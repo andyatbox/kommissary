@@ -4,7 +4,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Environment, Lightformer, SoftShadows, Text3D } from '@react-three/drei';
-import { WORDS, useUX, view, type FocusDot, type WordAnchor } from '@/lib/store';
+import { useUX, view, type FocusDot, type WordAnchor } from '@/lib/store';
 import { splineFrame } from '@/lib/path';
 import type { Quality } from '@/lib/perf';
 import Models from './Models';
@@ -21,21 +21,6 @@ const MARGIN = 5;
  * blobs. Fallback: "/fonts/helvetiker_bold.typeface.json".
  */
 const FONT = '/fonts/NewSpirit-Medium.typeface.json';
-
-/**
- * Pill buttons: each sits centered above the span of words it names. Clicking one
- * zooms the camera to it (see CameraRig's focus blend).
- */
-const BUTTON_DEFS = [
-  { label: 'Our Story', url: '/our-story', words: ['Kommissary—a'] },
-  { label: 'Food Is A Right', url: '/food-is-a-right', words: ['progressive,'] },
-  { label: 'Our Team', url: '/our-team', words: ['minority-run'] },
-  { label: 'Bespoke Meals', url: '/bespoke-meals', words: ['chef-crafted', 'meals'] },
-  { label: 'Logistics', url: '/logistics', words: ['logistics', 'leader'] },
-  { label: 'Services', url: '/services', words: ['serving'] },
-  { label: 'Our Impact', url: '/our-impact', words: ['communities'] },
-  { label: 'Connect', url: '/contact', words: ['New', 'York', 'City.'] },
-];
 
 /** How far above the words each button floats. */
 const BUTTON_UP = 2.6;
@@ -98,22 +83,31 @@ const KERN_PAIRS: Record<string, number> = {
 
 type Tok = { ch: string; word: number; space: boolean };
 
-const TOKENS: Tok[] = (() => {
-  const toks: Tok[] = [];
-  WORDS.forEach((w, wi) => {
-    if (wi > 0) toks.push({ ch: ' ', word: -1, space: true }); // inter-word space
-    for (const ch of w) toks.push({ ch, word: wi, space: ch === ' ' });
-  });
-  return toks;
-})();
+/** Strip trailing punctuation so a pill's anchor word matches the sentence token
+ *  even if the token carries a comma/period (e.g. anchor "City" ↔ token "City."). */
+const stripTrailing = (s: string) => s.replace(/[.,;:!?…"'”’)\]}]+$/, '');
 
 function Letters({ curveSegments }: { curveSegments: number }) {
+  const content = useUX((s) => s.content);
+  const setPath = useUX((s) => s.setPath);
   const meshes = useRef<(THREE.Mesh | null)[]>([]);
   const groups = useRef<(THREE.Group | null)[]>([]);
-  const setPath = useUX((s) => s.setPath);
+
+  // Split the sentence into words, then into per-letter tokens (spaces just advance).
+  const { words, tokens } = useMemo(() => {
+    const sentence = (content?.sentence ?? '').trim();
+    const words = sentence ? sentence.split(/\s+/) : [];
+    const tokens: Tok[] = [];
+    words.forEach((w, wi) => {
+      if (wi > 0) tokens.push({ ch: ' ', word: -1, space: true });
+      for (const ch of w) tokens.push({ ch, word: wi, space: ch === ' ' });
+    });
+    return { words, tokens };
+  }, [content?.sentence]);
 
   useLayoutEffect(() => {
-    const ready = TOKENS.every((t, i) => t.space || meshes.current[i]);
+    if (!tokens.length) return;
+    const ready = tokens.every((t, i) => t.space || meshes.current[i]);
     if (!ready) return;
 
     // Lay every letter end-to-end along one arc-length ruler; spaces just advance it.
@@ -123,7 +117,7 @@ function Letters({ curveSegments }: { curveSegments: number }) {
     let maxY = -Infinity;
     let prevCh = '';
     const placed: { i: number; center: number }[] = [];
-    TOKENS.forEach((t, i) => {
+    tokens.forEach((t, i) => {
       if (t.space) {
         s += SPACE_WIDTH;
         prevCh = '';
@@ -144,6 +138,7 @@ function Letters({ curveSegments }: { curveSegments: number }) {
       s += w + LETTER_GAP;
       prevCh = t.ch;
     });
+    if (!placed.length) return;
     const span = s - LETTER_GAP + MARGIN;
 
     // Baseline alignment: every glyph already has its font baseline at y = 0, so shift
@@ -179,7 +174,7 @@ function Letters({ curveSegments }: { curveSegments: number }) {
       g.position.copy(point);
       g.quaternion.copy(quat);
 
-      const wi = TOKENS[i].word;
+      const wi = tokens[i].word;
       if (!perWord.has(wi)) perWord.set(wi, { pts: [], u: [], q: [] });
       const rec = perWord.get(wi)!;
       rec.pts.push(point.clone());
@@ -195,13 +190,17 @@ function Letters({ curveSegments }: { curveSegments: number }) {
       rec.pts.forEach((p) => c.add(p));
       c.multiplyScalar(1 / rec.pts.length);
       const midIdx = Math.floor((rec.pts.length - 1) / 2);
-      anchors.push({ word: WORDS[wi], position: c, quaternion: rec.q[midIdx], u: rec.u[midIdx] });
+      anchors.push({ word: words[wi], position: c, quaternion: rec.q[midIdx], u: rec.u[midIdx] });
     });
 
+    // Match a pill's anchor word to an anchor — exact first, then punctuation-tolerant.
     const byWord = new Map(anchors.map((a) => [a.word, a]));
-    const dots: FocusDot[] = BUTTON_DEFS.flatMap((def, id) => {
-      const group = def.words
-        .map((w) => byWord.get(w))
+    const byWordNorm = new Map(anchors.map((a) => [stripTrailing(a.word), a]));
+    const findAnchor = (w: string) => byWord.get(w) ?? byWordNorm.get(stripTrailing(w));
+
+    const dots: FocusDot[] = (content?.pills ?? []).flatMap((pill, id) => {
+      const group = (pill.words ?? [])
+        .map((w) => findAnchor(w))
         .filter((a): a is WordAnchor => a != null);
       if (!group.length) return [];
       const center = new THREE.Vector3();
@@ -216,8 +215,10 @@ function Letters({ curveSegments }: { curveSegments: number }) {
       return [
         {
           id,
-          label: def.label,
-          url: def.url,
+          label: pill.label,
+          title: pill.title,
+          body: pill.body,
+          buttons: pill.buttons,
           position: center.addScaledVector(up, BUTTON_UP),
           normal,
           uStart,
@@ -241,11 +242,11 @@ function Letters({ curveSegments }: { curveSegments: number }) {
     const boxSize = bounds.getSize(new THREE.Vector3());
 
     setPath(curve, dots, anchors, travelStart, travelEnd, boxCenter, boxSize);
-  }, [setPath]);
+  }, [tokens, content, setPath]);
 
   return (
     <>
-      {TOKENS.map((t, i) =>
+      {tokens.map((t, i) =>
         t.space ? null : (
           <group
             key={i}

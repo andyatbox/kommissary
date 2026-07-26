@@ -1,15 +1,30 @@
-'use client';
+import { client } from '@/sanity/lib/client';
+import { DEFAULT_CONTENT } from '@/lib/defaultContent';
+import type { HomeContent } from '@/lib/store';
+import HomeClient from '@/components/HomeClient';
 
-import dynamic from 'next/dynamic';
-import Overlay from '@/components/Overlay';
+// Re-fetch periodically so published content changes show without a redeploy.
+export const revalidate = 60;
 
-const Experience = dynamic(() => import('@/components/Experience'), { ssr: false });
+const HOMEPAGE_QUERY = `*[_type == "homepage"][0]{
+  sentence,
+  "pills": pills[]{
+    label,
+    words,
+    title,
+    body,
+    "buttons": buttons[]{ label, url }
+  }
+}`;
 
-export default function Page() {
-  return (
-    <main className="h-dvh w-screen select-none">
-      <Experience />
-      <Overlay />
-    </main>
-  );
+export default async function Page() {
+  let content: HomeContent = DEFAULT_CONTENT;
+  try {
+    const data = await client.fetch<HomeContent | null>(HOMEPAGE_QUERY);
+    if (data?.sentence) content = { sentence: data.sentence, pills: data.pills ?? [] };
+  } catch {
+    // Keep the default fallback if Sanity is unreachable.
+  }
+
+  return <HomeClient content={content} />;
 }

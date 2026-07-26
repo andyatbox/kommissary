@@ -1,34 +1,25 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
+import type { PortableTextBlock } from '@portabletext/types';
 
-/** The full message as an ordered stream of words (no line breaks). */
-export const WORDS = [
-  "We're",
-  'Kommissary—a',
-  'progressive,',
-  'minority-run',
-  'purveyor',
-  'of',
-  'chef-crafted',
-  'meals',
-  'and',
-  'a',
-  'logistics',
-  'leader',
-  'serving',
-  'the',
-  'communities',
-  'of',
-  'New',
-  'York',
-  'City.',
-];
+/** Homepage content (from Sanity, or the default fallback). */
+export type PillButton = { label: string; url: string };
+export type PillContent = {
+  label: string;
+  words: string[];
+  title?: string;
+  body?: PortableTextBlock[];
+  buttons?: PillButton[];
+};
+export type HomeContent = { sentence: string; pills: PillContent[] };
 
 export type FocusDot = {
   id: number;
   label: string;
-  /** Page the camera navigates to once its zoom-in finishes. */
-  url: string;
+  /** Content shown in the overlay when this pill is clicked. */
+  title?: string;
+  body?: PortableTextBlock[];
+  buttons?: PillButton[];
   position: THREE.Vector3;
   /** Unit direction from the word toward where the camera should sit when focused. */
   normal: THREE.Vector3;
@@ -61,6 +52,10 @@ export const view = {
 };
 
 interface UXState {
+  /** Homepage content (sentence + pills), hydrated from Sanity on the client. */
+  content: HomeContent | null;
+  setContent: (content: HomeContent) => void;
+
   /** Organic 3D spline the words sit on and the camera reads along; null until measured. */
   path: THREE.CatmullRomCurve3 | null;
   dots: FocusDot[];
@@ -99,6 +94,9 @@ interface UXState {
 }
 
 export const useUX = create<UXState>((set) => ({
+  content: null,
+  setContent: (content) => set({ content }),
+
   path: null,
   dots: [],
   anchors: [],

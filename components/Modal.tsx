@@ -1,25 +1,74 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useUX } from '@/lib/store';
+import { useEffect, useState } from 'react';
+import { PortableText } from 'next-sanity';
+import type { PortableTextComponents } from '@portabletext/react';
+import type { PortableTextBlock } from '@portabletext/types';
+import { useUX, type PillButton } from '@/lib/store';
+
+type OverlayContent = {
+  label?: string;
+  title?: string;
+  body?: PortableTextBlock[];
+  buttons?: PillButton[];
+};
+
+const ptComponents: PortableTextComponents = {
+  block: {
+    normal: ({ children }) => (
+      <p className="mt-5 text-base leading-relaxed text-[#ff6666] first:mt-0 sm:text-lg">
+        {children}
+      </p>
+    ),
+  },
+  marks: {
+    link: ({ children, value }) => (
+      <a
+        href={(value as { href?: string })?.href ?? '#'}
+        className="underline transition-colors hover:text-[#ffcf33]"
+      >
+        {children}
+      </a>
+    ),
+  },
+};
+
+/** Normalize a Sanity path/url (e.g. "our-story" → "/our-story"), leaving full URLs alone. */
+function toHref(url: string) {
+  if (!url) return '#';
+  if (/^https?:\/\//.test(url) || url.startsWith('/') || url.startsWith('#')) return url;
+  return `/${url}`;
+}
 
 /**
- * Fullscreen content modal shown once a clicked pill's zoom-in finishes. Closing it
- * clears the focus, which eases the camera back out to the sentence path and brings
- * the header and pills back.
+ * Fullscreen content modal shown once a clicked pill's zoom-in finishes. It renders
+ * that pill's title / body / buttons from Sanity. Closing clears the focus, which eases
+ * the camera back out to the sentence path.
  */
 export default function Modal() {
   const modalOpen = useUX((s) => s.modalOpen);
-  const label = useUX((s) => s.focus?.label);
+  const focus = useUX((s) => s.focus);
   const setModalOpen = useUX((s) => s.setModalOpen);
   const setFocus = useUX((s) => s.setFocus);
+
+  // Retain the last pill's content so it doesn't vanish mid fade-out when focus clears.
+  const [shown, setShown] = useState<OverlayContent | null>(null);
+  useEffect(() => {
+    if (focus) {
+      setShown({
+        label: focus.label,
+        title: focus.title,
+        body: focus.body,
+        buttons: focus.buttons,
+      });
+    }
+  }, [focus]);
 
   const close = () => {
     setModalOpen(false);
     setFocus(null);
   };
 
-  // Escape closes too.
   useEffect(() => {
     if (!modalOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -30,15 +79,15 @@ export default function Modal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modalOpen]);
 
+  const title = shown?.title ?? shown?.label;
+  const buttons = shown?.buttons ?? [];
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-hidden={!modalOpen}
-      aria-label={label ?? 'Content'}
-      // Kept mounted so it can fade in/out. overflow-y-auto + min-h-full on the inner
-      // flex keeps content perfectly centered when it fits, and lets it scroll when it
-      // overflows on small screens.
+      aria-label={title ?? 'Content'}
       className={`fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-[#000666]/50 backdrop-blur-md transition-[opacity,visibility] duration-500 ${
         modalOpen ? 'visible opacity-100' : 'invisible opacity-0'
       }`}
@@ -64,24 +113,29 @@ export default function Modal() {
 
       <div className="flex min-h-full items-center justify-center p-8 sm:p-12">
         <div className="max-w-2xl text-center">
-          <h2 className="font-spirit text-3xl font-medium text-white sm:text-4xl">
-            {label ?? 'Lorem ipsum'}
-          </h2>
-          <p className="mt-6 text-base leading-relaxed text-[#ff6666] sm:text-lg">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-            nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-          </p>
-          <p className="mt-5 text-base leading-relaxed text-[#ff6666] sm:text-lg">
-            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-            fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-            culpa qui officia deserunt mollit anim id est laborum.
-          </p>
-          <p className="mt-5 text-base leading-relaxed text-[#ff6666] sm:text-lg">
-            Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
-            doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore
-            veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-          </p>
+          {title && (
+            <h2 className="font-spirit text-3xl font-medium text-white sm:text-4xl">{title}</h2>
+          )}
+
+          {shown?.body?.length ? (
+            <div className="mt-6">
+              <PortableText value={shown.body} components={ptComponents} />
+            </div>
+          ) : null}
+
+          {buttons.length > 0 && (
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              {buttons.map((b, i) => (
+                <a
+                  key={i}
+                  href={toHref(b.url)}
+                  className="font-spirit rounded-full bg-[#ff6666] px-6 py-3 text-base font-medium text-[#000666] transition-colors hover:bg-[#ffcf33]"
+                >
+                  {b.label}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
