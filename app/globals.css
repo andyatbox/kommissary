@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* New Spirit webfont — bulletproof syntax; .eot first for legacy IE. */
+@font-face {
+  font-family: 'New Spirit';
+  src: url('/fonts/NewSpirit.eot');
+  src:
+    url('/fonts/NewSpirit.eot?#iefix') format('embedded-opentype'),
+    url('/fonts/NewSpirit.woff2') format('woff2'),
+    url('/fonts/NewSpirit.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* New Spirit is reserved for h1/h2, buttons, and the whole nav + sub-nav.
+   Everything else uses Roboto Condensed (set on body below). */
+.font-spirit,
+h1,
+h2,
+button,
+nav,
+nav * {
+  font-family: 'New Spirit', ui-serif, Georgia, serif;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #000666;
+  font-family:
+    var(--font-roboto-condensed),
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Helvetica,
+    Arial,
+    sans-serif;
+}
+
+#canvas-root {
+  touch-action: none;
+}
+
+/* Kommissary wordmark: each letter starts painted the page background (invisible),
+   then flips to #F66 one after another on hover of the .group logo link. The flip is
+   instant per letter (0s duration); the stagger comes from a per-letter delay (--i)
+   applied only on hover, so un-hovering resets them all at once. */
+.k-letter {
+  fill: transparent;
+  transition: fill 0s linear;
+}
+/* The leftmost "K" is always lit, so it sits under the K mark and doesn't flicker
+   in the one frame between the mark hiding and the hover fill taking effect. */
+.k-letter--lit {
+  fill: #ff6666;
+}
+.group:hover .k-letter {
+  fill: #ff6666;
+  transition-delay: calc(var(--i, 0) * 0.06s);
+}
+
+/* Wrapper carries the zone reveal fade; the container's transform is CSS3DRenderer's. */
+.k-pill-wrap {
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+/* CSS3D pill buttons floating above the words. */
+.k-pill {
+  pointer-events: auto;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 0;
+  border-radius: 9999px;
+  background: #f66;
+  color: #000666;
+  font-family: 'New Spirit', ui-serif, Georgia, serif;
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 26px 46px;
+  box-shadow: 0 10px 40px rgb(255 102 102 / 35%);
+  transition:
+    transform 0.25s ease-out,
+    background 0.25s ease-out;
+}
+
+.k-pill:hover {
+  background: #ff8080;
+  transform: scale(1.06);
+}
