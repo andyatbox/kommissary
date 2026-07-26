@@ -103,9 +103,14 @@ export default function Buttons() {
     // Hide as soon as the end pull-out begins (not just once it's complete), so the
     // last pill clears before the completion display comes in.
     const pullingOut = view.overview > 0.02;
+    // Once a clicked pill's overlay is open, hide that pill (it would otherwise show
+    // through the modal's blur); it fades back in when the overlay closes.
+    const { modalOpen, focus } = useUX.getState();
+    const hiddenId = modalOpen ? focus?.id : undefined;
 
     for (const o of objects) {
-      const inZone = !pullingOut && u >= o.dot.uStart && u <= o.dot.uEnd;
+      const inZone =
+        !pullingOut && o.dot.id !== hiddenId && u >= o.dot.uStart && u <= o.dot.uEnd;
       o.shown.v = M.damp(o.shown.v, inZone ? 1 : 0, REVEAL_RATE, dt);
       const s = o.shown.v;
 

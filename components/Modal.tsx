@@ -21,6 +21,20 @@ const ptComponents: PortableTextComponents = {
       </p>
     ),
   },
+  // Tailwind's preflight removes list markers/indent, so restore them + the red color.
+  list: {
+    bullet: ({ children }) => (
+      <ul className="mt-5 list-disc space-y-2 pl-6 text-left text-base leading-relaxed text-[#ff6666] marker:text-[#ff6666] first:mt-0 sm:text-lg">
+        {children}
+      </ul>
+    ),
+    number: ({ children }) => (
+      <ol className="mt-5 list-decimal space-y-2 pl-6 text-left text-base leading-relaxed text-[#ff6666] marker:text-[#ff6666] first:mt-0 sm:text-lg">
+        {children}
+      </ol>
+    ),
+  },
+  listItem: ({ children }) => <li className="pl-1">{children}</li>,
   marks: {
     link: ({ children, value }) => (
       <a
