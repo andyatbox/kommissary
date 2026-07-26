@@ -20,4 +20,7 @@ export const structure: StructureResolver = (S) =>
         .title('Site Settings')
         .id('siteSettings')
         .child(S.document().schemaType('siteSettings').documentId('siteSettings')),
+      S.divider(),
+      // Regular multi-document type — create/list all Pages here.
+      S.documentTypeListItem('page').title('Pages'),
     ]);
