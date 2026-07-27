@@ -43,16 +43,24 @@ function Logo() {
     <a
       href="/"
       aria-label="Kommissary home"
-      className="group pointer-events-auto relative block shrink-0"
+      // `peer` so the nav can fade while this is hovered. Height only — the width comes
+      // from the in-flow K mark below, NOT the full wordmark, so the logo's footprint is
+      // just the K and the nav gets the rest of the row.
+      className="group peer pointer-events-auto relative block h-[50px] shrink-0 md:h-20"
     >
-      {/* Full wordmark, letters transparent until hover lights them up left to right. */}
-      <KommissaryWordmark className="block h-[50px] w-auto md:h-20" />
+      {/* Full wordmark: absolutely positioned so it reserves no layout width, and free to
+          overflow to the right on hover (the nav fades out of its way). Sits behind the K;
+          its letters are transparent until hover lights them up left to right. */}
+      <KommissaryWordmark className="pointer-events-none absolute left-0 top-0 block h-full w-auto" />
+      {/* The K mark is in flow (so it sets the logo's width) and on top (z-10). It fades
+          out on hover to reveal the wordmark writing itself out. opacity — not hidden — so
+          the width it reserves doesn't collapse mid-hover. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/images/k-logo.svg"
         alt=""
         aria-hidden="true"
-        className="absolute left-0 top-0 h-full w-auto group-hover:hidden"
+        className="relative z-10 block h-full w-auto transition-opacity duration-200 group-hover:opacity-0"
       />
     </a>
   );
@@ -126,8 +134,9 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
           >
             <Logo />
 
-            {/* Desktop trigger buttons */}
-            <ul className="font-spirit hidden items-center gap-5 text-lg font-medium md:flex lg:gap-7">
+            {/* Desktop trigger buttons. Fade out while the logo (peer) is hovered, so the
+                wordmark writing itself out has clear room instead of colliding with them. */}
+            <ul className="font-spirit hidden items-center gap-5 text-lg font-medium transition-opacity duration-200 peer-hover:pointer-events-none peer-hover:opacity-0 md:flex lg:gap-7">
               {menus.map((m) => (
                 <li key={m.id}>
                   <button
@@ -137,7 +146,7 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                     onMouseEnter={() => setOpen(m.id)}
                     onFocus={() => setOpen(m.id)}
                     onClick={() => setOpen((o) => (o === m.id ? null : m.id))}
-                    className={`pointer-events-auto inline-flex cursor-pointer items-center gap-1.5 transition-colors duration-200 hover:text-[#ffcf33] focus-visible:text-[#ffcf33] ${
+                    className={`pointer-events-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap transition-colors duration-200 hover:text-[#ffcf33] focus-visible:text-[#ffcf33] ${
                       open === m.id ? 'text-[#ffcf33]' : 'text-[#ff6666]'
                     }`}
                   >
