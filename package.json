@@ -12,6 +12,7 @@
     "@react-three/drei": "9.114.3",
     "@react-three/fiber": "8.17.10",
     "@sanity/image-url": "^1.2.0",
+    "@sanity/orderable-document-list": "^1.5.1",
     "@sanity/vision": "^3.99.0",
     "next": "14.2.15",
     "next-sanity": "^9.12.3",

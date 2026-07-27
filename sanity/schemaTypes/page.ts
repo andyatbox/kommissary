@@ -1,4 +1,5 @@
 import { defineArrayMember, defineField, defineType } from 'sanity';
+import { orderRankField, orderRankOrdering } from '@sanity/orderable-document-list';
 
 /**
  * A standalone content page (e.g. /our-story, /services, /contact). The slug is the
@@ -10,7 +11,10 @@ export const page = defineType({
   title: 'Page',
   type: 'document',
   fieldsets: [{ name: 'nav', title: 'Navigation', options: { collapsible: true, collapsed: false } }],
+  // Drag-to-reorder in the Pages list drives link order within each nav column.
+  orderings: [orderRankOrdering],
   fields: [
+    orderRankField({ type: 'page' }),
     defineField({ name: 'title', type: 'string', validation: (r) => r.required() }),
     defineField({
       name: 'slug',
@@ -20,24 +24,7 @@ export const page = defineType({
       description: 'The path after the domain, e.g. "our-story" → /our-story',
       validation: (r) => r.required(),
     }),
-    defineField({
-      name: 'description',
-      title: 'Meta description',
-      type: 'text',
-      rows: 2,
-      description: 'Used for SEO / social previews.',
-    }),
-    defineField({
-      name: 'body',
-      title: 'Content',
-      type: 'array',
-      of: [
-        defineArrayMember({ type: 'block' }),
-        defineArrayMember({ type: 'image', options: { hotspot: true } }),
-      ],
-    }),
-
-    // --- Navigation placement ---
+    // --- Navigation placement (kept right after the slug) ---
     defineField({
       name: 'navGroup',
       title: 'Dropdown menu',
@@ -76,11 +63,20 @@ export const page = defineType({
       },
     }),
     defineField({
-      name: 'navOrder',
-      title: 'Order',
-      type: 'number',
-      fieldset: 'nav',
-      description: 'Sort order within the column (lower = higher up).',
+      name: 'description',
+      title: 'Meta description',
+      type: 'text',
+      rows: 2,
+      description: 'Used for SEO / social previews.',
+    }),
+    defineField({
+      name: 'body',
+      title: 'Content',
+      type: 'array',
+      of: [
+        defineArrayMember({ type: 'block' }),
+        defineArrayMember({ type: 'image', options: { hotspot: true } }),
+      ],
     }),
   ],
   preview: {

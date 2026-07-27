@@ -1,10 +1,11 @@
 import type { StructureResolver } from 'sanity/structure';
+import { orderableDocumentListDeskItem } from '@sanity/orderable-document-list';
 
 /**
- * Show the three singletons (Homepage, Navigation, Site Settings) as single fixed
- * documents rather than "create new" lists.
+ * Homepage and Site Settings are singletons; Pages is a drag-orderable list whose
+ * order drives the nav link order within each column.
  */
-export const structure: StructureResolver = (S) =>
+export const structure: StructureResolver = (S, context) =>
   S.list()
     .title('Content')
     .items([
@@ -17,6 +18,7 @@ export const structure: StructureResolver = (S) =>
         .id('siteSettings')
         .child(S.document().schemaType('siteSettings').documentId('siteSettings')),
       S.divider(),
-      // Pages drive the header nav (via each page's Navigation fields).
-      S.documentTypeListItem('page').title('Pages'),
+      // Pages drive the header nav (via each page's Navigation fields). Drag to
+      // reorder — the list order sets link order within each nav column.
+      orderableDocumentListDeskItem({ type: 'page', title: 'Pages', S, context }),
     ]);
