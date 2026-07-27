@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import KommissaryWordmark from './KommissaryWordmark';
+import { useUX } from '@/lib/store';
 import type { NavItem, NavMenu } from '@/lib/nav';
 
 function Chevron({ open }: { open?: boolean }) {
@@ -61,6 +62,11 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
   const [open, setOpen] = useState<string | null>(null); // desktop dropdown
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // On the homepage, hide the whole header while a clicked pill's content modal is
+  // open (matches the pre-layout behavior where the modal covered the nav). Stays
+  // false on every other route, so the header is always shown there.
+  const modalOpen = useUX((s) => s.modalOpen);
+
   const activeMenu = menus.find((m) => m.id === open) ?? null;
 
   // Escape closes whatever's open.
@@ -76,7 +82,11 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
   }, []);
 
   return (
-    <>
+    <div
+      className={`transition-[opacity,visibility] duration-500 ${
+        modalOpen ? 'invisible opacity-0' : 'visible opacity-100'
+      }`}
+    >
       {/* Header + dropdown share one region. onMouseLeave here (not just on the link)
           keeps a dropdown open while the pointer is anywhere over the header or panel,
           so moving from the trigger down into the panel doesn't dismiss it. */}
@@ -227,6 +237,6 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
           </nav>
         </div>
       )}
-    </>
+    </div>
   );
 }
