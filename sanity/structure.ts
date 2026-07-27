@@ -21,4 +21,12 @@ export const structure: StructureResolver = (S, context) =>
       // Pages drive the header nav (via each page's Navigation fields). Drag to
       // reorder — the list order sets link order within each nav column.
       orderableDocumentListDeskItem({ type: 'page', title: 'Pages', S, context }),
+      S.divider(),
+      // Our Story (/our-story): the page-level content singleton + the drag-orderable
+      // timeline moments whose order runs down the page.
+      S.listItem()
+        .title('Our Story Page')
+        .id('ourStoryPage')
+        .child(S.document().schemaType('ourStoryPage').documentId('ourStoryPage')),
+      orderableDocumentListDeskItem({ type: 'moment', title: 'Timeline Moments', S, context }),
     ]);

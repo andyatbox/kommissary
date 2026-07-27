@@ -19,7 +19,15 @@ const STAGGER = 120;
  * The figures count up from zero once, the first time the section is scrolled into
  * reach (see useRevealOnce) — never again on subsequent scrolls past it.
  */
-export default function MillionsServed({ stats }: { stats: Stat[] }) {
+export default function MillionsServed({
+  stats,
+  heading = 'Millions Served',
+  unit = 'Meals',
+}: {
+  stats: Stat[];
+  heading?: string;
+  unit?: string;
+}) {
   const section = useRef<HTMLElement>(null);
   const revealed = useRevealOnce(section);
 
@@ -29,12 +37,12 @@ export default function MillionsServed({ stats }: { stats: Stat[] }) {
       className="border-t border-white/10 px-6 py-[14vh] text-center md:px-[8vw]"
     >
       <h1 className="text-4xl font-medium leading-[1.05] text-white sm:text-5xl md:text-6xl">
-        Millions Served
+        {heading}
       </h1>
 
       <div className="mx-auto mt-[9vh] flex max-w-4xl flex-wrap justify-center gap-x-10 gap-y-12 md:gap-x-16">
         {stats.map((stat, i) => (
-          <StatItem key={stat.year} stat={stat} revealed={revealed} delay={i * STAGGER} />
+          <StatItem key={`${stat.year}-${i}`} stat={stat} unit={unit} revealed={revealed} delay={i * STAGGER} />
         ))}
       </div>
     </section>
@@ -43,10 +51,12 @@ export default function MillionsServed({ stats }: { stats: Stat[] }) {
 
 function StatItem({
   stat,
+  unit,
   revealed,
   delay,
 }: {
   stat: Stat;
+  unit: string;
   revealed: boolean;
   delay: number;
 }) {
@@ -65,7 +75,7 @@ function StatItem({
         {display}
       </h2>
       <h3 className="mt-1 text-sm uppercase tracking-[0.2em] text-white/70 md:text-base">
-        Meals
+        {unit}
       </h3>
     </div>
   );

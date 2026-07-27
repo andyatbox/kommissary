@@ -1,20 +1,21 @@
 /**
- * The timeline content.
+ * The timeline content and model helpers.
  *
- * The shape is deliberately flat and Sanity-friendly: one document per moment, with
- * the model reference carried as a plain path. When this moves to Sanity, `getMoments()`
- * becomes an async GROQ query returning the same `Moment[]`, and nothing downstream of
- * it has to change. A suggested schema lives at the bottom of this file.
+ * Content is now authored in Sanity (the `moment` document type + the `ourStoryPage`
+ * singleton). The array below is the local FALLBACK used only when Sanity is empty or
+ * unreachable, so /our-story always renders. `momentFromSanity()` maps a fetched
+ * document into the same `Moment` shape the components consume.
  *
  * Resting model orientations are NOT here — they are a presentation concern, tuned by
- * eye rather than edited by an author, and live in lib/modelRotations.ts. They are
- * merged in by id below.
+ * eye rather than edited by an author, and live in lib/story/modelRotations.ts. They
+ * are keyed by MODEL (not moment), so a Sanity moment with a random id still resolves
+ * the right pose from its chosen model.
  */
 
 import { restingRotation } from './modelRotations';
 
 export type Moment = {
-  /** Stable key — becomes the Sanity document `_id` / slug. */
+  /** Stable key — the Sanity document `_id`, or the fallback id below. */
   id: string;
   /** Short label rendered on the timeline, e.g. "2016" or "Spring 2020". */
   period: string;
@@ -30,12 +31,78 @@ export type GalleryImage = {
   alt: string;
 };
 
+export type ModelSpec = {
+  /** Path to a Draco-compressed .glb under /public/models. */
+  url: string;
+  /** Accessible description of what the model depicts. */
+  alt: string;
+  /** Resting orientation in radians. Set it in DEGREES in lib/story/modelRotations.ts. */
+  rotation: [number, number, number];
+  /** Multiplier on the auto-fit size, for models that read small or large in frame. */
+  scale?: number;
+};
+
+/** New moments default to this model until a bespoke one is sourced. */
+export const DEFAULT_MODEL = 'statue-of-liberty';
+
 /**
- * PLACEHOLDER imagery — generated SVGs under /public/images/gallery, there to prove the
- * slider at realistic aspect ratios. The `subject` strings describe the real story each
- * one now sits behind, so the alt text already reads correctly; only the pictures
- * themselves are stand-ins. Replace with real photography (or Sanity image refs) and
- * this helper goes away.
+ * Alt text for each library model, keyed by its GLB file name (no extension) under
+ * /public/models — the same keys used in the Sanity `model` dropdown and in
+ * lib/story/modelRotations.ts. Adding a model means adding its GLB, an entry here, an
+ * option in sanity/schemaTypes/moment.ts, and (optionally) a pose in modelRotations.ts.
+ */
+export const MODEL_ALTS: Record<string, string> = {
+  'fish-market': 'A city fish market stall',
+  korilla: 'The Korilla BBQ food truck',
+  'cutting-board': 'A chef’s cutting board with prepared ingredients',
+  'kommy-truck': 'A Kommissary refrigerated delivery truck',
+  chicken: 'A roasted chicken dish',
+  'bananas-apple': 'Fresh bananas and an apple',
+  brownstones: 'A row of Brooklyn brownstones',
+  'statue-of-liberty': 'The Statue of Liberty',
+  ramen: 'A bowl of ramen',
+  'lettuce-broccoli': 'Fresh lettuce and broccoli',
+};
+
+/** Builds a full ModelSpec (url + alt + resting rotation) from a model key. */
+export function modelSpec(key: string, scale?: number): ModelSpec {
+  const k = MODEL_ALTS[key] ? key : DEFAULT_MODEL;
+  return {
+    url: `/models/${k}.glb`,
+    alt: MODEL_ALTS[k],
+    rotation: restingRotation(k),
+    scale,
+  };
+}
+
+/** Shape of a `moment` document as fetched by the /our-story GROQ query. */
+export type SanityMoment = {
+  id: string;
+  period: string;
+  title: string;
+  body: string;
+  model?: string;
+  modelScale?: number;
+  gallery?: { src?: string | null; alt?: string | null }[] | null;
+};
+
+/** Maps a fetched Sanity moment into the `Moment` shape the components render. */
+export function momentFromSanity(m: SanityMoment): Moment {
+  return {
+    id: m.id,
+    period: m.period,
+    title: m.title,
+    body: m.body,
+    model: modelSpec(m.model ?? DEFAULT_MODEL, m.modelScale ?? undefined),
+    gallery: (m.gallery ?? [])
+      .filter((g): g is { src: string; alt?: string | null } => Boolean(g?.src))
+      .map((g) => ({ src: g.src, alt: g.alt ?? '' })),
+  };
+}
+
+/**
+ * PLACEHOLDER imagery for the local fallback only — generated SVGs under
+ * /public/images/gallery. Sanity moments carry real uploaded photos instead.
  */
 function placeholderGallery(id: string, subject: string, count = 3): GalleryImage[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -44,19 +111,8 @@ function placeholderGallery(id: string, subject: string, count = 3): GalleryImag
   }));
 }
 
-export type ModelSpec = {
-  /** Path to a Draco-compressed .glb under /public/models. */
-  url: string;
-  /** Accessible description of what the model depicts. */
-  alt: string;
-  /** Resting orientation in radians. Set it in DEGREES in lib/modelRotations.ts. */
-  rotation: [number, number, number];
-  /** Multiplier on the auto-fit size, for models that read small or large in frame. */
-  scale?: number;
-};
-
-/** A moment as authored — the rotation is attached afterwards, by id. */
-type AuthoredMoment = Omit<Moment, 'model'> & { model: Omit<ModelSpec, 'rotation'> };
+/** A moment as authored locally — the model is given as a key + optional scale. */
+type AuthoredMoment = Omit<Moment, 'model'> & { modelKey: string; modelScale?: number };
 
 const AUTHORED: AuthoredMoment[] = [
   {
@@ -64,7 +120,7 @@ const AUTHORED: AuthoredMoment[] = [
     period: '1984—',
     title: 'Origin Story',
     body: 'When Eddie’s parents immigrated to New York City in 1984, they arrived with little more than hope, a few hundred dollars, and the kindness of friends who offered them a place to stay. His father found work where he could and eventually opened a small fish store in Astoria. It was neighbors—offering help, sharing meals, creating community—who made that path possible.',
-    model: { url: '/models/fish-market.glb', alt: 'A city fish market stall' },
+    modelKey: 'fish-market',
     gallery: placeholderGallery('fish-market', 'The original Astoria fish store'),
   },
   {
@@ -72,7 +128,7 @@ const AUTHORED: AuthoredMoment[] = [
     period: '2008—',
     title: 'Korilla BBQ',
     body: 'Years later, Eddie started a Korean taco truck. No big plan—just good food. But the more he cooked, the more he saw how food could bring people together. Not just around flavors, but around stories, identities, and community. That little truck turned into a few restaurants, and then something bigger—a kitchen space for other food makers like us.',
-    model: { url: '/models/korilla.glb', alt: 'The Korilla BBQ food truck' },
+    modelKey: 'korilla',
     gallery: placeholderGallery('korilla', 'The Korilla BBQ food truck'),
   },
   {
@@ -80,7 +136,7 @@ const AUTHORED: AuthoredMoment[] = [
     period: '2019—',
     title: 'Communal Commissary',
     body: 'By 2019, we’d opened a shared commissary. A place for local entrepreneurs, immigrant cooks, and cultural communities to find space, support, and opportunity.',
-    model: { url: '/models/cutting-board.glb', alt: 'A chef’s cutting board with prepared ingredients' },
+    modelKey: 'cutting-board',
     gallery: placeholderGallery('cutting-board', 'The shared commissary kitchen'),
   },
   {
@@ -88,7 +144,7 @@ const AUTHORED: AuthoredMoment[] = [
     period: '2020—',
     title: 'The Pandemic',
     body: 'Then the pandemic hit... And everything changed. We went from feeding customers to feeding the city. What started as a community kitchen became a frontline response. Thousands of meals turned into millions.',
-    model: { url: '/models/kommy-truck.glb', alt: 'A Kommissary refrigerated delivery truck' },
+    modelKey: 'kommy-truck',
     gallery: placeholderGallery('kommy-truck', 'Emergency meal distribution during the pandemic'),
   },
   {
@@ -96,7 +152,7 @@ const AUTHORED: AuthoredMoment[] = [
     period: '2022—',
     title: 'Post-pandemic',
     body: 'As the pandemic began to wind down in 2022, we strengthened our position as the City’s problem solver. We expanded upon our stringent Quality Assurance procedures, formalized a Culinary Team, and established our headquarters in a 30,000-square-foot facility. NYC Health + Hospitals took notice, sparking our ongoing collaboration that began with 750,000 quarantine meals and testing kits.',
-    model: { url: '/models/chicken.glb', alt: 'A roasted chicken dish' },
+    modelKey: 'chicken',
     gallery: placeholderGallery('chicken', 'Chef-crafted meals from the Culinary Team'),
   },
   {
@@ -104,7 +160,7 @@ const AUTHORED: AuthoredMoment[] = [
     period: '2023—',
     title: 'Asylum Seeker Crisis',
     body: 'Our partnership with NYC Health + Hospitals expanded in 2023 with the onset of the asylum seeker crisis. We helped build the Humanitarian Emergency Relief and Rescue Center (HERRC) program from scratch, and today, we manage operations at 11 sites where we provide food services to nearly 50,000 asylum seekers daily.',
-    model: { url: '/models/bananas-apple.glb', alt: 'Fresh bananas and an apple' },
+    modelKey: 'bananas-apple',
     gallery: placeholderGallery('bananas-apple', 'Food services for asylum seekers'),
   },
   {
@@ -112,7 +168,8 @@ const AUTHORED: AuthoredMoment[] = [
     period: '2024—',
     title: 'After-school Meals for DYCD',
     body: 'After winning a contract with the Department of Youth & Community Development, we began to provide meals for school children enrolled in after-school programs through the Department of Youth & Community Development. Through word of mouth, many other NYC schools heard about our services – and soon, this program expanded to encompass meal preparation, warehousing, and delivery to 280 NYC public schools and community centers.',
-    model: { url: '/models/brownstones.glb', alt: 'A row of Brooklyn brownstones', scale: 1.1 },
+    modelKey: 'brownstones',
+    modelScale: 1.1,
     gallery: placeholderGallery('brownstones', 'Meals delivered to NYC public schools'),
   },
   {
@@ -120,53 +177,19 @@ const AUTHORED: AuthoredMoment[] = [
     period: 'Today & Tomorrow—',
     title: 'Evolving As NYC Evolves',
     body: 'Since then, our work has grown, but we’re still neighbors helping neighbors—showing up, cooking with love, and believing that caring for one another is one of the most powerful tools we have. Nothing falls outside what is “normal” for us: whether addressing immigration challenges, public health emergencies, or other community needs, we remain steadfast stewards of public trust. As we formalize our commitment to sustainable food practices—including sourcing from New York State farms and donating to local food pantries—we are also preparing to roll out a completely green fleet of vehicles and biodegradable packaging and utensils within the next year. Our reach extends far beyond the meals we serve, and we invite you to join us as we continue nourishing communities, empowering change, and shaping a future where access to nutritious food is a universal right for all. We look forward to serving you.',
-    model: { url: '/models/statue-of-liberty.glb', alt: 'The Statue of Liberty' },
+    modelKey: 'statue-of-liberty',
     gallery: placeholderGallery('statue-of-liberty', 'Kommissary serving New York City'),
   },
 ];
 
-/**
- * Content joined to its resting rotations, once at module load. Doing it here rather
- * than inside getMoments() keeps object identity stable across calls, which is what
- * lets TimelineSection's registration effect depend on `moment.model` without
- * re-registering its slot on every render.
- */
-const MOMENTS: Moment[] = AUTHORED.map((moment) => ({
-  ...moment,
-  model: { ...moment.model, rotation: restingRotation(moment.id) },
+/** Object identity is stable across calls (built once), which lets TimelineSection's
+ *  registration effect depend on `moment.model` without re-registering every render. */
+const MOMENTS: Moment[] = AUTHORED.map(({ modelKey, modelScale, ...rest }) => ({
+  ...rest,
+  model: modelSpec(modelKey, modelScale),
 }));
 
-/**
- * Reads the timeline. Synchronous today because the content is local; when it moves
- * to Sanity this becomes `async` and callers already `await` it.
- */
+/** The local fallback timeline, used when Sanity returns no moments. */
 export async function getMoments(): Promise<Moment[]> {
   return MOMENTS;
 }
-
-/*
- * Suggested Sanity schema for `moment`:
- *
- *   defineType({
- *     name: 'moment',
- *     type: 'document',
- *     fields: [
- *       defineField({ name: 'period', type: 'string', validation: (r) => r.required() }),
- *       defineField({ name: 'title', type: 'string', validation: (r) => r.required() }),
- *       defineField({ name: 'body', type: 'text', rows: 6 }),
- *       defineField({ name: 'order', type: 'number' }),
- *       defineField({ name: 'model', type: 'file', options: { accept: '.glb' } }),
- *       defineField({ name: 'modelAlt', type: 'string' }),
- *       defineField({ name: 'modelScale', type: 'number', initialValue: 1 }),
- *     ],
- *   })
- *
- * GROQ: *[_type == "moment"] | order(order asc) {
- *   "id": _id, period, title, body,
- *   "model": { "url": model.asset->url, "alt": modelAlt, "scale": modelScale }
- * }
- *
- * Note there is no rotation field: posing a model is a design decision made against
- * the rendered page, not something an editor should be asked to supply in radians.
- * getMoments() keeps attaching it from lib/modelRotations.ts by id.
- */
