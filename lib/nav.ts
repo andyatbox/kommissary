@@ -29,7 +29,7 @@ export type NavLink = { text: string; href: string; column: number; order: numbe
  * (Our Story now exists as a real Page, so nothing here for now.)
  */
 export const NAV_EXTRAS: Record<NavGroupId, NavLink[]> = {
-  kommissary: [],
+  kommissary: [{ text: 'Home', href: '/', column: 2, order: 0 }],
   'what-we-do': [],
   connect: [],
 };
