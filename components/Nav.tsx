@@ -2,55 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import KommissaryWordmark from './KommissaryWordmark';
-
-type Item = { kind: 'h2'; text: string } | { kind: 'link'; text: string; href: string };
-type Menu = { id: string; label: string; columns: Item[][] };
-
-const h2 = (text: string): Item => ({ kind: 'h2', text });
-const link = (text: string, href = '#'): Item => ({ kind: 'link', text, href });
-
-const MENUS: Menu[] = [
-  {
-    id: 'kommissary',
-    label: 'Kommissary',
-    columns: [
-      [h2('Who we are...')],
-      [
-        link('Our Story & Timeline', '/our-story'),
-        link('Our Team', '/our-team'),
-        link('Kommissary Weekly', '/kommissary-weekly'),
-      ],
-      [
-        link('Food Is A Right', '/food-is-a-right'),
-        link('Certification & Compliance', '/certification'),
-      ],
-    ],
-  },
-  {
-    id: 'what-we-do',
-    label: 'What we do',
-    columns: [
-      [h2('What we do...')],
-      [
-        link('Services', '/services'),
-        link('Our Impact & Programs', '/our-impact'),
-      ],
-      [
-        link('Bespoke Meals', '/bespoke-meals'),
-        link('Logistics & Distribution', '/logistics'),
-      ],
-    ],
-  },
-  {
-    id: 'connect',
-    label: 'Connect',
-    columns: [
-      [h2("Let's work together!")],
-      [link('Contact Us', '/contact'), link('Careers', '/careers')],
-      [],
-    ],
-  },
-];
+import { useUX } from '@/lib/store';
+import type { NavItem } from '@/lib/nav';
 
 function Chevron({ open }: { open?: boolean }) {
   return (
@@ -109,7 +62,8 @@ export default function Nav() {
   const [open, setOpen] = useState<string | null>(null); // desktop dropdown
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const activeMenu = MENUS.find((m) => m.id === open) ?? null;
+  const menus = useUX((s) => s.nav);
+  const activeMenu = menus.find((m) => m.id === open) ?? null;
 
   // Escape closes whatever's open.
   useEffect(() => {
@@ -166,7 +120,7 @@ export default function Nav() {
 
             {/* Desktop trigger buttons */}
             <ul className="font-spirit hidden items-center gap-5 text-lg font-medium md:flex lg:gap-7">
-              {MENUS.map((m) => (
+              {menus.map((m) => (
                 <li key={m.id}>
                   <button
                     type="button"
@@ -247,9 +201,9 @@ export default function Nav() {
 
           <nav aria-label="Mobile" className="flex-1 overflow-y-auto px-8 pb-16">
             <ul className="font-spirit flex flex-col gap-9">
-              {MENUS.map((m) => {
+              {menus.map((m) => {
                 const links = m.columns.flat().filter((it) => it.kind === 'link') as Extract<
-                  Item,
+                  NavItem,
                   { kind: 'link' }
                 >[];
                 return (
