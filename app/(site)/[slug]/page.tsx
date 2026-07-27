@@ -21,11 +21,16 @@ const PAGE_QUERY = `*[_type == "page" && slug.current == $slug][0]{
 
 const SLUGS_QUERY = `*[_type == "page" && defined(slug.current)].slug.current`;
 
+// Slugs with a dedicated route of their own (a bespoke experience rather than the
+// generic block template). The explicit route shadows [slug] anyway, but excluding
+// them here keeps this template from also prerendering them.
+const DEDICATED_ROUTES = new Set(['our-story']);
+
 // Pre-render every page at build; new/edited pages still resolve on demand (revalidate).
 export async function generateStaticParams() {
   try {
     const slugs = await client.fetch<string[] | null>(SLUGS_QUERY);
-    return (slugs ?? []).map((slug) => ({ slug }));
+    return (slugs ?? []).filter((slug) => !DEDICATED_ROUTES.has(slug)).map((slug) => ({ slug }));
   } catch {
     return [];
   }

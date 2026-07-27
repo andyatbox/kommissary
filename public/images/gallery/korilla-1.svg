@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" role="img">
+  <rect width="1600" height="1000" fill="#000666"/>
+  <circle cx="1180" cy="330" r="230" fill="#ff6666" opacity="0.9"/>
+    <rect x="150" y="560" width="900" height="26" fill="#ffcf33"/>
+    <rect x="150" y="640" width="620" height="26" fill="#ffcf33" opacity="0.55"/>
+  <text x="150" y="840" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="62">It starts with a truck</text>
+  <text x="150" y="905" fill="#ff6666" font-family="Helvetica, Arial, sans-serif" font-size="34" letter-spacing="6">2010 — PLACEHOLDER 1 OF 3</text>
+</svg>

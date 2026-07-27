@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" role="img">
+  <rect width="1600" height="1000" fill="#000666"/>
+  <polygon points="1180,150 1420,620 940,620" fill="#ff6666" opacity="0.9"/>
+  <circle cx="1000" cy="770" r="110" fill="#ffcf33" opacity="0.8"/>
+  <rect x="150" y="230" width="560" height="26" fill="#ffcf33"/>
+  <rect x="150" y="310" width="380" height="26" fill="#ff6666" opacity="0.6"/>
+  <text x="150" y="840" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="62">Feeding a city, on purpose</text>
+  <text x="150" y="905" fill="#ff6666" font-family="Helvetica, Arial, sans-serif" font-size="34" letter-spacing="6">TODAY — PLACEHOLDER 3 OF 3</text>
+</svg>

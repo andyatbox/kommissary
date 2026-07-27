@@ -30,12 +30,16 @@ html {
   height: 100%;
 }
 
-/* Note: overflow is NOT locked globally — content pages ([slug]) scroll normally.
-   The homepage isolates its 3D canvas with `fixed inset-0 overflow-hidden`. */
+/* Note: vertical overflow is NOT locked globally — content pages ([slug]) and the
+   Our Story timeline scroll normally. Only the horizontal axis is clamped, and the
+   homepage isolates its 3D canvas with `fixed inset-0 overflow-hidden`. */
 body {
   min-height: 100%;
   margin: 0;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
   background: #000666;
+  color: #ffffff;
   font-family:
     var(--font-roboto-condensed),
     ui-sans-serif,
@@ -99,4 +103,79 @@ body {
 .k-pill:hover {
   background: #ff8080;
   transform: scale(1.06);
+}
+
+/* ==========================================================================
+   Our Story & Timeline (/our-story) — migrated from the Kommissary Story build.
+   These custom properties and classes are only consumed by components/story/*,
+   so they're inert on every other route.
+   ========================================================================== */
+:root {
+  /* Where the timeline rule sits. 30% of the window on desktop; tucked to the
+     left edge on phones, where a 30/70 split would starve the copy. */
+  --line-x: 1.75rem;
+  /* Gap between the rule and the start of the copy column. */
+  --line-gap: 1.75rem;
+  /* Distance from the top of a section to the centre of its ring — the optical centre
+     of the period eyebrow's first line. The ring and the model are both centred on
+     this, so they can't drift apart when the eyebrow's type scale changes. */
+  --dot-y: 0.625rem;
+  /* Height of a section's "media" — its 3D model box, and, when open, its Gallery
+     slider — so switching between the two causes no jump. Driven by ORIENTATION, not
+     viewport width (see the landscape override below). */
+  --media-h: 40vh;
+  /* Distance from the window's left edge to the model column's content. */
+  --gallery-inset: calc(var(--line-x) + var(--line-gap));
+  /* tl-col's own right padding — kept as a variable so the Gallery trigger's
+     off-screen slide distance (in TimelineSection.tsx) can match it exactly. */
+  --tl-pr: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --line-x: 30%;
+    --line-gap: 3rem;
+    --dot-y: 0.75rem;
+    --gallery-inset: 5vw;
+    --tl-pr: 8vw;
+  }
+}
+
+@media (orientation: landscape) {
+  :root {
+    --media-h: 60vh;
+  }
+}
+
+/* The gallery slider scrolls natively but shows no bar — the bullets and < > controls
+   are the affordance. */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* The copy column: everything right of the timeline rule. */
+.tl-col {
+  padding-left: calc(var(--line-x) + var(--line-gap));
+  padding-right: var(--tl-pr);
+}
+
+/* Smooth-scroll rig (see components/story/SmoothScroll.tsx). When the momentum scroll
+   is active the content is lifted out of flow and driven by a transform, while an empty
+   spacer keeps the native scrollbar — and therefore trackpad, keyboard and scrollbar
+   dragging — working exactly as the browser intends. */
+.smooth-content {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 10;
+  will-change: transform;
+}
+
+#webgl-root {
+  /* The canvas is a backdrop: the DOM above it owns every pointer interaction. */
+  pointer-events: none;
 }

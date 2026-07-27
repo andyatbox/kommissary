@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" role="img">
+  <rect width="1600" height="1000" fill="#000666"/>
+  <rect x="980" y="180" width="420" height="420" fill="#ffcf33" opacity="0.9"/>
+    <circle cx="330" cy="760" r="150" fill="#ff6666"/>
+    <rect x="150" y="200" width="26" height="380" fill="#ff6666" opacity="0.7"/>
+  <text x="150" y="840" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="62">Food is a right</text>
+  <text x="150" y="905" fill="#ff6666" font-family="Helvetica, Arial, sans-serif" font-size="34" letter-spacing="6">2021 — PLACEHOLDER 2 OF 3</text>
+</svg>
