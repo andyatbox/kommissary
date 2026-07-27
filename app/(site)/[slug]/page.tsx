@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { PortableTextBlock } from '@portabletext/types';
 import { client } from '@/sanity/lib/client';
-import PortableBody from '@/components/PortableBody';
+import Reveal from '@/components/Reveal';
+import SectionRenderer, { type PageSection } from '@/components/sections/SectionRenderer';
 
 // Re-fetch periodically so published content changes show without a redeploy.
 export const revalidate = 60;
@@ -10,13 +11,30 @@ export const revalidate = 60;
 type PageDoc = {
   title: string;
   description?: string;
+  sections?: PageSection[];
+  /** Legacy single body field, before the page-builder. Rendered as a Body Copy
+   *  section until the content is migrated into `sections`. */
   body?: PortableTextBlock[];
 };
+
+// Section projection: pull only the fields each section type needs, resolving image
+// asset URLs/LQIP for sliders.
+const SECTIONS = `sections[]{
+  _key,
+  _type,
+  _type == "bodyCopy" => { content },
+  _type == "videoEmbed" => { url, caption },
+  _type == "imageSlider" => {
+    "images": images[]{ asset, hotspot, crop, alt, "lqip": asset->metadata.lqip }
+  },
+  _type == "gridCopy" => { columns, column1, column2, column3 }
+}`;
 
 const PAGE_QUERY = `*[_type == "page" && slug.current == $slug][0]{
   title,
   description,
-  body
+  body,
+  ${SECTIONS}
 }`;
 
 const SLUGS_QUERY = `*[_type == "page" && defined(slug.current)].slug.current`;
@@ -54,22 +72,41 @@ export default async function SlugPage({ params }: { params: { slug: string } })
   const page = await client.fetch<PageDoc | null>(PAGE_QUERY, { slug: params.slug });
   if (!page) notFound();
 
-  return (
-    // Top padding clears the fixed header (25px bar + nav + logo).
-    <main className="min-h-dvh px-6 pb-28 pt-[120px] sm:px-8 md:pt-[168px]">
-      <article className="mx-auto max-w-2xl">
-        <h1 className="font-spirit text-4xl font-medium text-[#ff6666] sm:text-5xl">
-          {page.title}
-        </h1>
+  // Prefer the new page-builder sections; fall back to the legacy body as one Body
+  // Copy section so un-migrated pages still render.
+  const sections: PageSection[] =
+    page.sections?.length
+      ? page.sections
+      : page.body?.length
+        ? [{ _type: 'bodyCopy', _key: 'legacy-body', content: page.body }]
+        : [];
 
-        {page.body?.length ? (
-          <div className="mt-8">
-            <PortableBody value={page.body} />
-          </div>
-        ) : (
-          <p className="mt-8 text-lg text-white/60">Content coming soon.</p>
-        )}
-      </article>
+  return (
+    // Full-width main (no single max-width wrapper): each section owns its width, so
+    // sliders/grids can go full-bleed while copy/video stay in a readable column.
+    // Top padding clears the fixed header (25px bar + nav + logo).
+    <main className="min-h-dvh pb-28 pt-[120px] md:pt-[168px]">
+      <Reveal>
+        <div className="mx-auto w-full max-w-3xl px-6 sm:px-8">
+          <h1 className="font-spirit text-4xl font-medium text-[#ff6666] sm:text-5xl">
+            {page.title}
+          </h1>
+        </div>
+      </Reveal>
+
+      {sections.length ? (
+        <div className="mt-12 space-y-16 md:mt-16 md:space-y-24">
+          {sections.map((section) => (
+            <Reveal key={section._key}>
+              <SectionRenderer section={section} />
+            </Reveal>
+          ))}
+        </div>
+      ) : (
+        <div className="mx-auto w-full max-w-3xl px-6 pt-8 sm:px-8">
+          <p className="text-lg text-white/60">Content coming soon.</p>
+        </div>
+      )}
     </main>
   );
 }

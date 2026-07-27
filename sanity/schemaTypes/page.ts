@@ -70,12 +70,16 @@ export const page = defineType({
       description: 'Used for SEO / social previews.',
     }),
     defineField({
-      name: 'body',
-      title: 'Content',
+      name: 'sections',
+      title: 'Content Sections',
       type: 'array',
+      description:
+        'Build the page by adding sections in any order. Drag to reorder; add as many as you like.',
       of: [
-        defineArrayMember({ type: 'block' }),
-        defineArrayMember({ type: 'image', options: { hotspot: true } }),
+        defineArrayMember({ type: 'bodyCopy' }),
+        defineArrayMember({ type: 'videoEmbed' }),
+        defineArrayMember({ type: 'imageSlider' }),
+        defineArrayMember({ type: 'gridCopy' }),
       ],
     }),
   ],

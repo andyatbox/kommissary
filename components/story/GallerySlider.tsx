@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { GalleryImage } from '@/lib/story/timeline';
+import type { GalleryImage } from '@/lib/galleryImage';
 
 /**
  * A horizontal image slider built on native CSS scroll-snap.
@@ -16,10 +16,17 @@ export default function GallerySlider({
   /** False until the section is near enough to bother fetching the imagery. */
   armed,
   labelledBy,
+  /** Height utility for each slide. Defaults to the Our Story media box. */
+  slideClassName = 'h-[var(--media-h)]',
+  /** Extra classes for the controls row — e.g. padding to inset it from a full-bleed
+   *  track so the bullets/arrows don't run to the screen edges. */
+  controlsClassName = '',
 }: {
   images: GalleryImage[];
   armed: boolean;
   labelledBy?: string;
+  slideClassName?: string;
+  controlsClassName?: string;
 }) {
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
@@ -80,7 +87,7 @@ export default function GallerySlider({
             // 3D model occupies (60vh landscape / 40vh portrait), so opening the
             // gallery doesn't resize the section. The LQIP sits behind as a blur-up
             // while the full image streams in.
-            className="h-[var(--media-h)] w-full shrink-0 snap-center overflow-hidden rounded-xl bg-white/5 bg-cover bg-center"
+            className={`${slideClassName} w-full shrink-0 snap-center overflow-hidden rounded-xl bg-white/5 bg-cover bg-center`}
             style={image.lqip ? { backgroundImage: `url(${image.lqip})` } : undefined}
           >
             {armed && (
@@ -100,7 +107,7 @@ export default function GallerySlider({
         ))}
       </div>
 
-      <div className="mt-4 flex items-center gap-4">
+      <div className={`mt-4 flex items-center gap-4 ${controlsClassName}`}>
         <Step label="Previous image" disabled={index === 0} onClick={() => goTo(index - 1)}>
           <path d="M15 6l-6 6 6 6" />
         </Step>
