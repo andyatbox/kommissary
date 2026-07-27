@@ -21,13 +21,25 @@ export default function GallerySlider({
   /** Extra classes for the controls row — e.g. padding to inset it from a full-bleed
    *  track so the bullets/arrows don't run to the screen edges. */
   controlsClassName = '',
+  /**
+   * 'cover' (default) fills the slide box and crops (the Our Story media box).
+   * 'contain' shows the whole image: full height, natural (auto) width, centred — and
+   * on mobile goes full width with padding (see `slidePadClassName`).
+   */
+  imageFit = 'cover',
+  /** Padding on each slide — used by the full-bleed page slider to inset mobile images
+   *  from the window edge so their rounded corners read. */
+  slidePadClassName = '',
 }: {
   images: GalleryImage[];
   armed: boolean;
   labelledBy?: string;
   slideClassName?: string;
   controlsClassName?: string;
+  imageFit?: 'cover' | 'contain';
+  slidePadClassName?: string;
 }) {
+  const contain = imageFit === 'contain';
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
 
@@ -83,12 +95,16 @@ export default function GallerySlider({
             role="group"
             aria-roledescription="slide"
             aria-label={`${i + 1} of ${images.length}`}
-            // Fixed height rather than an aspect ratio: --media-h is the same box the
-            // 3D model occupies (60vh landscape / 40vh portrait), so opening the
-            // gallery doesn't resize the section. The LQIP sits behind as a blur-up
-            // while the full image streams in.
-            className={`${slideClassName} w-full shrink-0 snap-center overflow-hidden rounded-xl bg-white/5 bg-cover bg-center`}
-            style={image.lqip ? { backgroundImage: `url(${image.lqip})` } : undefined}
+            // Fixed height rather than an aspect ratio: in 'cover' mode this is the same
+            // box the 3D model occupies, so swapping doesn't resize the section; the LQIP
+            // sits behind as a blur-up. In 'contain' mode the slide just centres the
+            // image (which sets its own size).
+            className={
+              contain
+                ? `${slideClassName} flex w-full shrink-0 snap-center items-center justify-center ${slidePadClassName}`
+                : `${slideClassName} w-full shrink-0 snap-center overflow-hidden rounded-xl bg-white/5 bg-cover bg-center`
+            }
+            style={!contain && image.lqip ? { backgroundImage: `url(${image.lqip})` } : undefined}
           >
             {armed && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -99,8 +115,15 @@ export default function GallerySlider({
                 alt={image.alt}
                 draggable={false}
                 loading="lazy"
-                style={image.objectPosition ? { objectPosition: image.objectPosition } : undefined}
-                className="h-full w-full select-none object-cover"
+                style={!contain && image.objectPosition ? { objectPosition: image.objectPosition } : undefined}
+                // contain: full width on mobile (rounded, inset by the slide padding),
+                // then full height / auto width / centred on desktop so the whole image
+                // shows without cropping. cover: fill and crop.
+                className={
+                  contain
+                    ? 'h-auto w-full select-none rounded-xl object-contain md:h-full md:w-auto'
+                    : 'h-full w-full select-none object-cover'
+                }
               />
             )}
           </div>

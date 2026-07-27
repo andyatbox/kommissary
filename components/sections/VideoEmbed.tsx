@@ -84,9 +84,19 @@ function PlayButton() {
   );
 }
 
-export default function VideoEmbed({ url, caption }: { url: string; caption?: string }) {
+export default function VideoEmbed({
+  url,
+  caption,
+  /** Poster fetched server-side (e.g. Vimeo). Falls back to the provider thumbnail. */
+  poster,
+}: {
+  url: string;
+  caption?: string;
+  poster?: string;
+}) {
   const [playing, setPlaying] = useState(false);
   const video = parseVideo(url);
+  const thumbnail = poster ?? (video.kind === 'iframe' ? video.thumbnail : undefined);
 
   if (video.kind === 'unknown') {
     return (
@@ -98,10 +108,11 @@ export default function VideoEmbed({ url, caption }: { url: string; caption?: st
     );
   }
 
-  // Instagram: no facade, portrait-friendly, narrower column.
+  // Instagram: no facade, portrait post. Fixed height rather than a forced aspect
+  // ratio, so the embed isn't stretched to fit.
   if (!video.facade) {
     return (
-      <figure className="mx-auto w-full max-w-[420px] px-6 sm:px-8">
+      <figure className="mx-auto w-full max-w-[400px] px-6 sm:px-8">
         <div className="overflow-hidden rounded-xl bg-black">
           <iframe
             src={video.src}
@@ -109,7 +120,7 @@ export default function VideoEmbed({ url, caption }: { url: string; caption?: st
             loading="lazy"
             scrolling="no"
             allowFullScreen
-            className="aspect-[4/5] w-full"
+            className="h-[640px] w-full"
           />
         </div>
         {caption && <Caption>{caption}</Caption>}
@@ -119,7 +130,8 @@ export default function VideoEmbed({ url, caption }: { url: string; caption?: st
 
   return (
     <figure className="mx-auto w-full max-w-3xl px-6 sm:px-8">
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black md:max-h-[60vh]">
+      {/* Full width at 16:9 — no max-height, so the frame is never distorted. */}
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
         {playing ? (
           <iframe
             src={video.src}
@@ -136,10 +148,10 @@ export default function VideoEmbed({ url, caption }: { url: string; caption?: st
             aria-label={caption ? `Play: ${caption}` : 'Play video'}
             className="group absolute inset-0 h-full w-full cursor-pointer"
           >
-            {video.thumbnail && (
+            {thumbnail && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={video.thumbnail}
+                src={thumbnail}
                 alt=""
                 aria-hidden="true"
                 className="absolute inset-0 h-full w-full object-cover"

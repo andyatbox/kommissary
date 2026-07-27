@@ -39,6 +39,22 @@ const PAGE_QUERY = `*[_type == "page" && slug.current == $slug][0]{
 
 const SLUGS_QUERY = `*[_type == "page" && defined(slug.current)].slug.current`;
 
+/** Vimeo has no thumbnail-by-URL convention (unlike YouTube), so fetch its poster via
+ *  oEmbed server-side and cache it for a day. Returns undefined on any failure. */
+async function vimeoPoster(url: string): Promise<string | undefined> {
+  try {
+    const res = await fetch(
+      `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}&width=1280`,
+      { next: { revalidate: 86400 } }
+    );
+    if (!res.ok) return undefined;
+    const data = (await res.json()) as { thumbnail_url?: string };
+    return data.thumbnail_url;
+  } catch {
+    return undefined;
+  }
+}
+
 // Slugs with a dedicated route of their own (a bespoke experience rather than the
 // generic block template). The explicit route shadows [slug] anyway, but excluding
 // them here keeps this template from also prerendering them.
@@ -74,12 +90,21 @@ export default async function SlugPage({ params }: { params: { slug: string } })
 
   // Prefer the new page-builder sections; fall back to the legacy body as one Body
   // Copy section so un-migrated pages still render.
-  const sections: PageSection[] =
+  const rawSections: PageSection[] =
     page.sections?.length
       ? page.sections
       : page.body?.length
         ? [{ _type: 'bodyCopy', _key: 'legacy-body', content: page.body }]
         : [];
+
+  // Resolve Vimeo posters server-side (other providers derive theirs on the client).
+  const sections: PageSection[] = await Promise.all(
+    rawSections.map(async (s) =>
+      s._type === 'videoEmbed' && s.url.includes('vimeo.com')
+        ? { ...s, poster: await vimeoPoster(s.url) }
+        : s
+    )
+  );
 
   return (
     // Full-width main (no single max-width wrapper): each section owns its width, so

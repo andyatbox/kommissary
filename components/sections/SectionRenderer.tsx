@@ -7,7 +7,7 @@ import GridCopy from './GridCopy';
 
 export type PageSection =
   | { _type: 'bodyCopy'; _key: string; content?: PortableTextBlock[] }
-  | { _type: 'videoEmbed'; _key: string; url: string; caption?: string }
+  | { _type: 'videoEmbed'; _key: string; url: string; caption?: string; poster?: string }
   | { _type: 'imageSlider'; _key: string; images?: SanityGalleryImage[] }
   | {
       _type: 'gridCopy';
@@ -32,7 +32,7 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
         </div>
       );
     case 'videoEmbed':
-      return <VideoEmbed url={section.url} caption={section.caption} />;
+      return <VideoEmbed url={section.url} caption={section.caption} poster={section.poster} />;
     case 'imageSlider':
       return <ImageSlider images={galleryImagesFromSanity(section.images, '100vw')} />;
     case 'gridCopy':
