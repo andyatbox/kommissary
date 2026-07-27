@@ -80,7 +80,7 @@ export default function GallerySlider({
             // 3D model occupies (60vh landscape / 40vh portrait), so opening the
             // gallery doesn't resize the section. The LQIP sits behind as a blur-up
             // while the full image streams in.
-            className="h-[var(--media-h)] w-full shrink-0 snap-center overflow-hidden bg-white/5 bg-cover bg-center"
+            className="h-[var(--media-h)] w-full shrink-0 snap-center overflow-hidden rounded-xl bg-white/5 bg-cover bg-center"
             style={image.lqip ? { backgroundImage: `url(${image.lqip})` } : undefined}
           >
             {armed && (
