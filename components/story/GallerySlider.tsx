@@ -130,12 +130,13 @@ export default function GallerySlider({
         ))}
       </div>
 
-      <div className={`mt-4 flex items-center gap-4 ${controlsClassName}`}>
+      <div className={`mt-5 flex items-center justify-center gap-4 ${controlsClassName}`}>
         <Step label="Previous image" disabled={index === 0} onClick={() => goTo(index - 1)}>
           <path d="M15 6l-6 6 6 6" />
         </Step>
 
-        <ul className="flex flex-1 items-center gap-2.5">
+        {/* Bullets sit inside a red pill; the row is centred. */}
+        <ul className="flex items-center gap-2.5 rounded-full border border-coral px-4 py-2.5">
           {images.map((image, i) => (
             <li key={image.src}>
               <button
@@ -150,10 +151,6 @@ export default function GallerySlider({
             </li>
           ))}
         </ul>
-
-        <span className="font-spirit text-sm tabular-nums text-white/50">
-          {index + 1} / {images.length}
-        </span>
 
         <Step
           label="Next image"
@@ -184,10 +181,10 @@ function Step({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="text-coral transition-colors duration-200 hover:text-gold disabled:pointer-events-none disabled:opacity-25"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-coral text-coral transition-colors duration-200 hover:border-gold hover:text-gold disabled:pointer-events-none disabled:opacity-25"
     >
       <svg
-        className="h-6 w-6"
+        className="h-5 w-5"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

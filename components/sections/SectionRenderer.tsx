@@ -28,7 +28,11 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
     case 'bodyCopy':
       return (
         <div className={CONTAINED}>
-          <PortableBody value={section.content ?? []} />
+          {/* Cream card behind the copy; text goes black (links stay coral). Padding
+              grows with the breakpoint. */}
+          <div className="rounded-2xl bg-[#FFE9CC] px-6 py-8 sm:rounded-3xl sm:px-10 sm:py-12 lg:px-16 lg:py-14">
+            <PortableBody value={section.content ?? []} tone="light" />
+          </div>
         </div>
       );
     case 'videoEmbed':
