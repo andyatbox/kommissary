@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
 import type { PortableTextBlock } from '@portabletext/types';
-import type { NavMenu } from '@/lib/nav';
 
 /** Homepage content (from Sanity, or the default fallback). */
 export type PillButton = { label: string; url: string };
@@ -57,10 +56,6 @@ interface UXState {
   content: HomeContent | null;
   setContent: (content: HomeContent) => void;
 
-  /** Header dropdowns, built from Page documents and hydrated on the client. */
-  nav: NavMenu[];
-  setNav: (nav: NavMenu[]) => void;
-
   /** Organic 3D spline the words sit on and the camera reads along; null until measured. */
   path: THREE.CatmullRomCurve3 | null;
   dots: FocusDot[];
@@ -101,9 +96,6 @@ interface UXState {
 export const useUX = create<UXState>((set) => ({
   content: null,
   setContent: (content) => set({ content }),
-
-  nav: [],
-  setNav: (nav) => set({ nav }),
 
   path: null,
   dots: [],

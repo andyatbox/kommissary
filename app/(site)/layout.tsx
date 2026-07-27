@@ -1,6 +1,20 @@
 import type { Metadata, Viewport } from 'next';
 import { Roboto_Condensed } from 'next/font/google';
+import { client } from '@/sanity/lib/client';
+import { buildNav, type NavMenu, type NavPage } from '@/lib/nav';
+import Nav from '@/components/Nav';
 import './globals.css';
+
+// Re-fetch nav periodically so page/order changes surface without a redeploy.
+export const revalidate = 60;
+
+// Nav-enabled pages, in the Pages list's drag order (drives link order per column).
+const NAV_QUERY = `*[_type == "page" && defined(navGroup)]|order(orderRank){
+  navGroup,
+  navColumn,
+  "label": coalesce(navLabel, title),
+  "href": slug.current
+}`;
 
 const robotoCondensed = Roboto_Condensed({
   subsets: ['latin'],
@@ -52,10 +66,21 @@ export const viewport: Viewport = {
   themeColor: '#000666',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  let nav: NavMenu[] = buildNav([]); // headings-only fallback if Sanity is unreachable
+  try {
+    const pages = await client.fetch<NavPage[] | null>(NAV_QUERY);
+    nav = buildNav(pages ?? []);
+  } catch {
+    // Keep the fallback nav.
+  }
+
   return (
     <html lang="en" className={robotoCondensed.variable}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <Nav menus={nav} />
+        {children}
+      </body>
     </html>
   );
 }

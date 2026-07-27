@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import KommissaryWordmark from './KommissaryWordmark';
-import { useUX } from '@/lib/store';
-import type { NavItem } from '@/lib/nav';
+import type { NavItem, NavMenu } from '@/lib/nav';
 
 function Chevron({ open }: { open?: boolean }) {
   return (
@@ -58,11 +57,10 @@ function Logo() {
   );
 }
 
-export default function Nav() {
+export default function Nav({ menus }: { menus: NavMenu[] }) {
   const [open, setOpen] = useState<string | null>(null); // desktop dropdown
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const menus = useUX((s) => s.nav);
   const activeMenu = menus.find((m) => m.id === open) ?? null;
 
   // Escape closes whatever's open.

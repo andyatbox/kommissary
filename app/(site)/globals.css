@@ -26,12 +26,15 @@ nav * {
   font-family: 'New Spirit', ui-serif, Georgia, serif;
 }
 
-html,
-body {
+html {
   height: 100%;
+}
+
+/* Note: overflow is NOT locked globally — content pages ([slug]) scroll normally.
+   The homepage isolates its 3D canvas with `fixed inset-0 overflow-hidden`. */
+body {
+  min-height: 100%;
   margin: 0;
-  overflow: hidden;
-  overscroll-behavior: none;
   background: #000666;
   font-family:
     var(--font-roboto-condensed),

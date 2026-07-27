@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useUX } from '@/lib/store';
-import Nav from './Nav';
 import Modal from './Modal';
 
 export default function Overlay() {
@@ -71,7 +70,6 @@ export default function Overlay() {
         </h2>
       </div>
 
-      <Nav />
       <Modal />
 
       <div
