@@ -34,7 +34,13 @@ const MOMENTS_QUERY = `*[_type == "moment"]|order(orderRank){
   body,
   model,
   modelScale,
-  "gallery": gallery[]{ "src": asset->url, alt }
+  "gallery": gallery[]{
+    asset,
+    hotspot,
+    crop,
+    alt,
+    "lqip": asset->metadata.lqip
+  }
 }`;
 
 const PAGE_QUERY = `*[_type == "ourStoryPage"][0]{

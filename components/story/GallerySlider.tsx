@@ -78,16 +78,21 @@ export default function GallerySlider({
             aria-label={`${i + 1} of ${images.length}`}
             // Fixed height rather than an aspect ratio: --media-h is the same box the
             // 3D model occupies (60vh landscape / 40vh portrait), so opening the
-            // gallery doesn't resize the section.
-            className="h-[var(--media-h)] w-full shrink-0 snap-center overflow-hidden bg-white/5"
+            // gallery doesn't resize the section. The LQIP sits behind as a blur-up
+            // while the full image streams in.
+            className="h-[var(--media-h)] w-full shrink-0 snap-center overflow-hidden bg-white/5 bg-cover bg-center"
+            style={image.lqip ? { backgroundImage: `url(${image.lqip})` } : undefined}
           >
             {armed && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={image.src}
+                srcSet={image.srcSet}
+                sizes={image.sizes}
                 alt={image.alt}
                 draggable={false}
                 loading="lazy"
+                style={image.objectPosition ? { objectPosition: image.objectPosition } : undefined}
                 className="h-full w-full select-none object-cover"
               />
             )}

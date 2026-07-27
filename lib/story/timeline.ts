@@ -13,6 +13,7 @@
  */
 
 import { restingRotation } from './modelRotations';
+import { urlFor } from '@/sanity/lib/image';
 
 export type Moment = {
   /** Stable key — the Sanity document `_id`, or the fallback id below. */
@@ -27,8 +28,18 @@ export type Moment = {
 };
 
 export type GalleryImage = {
+  /** Default src (a mid-range width) for browsers without srcSet support. */
   src: string;
+  /** Responsive candidates across widths, each `url 1234w`. */
+  srcSet?: string;
+  /** Matches how wide the slide renders, so the browser picks the right candidate. */
+  sizes?: string;
   alt: string;
+  /** CSS object-position from the image's hotspot, so object-cover keeps the focal
+   *  point in frame at any aspect ratio. */
+  objectPosition?: string;
+  /** Tiny base64 blur-up placeholder shown while the full image loads. */
+  lqip?: string;
 };
 
 export type ModelSpec = {
@@ -75,6 +86,16 @@ export function modelSpec(key: string, scale?: number): ModelSpec {
   };
 }
 
+/** A gallery image as stored on a `moment` (asset ref + hotspot/crop + our alt),
+ *  plus the LQIP pulled from asset metadata by the query. */
+export type SanityGalleryImage = {
+  asset?: { _ref?: string } | null;
+  hotspot?: { x: number; y: number } | null;
+  crop?: unknown;
+  alt?: string | null;
+  lqip?: string | null;
+};
+
 /** Shape of a `moment` document as fetched by the /our-story GROQ query. */
 export type SanityMoment = {
   id: string;
@@ -83,8 +104,31 @@ export type SanityMoment = {
   body: string;
   model?: string;
   modelScale?: number;
-  gallery?: { src?: string | null; alt?: string | null }[] | null;
+  gallery?: SanityGalleryImage[] | null;
 };
+
+/** Widths requested from the Sanity image CDN for the responsive srcSet. */
+const GALLERY_WIDTHS = [480, 768, 1024, 1440, 1920];
+/** The slide is ~the copy column at md+ (roughly two-thirds), full-width below. */
+const GALLERY_SIZES = '(min-width: 768px) 65vw, 100vw';
+
+/** Builds an optimized, responsive GalleryImage from a Sanity image, or null if the
+ *  item has no asset yet. `auto('format')` serves AVIF/WebP where supported; hotspot
+ *  becomes a CSS object-position so object-cover keeps the focal point in frame. */
+function galleryImageFromSanity(img: SanityGalleryImage): GalleryImage | null {
+  if (!img?.asset?._ref) return null;
+  const base = urlFor(img).auto('format').quality(80).fit('max');
+  return {
+    src: base.width(1024).url(),
+    srcSet: GALLERY_WIDTHS.map((w) => `${base.width(w).url()} ${w}w`).join(', '),
+    sizes: GALLERY_SIZES,
+    alt: img.alt ?? '',
+    objectPosition: img.hotspot
+      ? `${(img.hotspot.x * 100).toFixed(1)}% ${(img.hotspot.y * 100).toFixed(1)}%`
+      : undefined,
+    lqip: img.lqip ?? undefined,
+  };
+}
 
 /** Maps a fetched Sanity moment into the `Moment` shape the components render. */
 export function momentFromSanity(m: SanityMoment): Moment {
@@ -95,8 +139,8 @@ export function momentFromSanity(m: SanityMoment): Moment {
     body: m.body,
     model: modelSpec(m.model ?? DEFAULT_MODEL, m.modelScale ?? undefined),
     gallery: (m.gallery ?? [])
-      .filter((g): g is { src: string; alt?: string | null } => Boolean(g?.src))
-      .map((g) => ({ src: g.src, alt: g.alt ?? '' })),
+      .map(galleryImageFromSanity)
+      .filter((g): g is GalleryImage => g !== null),
   };
 }
 
