@@ -18,6 +18,7 @@ export const MODEL_OPTIONS = [
   { title: 'Brownstones', value: 'brownstones' },
   { title: 'Ramen', value: 'ramen' },
   { title: 'Lettuce & Broccoli', value: 'lettuce-broccoli' },
+  { title: 'Face Mask', value: 'mask' },
 ];
 
 export const moment = defineType({

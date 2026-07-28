@@ -67,6 +67,7 @@ export const MODEL_ALTS: Record<string, string> = {
   'statue-of-liberty': 'The Statue of Liberty',
   ramen: 'A bowl of ramen',
   'lettuce-broccoli': 'Fresh lettuce and broccoli',
+  mask: 'A protective face mask',
 };
 
 /** Builds a full ModelSpec (url + alt + resting rotation) from a model key. */
@@ -147,7 +148,7 @@ const AUTHORED: AuthoredMoment[] = [
     period: '2020—',
     title: 'The Pandemic',
     body: 'Then the pandemic hit... And everything changed. We went from feeding customers to feeding the city. What started as a community kitchen became a frontline response. Thousands of meals turned into millions.',
-    modelKey: 'kommy-truck',
+    modelKey: 'mask',
     gallery: placeholderGallery('kommy-truck', 'Emergency meal distribution during the pandemic'),
   },
   {

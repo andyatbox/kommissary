@@ -68,11 +68,11 @@ const ZONES: ZoneDef[] = [
     id: 'minority-run',
     triggers: ['minority-run'],
     models: [
-      { kind: 'image', url: '/images/team-1.jpg', anchor: 'minority-run', offset: [0.7, -4.7, 2.4], target: 5.0, rotationZ: 0.02, hoverAmp: 0.32, hoverFreq: 0.9 },
-      { kind: 'image', url: '/images/team-2.jpg', anchor: 'minority-run', offset: [-5.6, 3.1, 2.6], target: 3.2, rotationY: 0.4, rotationZ: -0.13, hoverAmp: 0.34, hoverFreq: 1.05 },
-      { kind: 'image', url: '/images/team-3.jpg', anchor: 'minority-run', offset: [5.3, 3.5, -3], target: 3.2, rotationY: -0.32, rotationZ: 0.1, hoverAmp: 0.3, hoverFreq: 0.88 },
-      { kind: 'image', url: '/images/team-4.jpg', anchor: 'minority-run', offset: [-4.9, -3.4, 3], target: 3.2, rotationY: 0.3, rotationZ: 0.15, hoverAmp: 0.33, hoverFreq: 1.12 },
-      { kind: 'image', url: '/images/team-6.jpg', anchor: 'minority-run', offset: [5.0, -3.0, 1.9], target: 3.2, rotationY: -0.36, rotationZ: -0.12, hoverAmp: 0.34, hoverFreq: 1.15 },
+      { kind: 'image', url: '/images/team-1.jpg', anchor: 'minority-run', offset: [0.7, -2, 3], target: 5.0, rotationY: -0.5, hoverAmp: 0.32, hoverFreq: 0.9 },
+      { kind: 'image', url: '/images/team-2.jpg', anchor: 'minority-run', offset: [-5.6, 2, -1.5], target: 4, rotationY: -0.2, rotationZ: -0.13, hoverAmp: 0.34, hoverFreq: 1.05 },
+      { kind: 'image', url: '/images/team-3.jpg', anchor: 'minority-run', offset: [5.3, 2, -3], target: 3.2, rotationY: -1.8, rotationZ: 0.1, hoverAmp: 0.3, hoverFreq: 0.88 },
+      { kind: 'image', url: '/images/team-4.jpg', anchor: 'minority-run', offset: [-4.9, -2, 3], target: 3.2, rotationY: 0.1, rotationZ: 0.15, hoverAmp: 0.33, hoverFreq: 1.12 },
+      { kind: 'image', url: '/images/team-6.jpg', anchor: 'minority-run', offset: [5.0, -2.0, 1.9], target: 3.5, rotationY: -1.5, rotationZ: -0.12, hoverAmp: 0.34, hoverFreq: 1.15 },
     ],
   },
   {
