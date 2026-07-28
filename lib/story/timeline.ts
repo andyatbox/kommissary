@@ -81,25 +81,41 @@ export function modelSpec(key: string, scale?: number): ModelSpec {
   };
 }
 
-/** Shape of a `moment` document as fetched by the /our-story GROQ query. */
+/**
+ * Which model each moment shows — hard-set HERE, not in Sanity, keyed by the moment's
+ * document id (stable across reordering). Newly authored moments (unknown id) fall back
+ * to the default model. To change a moment's model, edit this map.
+ */
+const MOMENT_MODELS: Record<string, { key: string; scale?: number }> = {
+  'moment-fish-market': { key: 'fish-market' },
+  'moment-korilla': { key: 'korilla' },
+  'moment-cutting-board': { key: 'cutting-board' },
+  'moment-kommy-truck': { key: 'mask' },
+  'moment-chicken': { key: 'chicken' },
+  'moment-bananas-apple': { key: 'bananas-apple' },
+  'moment-brownstones': { key: 'brownstones', scale: 1.1 },
+  'moment-statue-of-liberty': { key: 'statue-of-liberty' },
+};
+
+/** Shape of a `moment` document as fetched by the /our-story GROQ query. The model is
+ *  NOT read from Sanity — it's hard-set in MOMENT_MODELS above. */
 export type SanityMoment = {
   id: string;
   period: string;
   title: string;
   body: string;
-  model?: string;
-  modelScale?: number;
   gallery?: SanityGalleryImage[] | null;
 };
 
 /** Maps a fetched Sanity moment into the `Moment` shape the components render. */
 export function momentFromSanity(m: SanityMoment): Moment {
+  const model = MOMENT_MODELS[m.id] ?? { key: DEFAULT_MODEL };
   return {
     id: m.id,
     period: m.period,
     title: m.title,
     body: m.body,
-    model: modelSpec(m.model ?? DEFAULT_MODEL, m.modelScale ?? undefined),
+    model: modelSpec(model.key, model.scale),
     gallery: galleryImagesFromSanity(m.gallery, OUR_STORY_GALLERY_SIZES),
   };
 }

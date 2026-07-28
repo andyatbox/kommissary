@@ -43,20 +43,23 @@ export const moment = defineType({
       rows: 6,
       validation: (r) => r.required(),
     }),
+    // The 3D model is hard-set in code (lib/story/timeline.ts → MOMENT_MODELS), not
+    // controlled here. These fields are kept (hidden/read-only) only so existing stored
+    // values don't surface as "Unknown field" in the Studio.
     defineField({
       name: 'model',
-      title: '3D Model',
+      title: '3D Model (managed in code)',
       type: 'string',
-      initialValue: 'statue-of-liberty',
-      description: 'The floating model beside this moment. Defaults to the Statue of Liberty until a bespoke model is sourced.',
       options: { list: MODEL_OPTIONS },
-      validation: (r) => r.required(),
+      hidden: true,
+      readOnly: true,
     }),
     defineField({
       name: 'modelScale',
-      title: 'Model scale',
+      title: 'Model scale (managed in code)',
       type: 'number',
-      description: 'Optional multiplier if the model reads small or large in frame. Leave blank for the default (1).',
+      hidden: true,
+      readOnly: true,
     }),
     defineField({
       name: 'gallery',
@@ -80,10 +83,7 @@ export const moment = defineType({
     }),
   ],
   preview: {
-    select: { title: 'title', period: 'period', model: 'model' },
-    prepare: ({ title, period, model }) => ({
-      title,
-      subtitle: [period, model].filter(Boolean).join('   ·   '),
-    }),
+    select: { title: 'title', period: 'period' },
+    prepare: ({ title, period }) => ({ title, subtitle: period }),
   },
 });

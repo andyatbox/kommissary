@@ -27,13 +27,12 @@ export const metadata: Metadata = {
 };
 
 // Moments in the drag-orderable list order; gallery image URLs resolved server-side.
+// Models are hard-set in lib/story/timeline.ts (not read from Sanity).
 const MOMENTS_QUERY = `*[_type == "moment"]|order(orderRank){
   "id": _id,
   period,
   title,
   body,
-  model,
-  modelScale,
   "gallery": gallery[]{
     asset,
     hotspot,
