@@ -11,10 +11,10 @@ const M = THREE.MathUtils;
 // Kinetic scroll: input adds velocity immediately (no ease-in), and when input
 // stops the velocity decays for a smooth ease-out coast.
 const WHEEL_IMPULSE = 0.00025; // progress-velocity added per unit wheel delta
-// A tenth of the original 0.001 — even a third still tracked the finger far too
-// closely for subtle touch scrolling. TOUCH_FLING is a straight multiple of this,
-// so cutting it here also cuts the release-momentum by the same amount automatically.
-const TOUCH_DRAG = 0.001 / 10; // progress per px while the finger is down (immediate 1:1)
+// An eighth of the original 0.001 — a tenth read as a little too slow, a third as
+// too fast. TOUCH_FLING is a straight multiple of this, so tuning it here also
+// scales the release-momentum by the same amount automatically.
+const TOUCH_DRAG = 0.001 / 8; // progress per px while the finger is down (immediate 1:1)
 const TOUCH_FLING = 50; // px-velocity → progress-velocity carried on release
 const SCROLL_DECAY = 4.0; // higher = shorter coast / snappier ease-out
 const MAX_SCROLL_VEL = 0.38; // clamp so a hard flick can't skip past whole sections
