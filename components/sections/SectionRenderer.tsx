@@ -18,20 +18,21 @@ export type PageSection =
       column3?: PortableTextBlock[];
     };
 
-/** The normal page column: readable width, centred, with page-edge padding. */
-const CONTAINED = 'mx-auto w-full max-w-3xl px-6 sm:px-8';
-
-/** Renders one page section. Contained sections (body, video) centre themselves; the
- *  slider and grid go full browser width and manage their own edges. */
+/** Renders one page section. Body Copy is a full-width cream band with centred text;
+ *  video centres itself; the slider and grid go full browser width. */
 export default function SectionRenderer({ section }: { section: PageSection }) {
   switch (section._type) {
     case 'bodyCopy':
       return (
-        <div className={CONTAINED}>
-          {/* Cream card behind the copy; text goes black (links stay coral). Padding
-              grows with the breakpoint. */}
-          <div className="rounded-2xl bg-[#FFE9CC] px-6 py-8 sm:rounded-3xl sm:px-10 sm:py-12 lg:px-16 lg:py-14">
-            <PortableBody value={section.content ?? []} tone="light" />
+        // Small side margin so the cream band doesn't touch the browser edges.
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          {/* Full-width cream band: flatter corners, generous vertical padding. Text
+              goes black (links stay coral). */}
+          <div className="rounded-lg bg-[#FFE9CC] py-14 sm:py-16 lg:py-24">
+            {/* Copy stays in a readable centred column inside the full-width band. */}
+            <div className="mx-auto w-full max-w-3xl px-6 sm:px-10 lg:px-16">
+              <PortableBody value={section.content ?? []} tone="light" />
+            </div>
           </div>
         </div>
       );
