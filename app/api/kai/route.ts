@@ -111,7 +111,11 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: `${SYSTEM_PROMPT}\n\n${knowledge}` }] },
         contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
-        generationConfig: { temperature: 0.5, maxOutputTokens: 512 },
+        // This model spends internal "thinking" tokens out of the SAME budget as the
+        // visible reply (~500-800 tokens observed even at minimum thinkingBudget), so
+        // maxOutputTokens must be well above that or the reply gets cut off mid-sentence
+        // (finishReason MAX_TOKENS). 2048 leaves comfortable headroom either way.
+        generationConfig: { temperature: 0.5, maxOutputTokens: 2048 },
       }),
     });
 
@@ -122,26 +126,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ disabled: true, reason: 'quota' });
     }
     if (!res.ok) {
-      // Temporary: surface Google's own status/message so a production-only failure
-      // (env var typo, key restriction, region block, etc.) can be diagnosed without
-      // Vercel log access. No key material is ever included. Remove once confirmed.
-      const detail = await res.text();
-      console.error('Kai upstream error', res.status, detail.slice(0, 500));
-      return NextResponse.json(
-        { error: 'upstream', upstreamStatus: res.status, upstreamMessage: detail.slice(0, 300) },
-        { status: 502 }
-      );
+      // Logged server-side only (visible in Vercel's function logs) — never sent to
+      // the client, so no upstream detail (or key material) is ever exposed.
+      console.error('Kai upstream error', res.status, (await res.text()).slice(0, 500));
+      return NextResponse.json({ error: 'upstream' }, { status: 502 });
     }
 
     const data = (await res.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
     };
-    const reply = (data.candidates?.[0]?.content?.parts ?? [])
+    const candidate = data.candidates?.[0];
+    const reply = (candidate?.content?.parts ?? [])
       .map((p) => p.text ?? '')
       .join('')
       .trim();
 
-    if (!reply) return NextResponse.json({ error: 'empty' }, { status: 502 });
+    if (!reply) {
+      console.error('Kai empty reply', candidate?.finishReason);
+      return NextResponse.json({ error: 'empty' }, { status: 502 });
+    }
     return NextResponse.json({ reply });
   } catch (e) {
     console.error('Kai fetch threw', e);
