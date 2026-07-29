@@ -17,9 +17,12 @@ export default function HomeClient({ content }: { content: HomeContent }) {
 
   // Fixed + overflow-hidden isolates the 3D canvas from document scroll, so the
   // homepage never scrolls even though the global body no longer locks overflow
-  // (content pages need to scroll).
+  // (content pages need to scroll). touch-none stops iOS Safari's native
+  // rubber-band/elastic bounce on any touch here (not just over the canvas, which
+  // already had it — the Overlay/Nav sit on top and need the same opt-out) so it
+  // can't fight the custom touch-driven camera scroll in CameraRig.tsx.
   return (
-    <main className="fixed inset-0 select-none overflow-hidden overscroll-none">
+    <main className="fixed inset-0 touch-none select-none overflow-hidden overscroll-none">
       <Experience />
       <Overlay />
     </main>
