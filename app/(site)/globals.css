@@ -28,6 +28,7 @@ nav * {
 
 html {
   height: 100%;
+  overflow-x: hidden;
 }
 
 /* Note: vertical overflow is NOT locked globally — content pages ([slug]) and the
@@ -173,6 +174,13 @@ body {
   top: 0;
   z-index: 10;
   will-change: transform;
+  /* Being position:fixed, this box's own overflow isn't reliably contained by
+     body/html's overflow-x — a descendant that slides in/out via translate-x past
+     the viewport edge (e.g. the Our Story gallery CTA) can otherwise still enable
+     horizontal page scroll. Clip it directly at the source. (Height stays exactly
+     the content's height here — only top is set, not bottom — so this can't clip
+     anything vertically.) */
+  overflow-x: hidden;
 }
 
 #webgl-root {

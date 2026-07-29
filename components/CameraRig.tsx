@@ -11,7 +11,10 @@ const M = THREE.MathUtils;
 // Kinetic scroll: input adds velocity immediately (no ease-in), and when input
 // stops the velocity decays for a smooth ease-out coast.
 const WHEEL_IMPULSE = 0.00025; // progress-velocity added per unit wheel delta
-const TOUCH_DRAG = 0.001; // progress per px while the finger is down (immediate 1:1)
+// A third of the original 0.001 — 1:1 finger tracking felt way too fast for subtle
+// touch scrolling. TOUCH_FLING is a straight multiple of this, so cutting it here
+// also cuts the release-momentum by the same third automatically.
+const TOUCH_DRAG = 0.001 / 3; // progress per px while the finger is down (immediate 1:1)
 const TOUCH_FLING = 50; // px-velocity → progress-velocity carried on release
 const SCROLL_DECAY = 4.0; // higher = shorter coast / snappier ease-out
 const MAX_SCROLL_VEL = 0.38; // clamp so a hard flick can't skip past whole sections
@@ -85,9 +88,10 @@ export default function CameraRig() {
       (navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
 
     const computeScale = () => {
-      // Narrower viewports back the camera off proportionally; pull it a little closer
-      // again below 768px so the words don't read too small on phones.
-      const mobile = window.innerWidth < 768 ? 0.85 : 1;
+      // Narrower viewports back the camera off proportionally; at 767px and below,
+      // back it off a bit further still so more of the sentence reads in frame
+      // instead of feeling zoomed in on a small screen.
+      const mobile = window.innerWidth <= 767 ? 1.15 : 1;
       distScale.current = M.clamp(REF_WIDTH / window.innerWidth, 0.85, 2.3) * mobile;
     };
     computeScale();
