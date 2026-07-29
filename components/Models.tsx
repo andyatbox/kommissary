@@ -161,11 +161,31 @@ const ZONES: ZoneDef[] = [
       {
         url: '/models/brownstones.glb',
         anchor: 'communities',
-        offset: [0, -1, -5],
-        target: 9.5,
+        offset: [0, 1, -11],
+        target: 15,
         rotationY: -1,
         hoverAmp: 0.25,
         hoverFreq: 0.8,
+      },
+      // In front of the word, toward the left — angled slightly right/toward camera.
+      {
+        url: '/models/komi-pitcher.glb',
+        anchor: 'communities',
+        offset: [-4.5, -1.2, 4],
+        target: 7,
+        rotationY: 0.5,
+        hoverAmp: 0.3,
+        hoverFreq: 0.95,
+      },
+      // In front of the word, toward the right — mirrored angle, facing back left.
+      {
+        url: '/models/komi-batter.glb',
+        anchor: 'communities',
+        offset: [4.5, -1.2, 4],
+        target: 7,
+        rotationY: -0.5,
+        hoverAmp: 0.3,
+        hoverFreq: 1.05,
       },
     ],
   },
