@@ -122,7 +122,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ disabled: true, reason: 'quota' });
     }
     if (!res.ok) {
-      return NextResponse.json({ error: 'upstream' }, { status: 502 });
+      // Temporary: surface Google's own status/message so a production-only failure
+      // (env var typo, key restriction, region block, etc.) can be diagnosed without
+      // Vercel log access. No key material is ever included. Remove once confirmed.
+      const detail = await res.text();
+      console.error('Kai upstream error', res.status, detail.slice(0, 500));
+      return NextResponse.json(
+        { error: 'upstream', upstreamStatus: res.status, upstreamMessage: detail.slice(0, 300) },
+        { status: 502 }
+      );
     }
 
     const data = (await res.json()) as {
@@ -135,7 +143,8 @@ export async function POST(req: Request) {
 
     if (!reply) return NextResponse.json({ error: 'empty' }, { status: 502 });
     return NextResponse.json({ reply });
-  } catch {
-    return NextResponse.json({ error: 'upstream' }, { status: 502 });
+  } catch (e) {
+    console.error('Kai fetch threw', e);
+    return NextResponse.json({ error: 'upstream', upstreamMessage: String(e) }, { status: 502 });
   }
 }
