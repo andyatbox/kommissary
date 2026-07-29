@@ -100,9 +100,10 @@ export async function POST(req: Request) {
   const knowledge = await getKnowledge();
 
   try {
-    const res = await fetch(`${API_URL}?key=${key}`, {
+    const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      // Newer Gemini keys (AQ.* format) authenticate via this header rather than ?key=.
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: `${SYSTEM_PROMPT}\n\n${knowledge}` }] },
         contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
