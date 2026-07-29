@@ -13,8 +13,12 @@ import { getKnowledge } from '@/lib/kai/knowledge';
  *     "recharging" state) until the cooldown passes.
  */
 
-/** Generous free tier (15 RPM / ~1500 RPD) and plenty capable for site Q&A. */
-const MODEL = 'gemini-2.0-flash';
+/**
+ * The "-latest" alias always resolves to a currently-available flash model, so it
+ * won't 404 when Google retires a pinned version (as happened to gemini-2.x-flash).
+ * Flash = fast, cheap, free-tier eligible, plenty capable for grounded site Q&A.
+ */
+const MODEL = 'gemini-flash-latest';
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 /** Self-imposed caps, kept below Google's free-tier quotas. */
