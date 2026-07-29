@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import KommissaryWordmark from './KommissaryWordmark';
 import { useUX } from '@/lib/store';
 import type { NavItem, NavMenu } from '@/lib/nav';
@@ -69,6 +70,7 @@ function Logo() {
 export default function Nav({ menus }: { menus: NavMenu[] }) {
   const [open, setOpen] = useState<string | null>(null); // desktop dropdown
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   // On the homepage, hide the whole header while a clicked pill's content modal is
   // open (matches the pre-layout behavior where the modal covered the nav). Stays
@@ -187,7 +189,10 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                         <a
                           key={j}
                           href={it.href}
-                          className="font-spirit text-lg text-[#ff6666] transition-colors duration-200 hover:text-[#ffcf33]"
+                          aria-current={it.href === pathname ? 'page' : undefined}
+                          className={`font-spirit text-lg transition-colors duration-200 hover:text-[#ffcf33] ${
+                            it.href === pathname ? 'text-[#ffcf33]' : 'text-[#ff6666]'
+                          }`}
                         >
                           {it.text}
                         </a>
@@ -232,7 +237,10 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                           <a
                             href={it.href}
                             onClick={() => setMobileOpen(false)}
-                            className="text-xl text-[#ff6666] transition-colors hover:text-[#ffcf33]"
+                            aria-current={it.href === pathname ? 'page' : undefined}
+                            className={`text-xl transition-colors hover:text-[#ffcf33] ${
+                              it.href === pathname ? 'text-[#ffcf33]' : 'text-[#ff6666]'
+                            }`}
                           >
                             {it.text}
                           </a>
