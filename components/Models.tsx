@@ -208,8 +208,8 @@ const ZONES: ZoneDef[] = [
       {
         url: '/models/bridge.glb',
         anchor: 'York',
-        offset: [0, 1, -11],
-        target: 16,
+        offset: [4, 2, -12],
+        target: 19,
         rotationY: 0,
         hoverAmp: 0.2,
         hoverFreq: 0.75,
