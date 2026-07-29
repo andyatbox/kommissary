@@ -3,6 +3,7 @@ import { Roboto_Condensed } from 'next/font/google';
 import { client } from '@/sanity/lib/client';
 import { buildNav, type NavMenu, type NavPage } from '@/lib/nav';
 import Nav from '@/components/Nav';
+import KaiWidget from '@/components/kai/KaiWidget';
 import './globals.css';
 
 // Re-fetch nav periodically so page/order changes surface without a redeploy.
@@ -80,6 +81,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="antialiased">
         <Nav menus={nav} />
         {children}
+        {/* Ask Kai — floating chatbot, on every page. */}
+        <KaiWidget />
       </body>
     </html>
   );
