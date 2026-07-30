@@ -56,6 +56,13 @@ export function progressToU(p: number, uStart = 0, uEnd = 1) {
   return M.lerp(uStart, uEnd, t);
 }
 
+/** Inverse of progressToU: the scroll progress at which the camera reads curve-u `u`.
+ *  Used to jump/ease the scroll to center a given word (see the homepage nav controls). */
+export function uToProgress(u: number, uStart = 0, uEnd = 1) {
+  const t = uEnd === uStart ? 0 : (u - uStart) / (uEnd - uStart);
+  return M.clamp(PAN_START + t * (1 - PAN_START), 0, 1);
+}
+
 /**
  * Camera pose while reading the snaking word-stream, for scroll progress p in
  * [0, 1]. Reading distance is constant — there's no zoom-in. Instead the track

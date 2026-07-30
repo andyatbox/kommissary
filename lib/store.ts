@@ -91,6 +91,11 @@ interface UXState {
   /** True once scrolled in past the very start; flips back to false at the start. */
   started: boolean;
   setStarted: (v: boolean) => void;
+
+  /** Target scroll progress the camera should ease to (set by the nav chevrons);
+   *  null when there's no active jump. Cleared by the rig on arrival or manual input. */
+  navTarget: number | null;
+  setNavTarget: (p: number | null) => void;
 }
 
 export const useUX = create<UXState>((set) => ({
@@ -127,4 +132,7 @@ export const useUX = create<UXState>((set) => ({
 
   started: false,
   setStarted: (v) => set({ started: v }),
+
+  navTarget: null,
+  setNavTarget: (p) => set({ navTarget: p }),
 }));

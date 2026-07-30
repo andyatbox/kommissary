@@ -18,6 +18,8 @@ const TOUCH_DRAG = 0.001 / 8; // progress per px while the finger is down (immed
 const TOUCH_FLING = 50; // px-velocity → progress-velocity carried on release
 const SCROLL_DECAY = 4.0; // higher = shorter coast / snappier ease-out
 const MAX_SCROLL_VEL = 0.38; // clamp so a hard flick can't skip past whole sections
+/** Duration (s) of a nav-chevron ease-in-out jump to the next/previous pill. */
+const NAV_DURATION = 0.9;
 
 /** How far the camera parks from a dot when focused — closer than the reading distance. */
 const FOCUS_DIST = 5.5;
@@ -52,6 +54,8 @@ export default function CameraRig() {
   const scene = useThree((s) => s.scene);
 
   const scroll = useRef({ current: 0, vel: 0, touching: false, lastY: 0 });
+  // Nav-chevron ease: a timed ease-in-out tween from `navFrom` to the store's navTarget.
+  const nav = useRef({ from: 0, elapsed: 0, target: null as number | null });
   const blend = useRef(0);
   const endBlend = useRef(0);
   const baseFog = useRef<{ near: number; far: number } | null>(null);
@@ -106,11 +110,13 @@ export default function CameraRig() {
 
     const onWheel = (e: WheelEvent) => {
       if (useUX.getState().modalOpen) return; // modal owns scrolling while it's up
+      if (useUX.getState().navTarget != null) useUX.getState().setNavTarget(null); // user takes over
       // Add velocity right away — the camera moves this frame, no ease-in ramp.
       s.vel = M.clamp(s.vel + e.deltaY * WHEEL_IMPULSE, -MAX_SCROLL_VEL, MAX_SCROLL_VEL);
     };
 
     const onTouchStart = (e: TouchEvent) => {
+      if (useUX.getState().navTarget != null) useUX.getState().setNavTarget(null); // user takes over
       s.touching = true;
       s.vel = 0;
       s.lastY = e.touches[0].clientY;
@@ -147,18 +153,39 @@ export default function CameraRig() {
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 1 / 20);
     const s = scroll.current;
-    const { focus, path, travelStart, travelEnd, modalOpen } = useUX.getState();
+    const n = nav.current;
+    const { focus, path, travelStart, travelEnd, modalOpen, navTarget } = useUX.getState();
     if (!path) return;
 
-    // Kinetic integration: move by velocity, then decay it (ease-out coast). No
-    // damp-toward-target, so there's no ease-in lag when a gesture begins. Frozen
-    // while the modal is up so the sentence doesn't drift behind it.
-    if (modalOpen) {
+    // Nav chevrons: ease-in-out toward the requested progress (centering a pill or the
+    // end shot). Takes priority over kinetic scroll; interrupted by manual input (which
+    // clears navTarget) and by the modal opening.
+    if (navTarget != null && !modalOpen && !s.touching) {
+      if (n.target !== navTarget) {
+        n.target = navTarget;
+        n.from = s.current;
+        n.elapsed = 0;
+      }
+      n.elapsed += dt;
+      const t = Math.min(n.elapsed / NAV_DURATION, 1);
+      s.current = M.lerp(n.from, navTarget, M.smootherstep(t, 0, 1));
       s.vel = 0;
-    } else if (!s.touching) {
-      s.current += s.vel * dt;
-      s.vel *= Math.exp(-SCROLL_DECAY * dt);
-      if (Math.abs(s.vel) < 1e-5) s.vel = 0;
+      if (t >= 1) {
+        n.target = null;
+        useUX.getState().setNavTarget(null);
+      }
+    } else {
+      n.target = null;
+      // Kinetic integration: move by velocity, then decay it (ease-out coast). No
+      // damp-toward-target, so there's no ease-in lag when a gesture begins. Frozen
+      // while the modal is up so the sentence doesn't drift behind it.
+      if (modalOpen) {
+        s.vel = 0;
+      } else if (!s.touching) {
+        s.current += s.vel * dt;
+        s.vel *= Math.exp(-SCROLL_DECAY * dt);
+        if (Math.abs(s.vel) < 1e-5) s.vel = 0;
+      }
     }
     if (s.current <= 0) {
       s.current = 0;

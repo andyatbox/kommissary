@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useUX } from '@/lib/store';
 import Modal from './Modal';
+import HomeControls from './HomeControls';
 
 export default function Overlay() {
   const started = useUX((s) => s.started);
@@ -71,6 +72,7 @@ export default function Overlay() {
       </div>
 
       <Modal />
+      <HomeControls />
 
       <div
         className={`pointer-events-none fixed bottom-10 left-1/2 z-10 -translate-x-1/2 text-center transition-opacity duration-700 ${
