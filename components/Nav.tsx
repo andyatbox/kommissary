@@ -148,9 +148,9 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                     onMouseEnter={() => setOpen(m.id)}
                     onFocus={() => setOpen(m.id)}
                     onClick={() => setOpen((o) => (o === m.id ? null : m.id))}
-                    className={`pointer-events-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md bg-[#000666] px-3 py-1.5 transition-colors duration-200 hover:text-[#ffcf33] focus-visible:text-[#ffcf33] ${
-                      open === m.id ? 'text-[#ffcf33]' : 'text-[#ff6666]'
-                    }`}
+                    className={`pointer-events-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 transition-colors duration-200 hover:text-[#ffcf33] focus-visible:text-[#ffcf33] ${
+                      activeMenu ? 'bg-transparent' : 'bg-[#000666]'
+                    } ${open === m.id ? 'text-[#ffcf33]' : 'text-[#ff6666]'}`}
                   >
                     {m.label}
                     <Chevron open={open === m.id} />
