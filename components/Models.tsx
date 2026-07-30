@@ -63,6 +63,22 @@ const ZONES: ZoneDef[] = [
     ],
   },
   {
+    id: 'progressive',
+    triggers: ['progressive'],
+    models: [
+      // Centered behind the word — a raised-fist backdrop.
+      {
+        url: '/models/fist.glb',
+        anchor: 'progressive',
+        offset: [0, 1, -6],
+        target: 7,
+        rotationY: 0,
+        hoverAmp: 0.25,
+        hoverFreq: 0.8,
+      },
+    ],
+  },
+  {
     // Team photos as textured planes scattered around the word. team-1 (the owners)
     // sits bottom-centre — largest and closest to camera — where team-5 used to be.
     id: 'minority-run',
