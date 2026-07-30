@@ -109,9 +109,10 @@ const ZONES: ZoneDef[] = [
       {
         url: '/models/chicken.glb',
         anchor: 'meals',
-        offset: [-1.3, 2, -4],
+        offset: [-2.3, 2, -4],
         target: 4.6,
         rotationX: 0.9,
+        rotationY: 0,
         hoverAmp: 0.32,
         hoverFreq: 1.0,
       },
@@ -128,19 +129,35 @@ const ZONES: ZoneDef[] = [
     ],
   },
   {
-    id: 'distributor',
-    triggers: ['logistics'],
+    id: 'provisions',
+    triggers: ['provisions'],
     models: [
-      // Above and behind, toward the left.
+      // Below, in front, toward the right of the word.
+      {
+        url: '/models/boxes.glb',
+        anchor: 'provisions',
+        offset: [3.5, -2, 4],
+        target: 5,
+        rotationY: -0.4,
+        hoverAmp: 0.3,
+        hoverFreq: 0.95,
+      },
+      // To the right, behind the word.
       {
         url: '/models/bananas-apple.glb',
-        anchor: 'logistics',
-        offset: [-5, 2.7, -3],
+        anchor: 'provisions',
+        offset: [4, 1, -3],
         target: 5.7,
         rotationY: M.degToRad(95),
         hoverAmp: 0.38,
         hoverFreq: 1.1,
       },
+    ],
+  },
+  {
+    id: 'distributor',
+    triggers: ['logistics'],
+    models: [
       // Below and in front, toward the right — the delivery truck.
       {
         url: '/models/kommy-truck.glb',
@@ -238,10 +255,20 @@ type ZoneRange = { def: ZoneDef; uStart: number; uEnd: number; centerU: number }
 export default function Models() {
   const anchors = useUX((s) => s.anchors);
 
-  const byWord = useMemo(
-    () => new Map(anchors.map((a) => [a.word, a])),
-    [anchors]
-  );
+  // Match a zone trigger / model anchor to a sentence word, tolerating trailing
+  // punctuation on the token — so an anchor of 'meals' still resolves when the
+  // sentence reads 'meals,' (as it does now). Exact tokens win; stripped keys fill
+  // in only where they don't collide with one.
+  const byWord = useMemo(() => {
+    const stripTrailing = (s: string) => s.replace(/[.,;:!?…"'”’)\]}]+$/, '');
+    const m = new Map<string, WordAnchor>();
+    for (const a of anchors) if (!m.has(a.word)) m.set(a.word, a);
+    for (const a of anchors) {
+      const k = stripTrailing(a.word);
+      if (!m.has(k)) m.set(k, a);
+    }
+    return m;
+  }, [anchors]);
 
   const ranges = useMemo<ZoneRange[]>(() => {
     if (!anchors.length) return [];

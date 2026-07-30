@@ -68,6 +68,7 @@ export const MODEL_ALTS: Record<string, string> = {
   ramen: 'A bowl of ramen',
   'lettuce-broccoli': 'Fresh lettuce and broccoli',
   mask: 'A protective face mask',
+  desk: 'A work desk',
 };
 
 /** Builds a full ModelSpec (url + alt + resting rotation) from a model key. */
@@ -93,7 +94,7 @@ const MOMENT_MODELS: Record<string, { key: string; scale?: number }> = {
   'moment-kommy-truck': { key: 'mask' },
   'moment-chicken': { key: 'chicken' },
   'moment-bananas-apple': { key: 'bananas-apple' },
-  'moment-brownstones': { key: 'brownstones', scale: 1.1 },
+  'moment-brownstones': { key: 'desk' },
   'moment-statue-of-liberty': { key: 'statue-of-liberty' },
 };
 
@@ -188,8 +189,7 @@ const AUTHORED: AuthoredMoment[] = [
     period: '2024—',
     title: 'After-school Meals for DYCD',
     body: 'After winning a contract with the Department of Youth & Community Development, we began to provide meals for school children enrolled in after-school programs through the Department of Youth & Community Development. Through word of mouth, many other NYC schools heard about our services – and soon, this program expanded to encompass meal preparation, warehousing, and delivery to 280 NYC public schools and community centers.',
-    modelKey: 'brownstones',
-    modelScale: 1.1,
+    modelKey: 'desk',
     gallery: placeholderGallery('brownstones', 'Meals delivered to NYC public schools'),
   },
   {
