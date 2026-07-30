@@ -29,6 +29,19 @@ export default function HtmlEmbed({ code }: { code: string }) {
       old.replaceWith(s);
     }
 
+    // Give iframes a sensible default size when the snippet sets none itself — a
+    // height-less iframe collapses to ~150px, and embed codes often rely on CSS
+    // framework classes (e.g. Bootstrap's vh-100) that aren't loaded here.
+    for (const iframe of Array.from(el.querySelectorAll('iframe'))) {
+      const style = iframe.getAttribute('style') ?? '';
+      if (!iframe.getAttribute('height') && !/(?:^|;)\s*height\s*:/i.test(style)) {
+        iframe.style.height = '80vh';
+      }
+      if (!iframe.getAttribute('width') && !/(?:^|;)\s*width\s*:/i.test(style)) {
+        iframe.style.width = '100%';
+      }
+    }
+
     return () => {
       el.innerHTML = '';
     };
