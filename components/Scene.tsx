@@ -359,7 +359,9 @@ function KeyLight({ mapSize }: { mapSize: number }) {
 export default function Scene({ quality }: { quality: Quality }) {
   return (
     <>
-      <color attach="background" args={['#000666']} />
+      {/* No scene background — the canvas is transparent so the animated gradient
+          background (GradientBackground) shows behind the models. Fog still fades
+          distant models toward navy, which sits over the gradient's blue range. */}
       <fog attach="fog" args={['#000666', 22, 88]} />
       {/* PCSS costs a texture lookup per sample per fragment — skipped on weak GPUs,
           which fall back to three's cheaper default PCF shadows. */}

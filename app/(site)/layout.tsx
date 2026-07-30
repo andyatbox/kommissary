@@ -4,6 +4,7 @@ import { client } from '@/sanity/lib/client';
 import { buildNav, type NavMenu, type NavPage } from '@/lib/nav';
 import Nav from '@/components/Nav';
 import KaiWidget from '@/components/kai/KaiWidget';
+import GradientBackground from '@/components/GradientBackground';
 import './globals.css';
 
 // Re-fetch nav periodically so page/order changes surface without a redeploy.
@@ -79,6 +80,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={robotoCondensed.variable}>
       <body className="antialiased">
+        {/* Animated organic gradient behind everything (the R3F scenes render transparent
+            over it). Falls back to the body's solid #000666 if WebGL is unavailable. */}
+        <GradientBackground />
         <Nav menus={nav} />
         {children}
         {/* Ask Kai — floating chatbot, on every page. */}

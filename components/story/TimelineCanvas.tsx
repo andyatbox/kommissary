@@ -197,10 +197,10 @@ export default function TimelineCanvas() {
     <div id="webgl-root" className="fixed inset-0 z-0">
       <Canvas
         dpr={quality.dpr}
-        gl={{ antialias: quality.antialias, powerPreference: 'high-performance' }}
+        gl={{ antialias: quality.antialias, powerPreference: 'high-performance', alpha: true }}
         camera={{ position: [0, 0, CAM_Z], fov: FOV, near: 0.5, far: 60 }}
       >
-        <color attach="background" args={['#000666']} />
+        {/* Transparent canvas — the animated GradientBackground shows behind the models. */}
 
         <ambientLight intensity={0.28} />
         {/* The raking key/fill pair from the source project, which is what gives the

@@ -73,7 +73,7 @@ export default function Experience() {
       <Canvas
         shadows={quality.shadows}
         dpr={quality.dpr}
-        gl={{ antialias: quality.antialias, powerPreference: 'high-performance' }}
+        gl={{ antialias: quality.antialias, powerPreference: 'high-performance', alpha: true }}
         // near is well clear of anything we get close to; keeping it off 0.1 preserves
         // depth precision now that far reaches 900 for the overview shot.
         camera={{ position: [0, 2.5, 26], fov: 40, near: 0.5, far: 900 }}
