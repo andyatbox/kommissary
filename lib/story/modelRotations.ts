@@ -46,7 +46,7 @@ export const MODEL_ROTATIONS: Record<string, RestingRotation> = {
   korilla: { x: 0, y: 45 },
 
   // Market stall — angled so the frontage opens toward the copy rather than the edge.
-  'fish-market': { x: 0, y: 30 },
+  'fish-market': { x: 15, y: 30 },
 
   // Board and ingredients lie flat; pitch it forward so you look down onto the top.
   'cutting-board': { x: 26, y: 17 },
