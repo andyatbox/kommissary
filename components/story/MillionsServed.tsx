@@ -77,6 +77,12 @@ function StatItem({
       <h3 className="mt-1 text-sm uppercase tracking-[0.2em] text-white/70 md:text-base">
         {unit}
       </h3>
+      {/* Trailing prose from the value (e.g. "And still counting!") at a small size. */}
+      {parsed.note && (
+        <p className="font-spirit mt-2 text-base font-medium text-coral sm:text-lg">
+          {parsed.note}
+        </p>
+      )}
     </div>
   );
 }
