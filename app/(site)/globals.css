@@ -28,12 +28,17 @@ nav * {
 
 html {
   height: 100%;
-  overflow-x: hidden;
+  /* Deliberately NO overflow-x here: setting it makes <body> its own (non-scrollable)
+     scroll container instead of letting body's overflow propagate to the viewport,
+     which — together with body's overscroll-behavior — swallows mouse-wheel scrolling
+     on content pages. The horizontal clamp comes from body's overflow-x below (which
+     the browser propagates to the viewport) plus .smooth-content's own overflow-x. */
 }
 
 /* Note: vertical overflow is NOT locked globally — content pages ([slug]) and the
-   Our Story timeline scroll normally. Only the horizontal axis is clamped, and the
-   homepage isolates its 3D canvas with `fixed inset-0 overflow-hidden`. */
+   Our Story timeline scroll normally. Only the horizontal axis is clamped (via the
+   viewport, since body's overflow propagates there), and the homepage isolates its
+   3D canvas with `fixed inset-0 overflow-hidden`. */
 body {
   min-height: 100%;
   margin: 0;

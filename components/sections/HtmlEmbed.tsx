@@ -5,9 +5,12 @@ import { useEffect, useRef } from 'react';
 /**
  * Renders a raw HTML embed snippet from the CMS (iframe, widget, form, etc.).
  *
- * Client-side and imperative rather than dangerouslySetInnerHTML, because scripts
- * inserted via innerHTML don't execute — many widget embeds are a <script> that
- * builds the widget, so we re-create each <script> node so the browser runs it.
+ * The markup is server-rendered via dangerouslySetInnerHTML so it's in the page
+ * immediately — no dependency on client-side injection timing. A client effect then
+ * handles the two things static HTML can't: re-creating any <script> tags so
+ * script-based widgets actually run (browsers don't execute scripts set as HTML), and
+ * giving a height-less iframe a sensible default (embed codes often rely on CSS
+ * framework classes, e.g. Bootstrap's vh-100, that aren't loaded here).
  *
  * Trust note: this executes whatever HTML/JS an editor pastes, in the page's origin.
  * It's an editor-only, authenticated field (like every CMS "embed code" block), so the
@@ -19,9 +22,8 @@ export default function HtmlEmbed({ code }: { code: string }) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    el.innerHTML = code;
 
-    // Re-inject scripts so they actually run.
+    // Re-create scripts so they actually run.
     for (const old of Array.from(el.querySelectorAll('script'))) {
       const s = document.createElement('script');
       for (const attr of Array.from(old.attributes)) s.setAttribute(attr.name, attr.value);
@@ -29,9 +31,8 @@ export default function HtmlEmbed({ code }: { code: string }) {
       old.replaceWith(s);
     }
 
-    // Give iframes a sensible default size when the snippet sets none itself — a
-    // height-less iframe collapses to ~150px, and embed codes often rely on CSS
-    // framework classes (e.g. Bootstrap's vh-100) that aren't loaded here.
+    // Default size for iframes whose snippet sets none (a height-less iframe collapses
+    // to ~150px). Leaves iframes that set their own height/width untouched.
     for (const iframe of Array.from(el.querySelectorAll('iframe'))) {
       const style = iframe.getAttribute('style') ?? '';
       if (!iframe.getAttribute('height') && !/(?:^|;)\s*height\s*:/i.test(style)) {
@@ -41,13 +42,16 @@ export default function HtmlEmbed({ code }: { code: string }) {
         iframe.style.width = '100%';
       }
     }
-
-    return () => {
-      el.innerHTML = '';
-    };
   }, [code]);
 
   if (!code) return null;
-  // Make embedded iframes responsive by default; other markup renders as authored.
-  return <div ref={ref} className="[&_iframe]:max-w-full [&_iframe]:rounded-xl" />;
+  return (
+    <div
+      ref={ref}
+      // Block display avoids the inline-image descender gap; max-w-full keeps a wide
+      // embed from overflowing the column. Explicit author sizes are respected.
+      className="[&_iframe]:block [&_iframe]:max-w-full"
+      dangerouslySetInnerHTML={{ __html: code }}
+    />
+  );
 }
