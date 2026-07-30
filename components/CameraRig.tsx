@@ -19,7 +19,7 @@ const TOUCH_FLING = 50; // px-velocity → progress-velocity carried on release
 const SCROLL_DECAY = 4.0; // higher = shorter coast / snappier ease-out
 const MAX_SCROLL_VEL = 0.38; // clamp so a hard flick can't skip past whole sections
 /** Duration (s) of a nav-chevron ease-in-out jump to the next/previous pill. */
-const NAV_DURATION = 0.9;
+const NAV_DURATION = 1.9;
 
 /** How far the camera parks from a dot when focused — closer than the reading distance. */
 const FOCUS_DIST = 5.5;

@@ -88,10 +88,10 @@ function ChevronButton({
       disabled={disabled}
       aria-label={dir === 'prev' ? 'Previous point' : 'Next point'}
       // Red round shape, dark-blue chevron.
-      className="pointer-events-auto flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-[#ff6666] text-[#000666] shadow-[0_8px_24px_rgba(255,102,102,0.35)] transition-[transform,opacity] duration-200 hover:scale-105 disabled:pointer-events-none disabled:opacity-30"
+      className="pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#ff6666] text-[#000666] shadow-[0_8px_24px_rgba(255,102,102,0.35)] transition-[transform,opacity] duration-200 hover:scale-105 disabled:pointer-events-none disabled:opacity-30"
     >
       <svg
-        className="h-6 w-6"
+        className="h-5 w-5"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
