@@ -69,6 +69,7 @@ export const MODEL_ALTS: Record<string, string> = {
   'lettuce-broccoli': 'Fresh lettuce and broccoli',
   mask: 'A protective face mask',
   desk: 'A work desk',
+  shelter: 'An emergency shelter',
 };
 
 /** Builds a full ModelSpec (url + alt + resting rotation) from a model key. */
@@ -93,7 +94,7 @@ const MOMENT_MODELS: Record<string, { key: string; scale?: number }> = {
   'moment-cutting-board': { key: 'cutting-board' },
   'moment-kommy-truck': { key: 'mask' },
   'moment-chicken': { key: 'chicken' },
-  'moment-bananas-apple': { key: 'bananas-apple' },
+  'moment-bananas-apple': { key: 'shelter' },
   'moment-brownstones': { key: 'desk' },
   'moment-statue-of-liberty': { key: 'statue-of-liberty' },
 };
@@ -181,7 +182,7 @@ const AUTHORED: AuthoredMoment[] = [
     period: '2023—',
     title: 'Asylum Seeker Crisis',
     body: 'Our partnership with NYC Health + Hospitals expanded in 2023 with the onset of the asylum seeker crisis. We helped build the Humanitarian Emergency Relief and Rescue Center (HERRC) program from scratch, and today, we manage operations at 11 sites where we provide food services to nearly 50,000 asylum seekers daily.',
-    modelKey: 'bananas-apple',
+    modelKey: 'shelter',
     gallery: placeholderGallery('bananas-apple', 'Food services for asylum seekers'),
   },
   {
