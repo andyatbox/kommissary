@@ -28,6 +28,12 @@ nav * {
 
 html {
   height: 100%;
+  /* The base/fallback color lives HERE, not on <body>: the animated GradientBackground
+     is a fixed, z-index:-10 canvas, and an opaque background on <body> can paint over a
+     negative-z child (a classic gotcha) — showing only flat navy. With the color on
+     <html> and <body> transparent, the gradient sits above this and this shows through
+     only where the gradient is absent (or if WebGL fails). */
+  background-color: #000666;
   /* Deliberately NO overflow-x here: setting it makes <body> its own (non-scrollable)
      scroll container instead of letting body's overflow propagate to the viewport,
      which — together with body's overscroll-behavior — swallows mouse-wheel scrolling
@@ -44,7 +50,8 @@ body {
   margin: 0;
   overflow-x: hidden;
   overscroll-behavior-y: none;
-  background: #000666;
+  /* Transparent — the base color is on <html> so the fixed gradient canvas shows. */
+  background: transparent;
   color: #ffffff;
   font-family:
     var(--font-roboto-condensed),

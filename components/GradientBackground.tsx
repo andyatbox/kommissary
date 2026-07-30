@@ -23,11 +23,11 @@ void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
 `;
 
 const FRAG = `
-precision highp float;
+precision mediump float;
 uniform vec2 uRes;
 uniform float uTime;
 
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
   vec2 i = floor(p), f = fract(p);
   vec2 u = f * f * (3.0 - 2.0 * f);
@@ -41,25 +41,24 @@ float fbm(vec2 p) {
   return v;
 }
 void main() {
-  vec2 res = max(uRes, vec2(1.0));       // never divide by zero (→ NaN → white)
+  vec2 res = max(uRes, vec2(1.0));        // never divide by zero (→ NaN → white)
   vec2 uv = gl_FragCoord.xy / res;
   vec2 p = uv;
-  p.x *= res.x / res.y;                   // aspect-correct so shapes stay round
-  p *= 1.6;
-  float t = uTime * 0.04;                 // slow drift
+  p.x *= res.x / res.y;                    // aspect-correct so shapes stay round
+  p *= 1.1;                                // large blobs
+  float t = uTime * 0.06;                  // slow drift
 
   vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(4.3, -t * 0.8)));
   vec2 r = vec2(
-    fbm(p + 1.8 * q + vec2(1.2, 7.4) + t * 0.5),
-    fbm(p + 1.8 * q + vec2(8.7, 2.1) - t * 0.4)
+    fbm(p + 1.6 * q + vec2(1.2, 7.4) + t * 0.5),
+    fbm(p + 1.6 * q + vec2(8.7, 2.1) - t * 0.4)
   );
-  float f = clamp(fbm(p + 1.8 * r) * 1.15, 0.0, 1.0);
+  float f = smoothstep(0.25, 0.78, fbm(p + 1.6 * r)); // more contrast → defined shapes
 
   vec3 navy   = vec3(0.000, 0.024, 0.400); // #000666
-  vec3 indigo = vec3(0.120, 0.010, 0.380); // blue-purple midpoint
   vec3 purple = vec3(0.294, 0.000, 0.263); // #4b0043
-  vec3 col = f < 0.5 ? mix(navy, indigo, f * 2.0) : mix(indigo, purple, (f - 0.5) * 2.0);
-  col *= 0.88 + 0.24 * r.x;                // gentle depth variation
+  vec3 col = mix(navy, purple, f);
+  col += smoothstep(0.6, 1.0, f) * vec3(0.10, 0.0, 0.12); // subtle glow in the purple cores
 
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }
