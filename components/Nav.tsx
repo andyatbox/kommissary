@@ -93,6 +93,11 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
 
   return (
     <div
+      // translate="no": browser auto-translate (Chrome/Google Translate) mutates text
+      // nodes, which breaks React's reconciliation when the dropdown re-renders and can
+      // swap a link's label for unrelated on-page text. The nav is brand chrome, so
+      // opting it out of translation is safe and prevents that corruption.
+      translate="no"
       className={`transition-[opacity,visibility] duration-500 ${
         modalOpen ? 'invisible opacity-0' : 'visible opacity-100'
       }`}

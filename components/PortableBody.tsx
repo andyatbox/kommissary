@@ -13,6 +13,12 @@ import { urlFor } from '@/sanity/lib/image';
  */
 type Tone = 'dark' | 'light';
 
+/** A block is centered if any of its text runs carry the 'center' decorator mark. */
+function isCentered(value: unknown): boolean {
+  const children = (value as { children?: { marks?: string[] }[] })?.children;
+  return Array.isArray(children) && children.some((c) => c.marks?.includes('center'));
+}
+
 function makeComponents(tone: Tone): PortableTextComponents {
   const light = tone === 'light';
   const body = light ? 'text-black' : 'text-white/85';
@@ -24,19 +30,29 @@ function makeComponents(tone: Tone): PortableTextComponents {
 
   return {
     block: {
-      normal: ({ children }) => (
-        <p className={`mt-5 text-lg leading-relaxed ${body} first:mt-0`}>{children}</p>
+      normal: ({ children, value }) => (
+        <p className={`mt-5 text-lg leading-relaxed ${body} first:mt-0 ${isCentered(value) ? 'text-center' : ''}`}>
+          {children}
+        </p>
       ),
-      h2: ({ children }) => (
-        <h2 className={`font-spirit mt-12 text-3xl font-medium ${heading} first:mt-0 sm:text-4xl`}>
+      h2: ({ children, value }) => (
+        <h2
+          className={`font-spirit mt-12 text-3xl font-medium ${heading} first:mt-0 sm:text-4xl ${isCentered(value) ? 'text-center' : ''}`}
+        >
           {children}
         </h2>
       ),
-      h3: ({ children }) => (
-        <h3 className={`font-spirit mt-9 text-2xl font-medium ${sub} first:mt-0`}>{children}</h3>
+      h3: ({ children, value }) => (
+        <h3
+          className={`font-spirit mt-9 text-2xl font-medium ${sub} first:mt-0 ${isCentered(value) ? 'text-center' : ''}`}
+        >
+          {children}
+        </h3>
       ),
-      blockquote: ({ children }) => (
-        <blockquote className={`mt-6 border-l-2 border-[#ff6666] pl-5 text-lg italic ${quote}`}>
+      blockquote: ({ children, value }) => (
+        <blockquote
+          className={`mt-6 border-l-2 border-[#ff6666] pl-5 text-lg italic ${quote} ${isCentered(value) ? 'text-center' : ''}`}
+        >
           {children}
         </blockquote>
       ),
@@ -58,6 +74,9 @@ function makeComponents(tone: Tone): PortableTextComponents {
     marks: {
       strong: ({ children }) => <strong className={`font-semibold ${strong}`}>{children}</strong>,
       em: ({ children }) => <em className="italic">{children}</em>,
+      // Alignment is applied at the block level (see isCentered); the mark itself is a
+      // no-op wrapper so it doesn't add an inline span or warn.
+      center: ({ children }) => <>{children}</>,
       // Hyperlinks stay coral in both tones (the one exception to "all black").
       link: ({ children, value }) => {
         const href = (value as { href?: string })?.href ?? '#';
