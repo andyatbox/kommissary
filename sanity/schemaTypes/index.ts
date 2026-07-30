@@ -4,7 +4,7 @@ import { page } from './page';
 import { moment } from './moment';
 import { ourStoryPage } from './ourStoryPage';
 import { blockContent } from './blockContent';
-import { bodyCopy, videoEmbed, imageSlider, gridCopy } from './sections';
+import { bodyCopy, videoEmbed, imageSlider, gridCopy, htmlEmbed } from './sections';
 
 export const schemaTypes = [
   // Documents
@@ -22,4 +22,5 @@ export const schemaTypes = [
   videoEmbed,
   imageSlider,
   gridCopy,
+  htmlEmbed,
 ];

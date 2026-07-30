@@ -80,6 +80,7 @@ export const page = defineType({
         defineArrayMember({ type: 'videoEmbed' }),
         defineArrayMember({ type: 'imageSlider' }),
         defineArrayMember({ type: 'gridCopy' }),
+        defineArrayMember({ type: 'htmlEmbed' }),
       ],
     }),
   ],

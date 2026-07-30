@@ -27,7 +27,8 @@ const SECTIONS = `sections[]{
   _type == "imageSlider" => {
     "images": images[]{ asset, hotspot, crop, alt, "lqip": asset->metadata.lqip }
   },
-  _type == "gridCopy" => { columns, column1, column2, column3 }
+  _type == "gridCopy" => { columns, column1, column2, column3 },
+  _type == "htmlEmbed" => { code }
 }`;
 
 const PAGE_QUERY = `*[_type == "page" && slug.current == $slug][0]{

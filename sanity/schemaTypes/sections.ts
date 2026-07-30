@@ -106,6 +106,31 @@ export const gridCopy = defineType({
   },
 });
 
+/** Raw HTML embed — for third-party widgets, iframes, forms, etc. */
+export const htmlEmbed = defineType({
+  name: 'htmlEmbed',
+  title: 'HTML Embed Code',
+  type: 'object',
+  fields: [
+    defineField({
+      name: 'code',
+      title: 'Embed code (HTML)',
+      type: 'text',
+      rows: 6,
+      description:
+        'Paste an embed/widget snippet (iframe, script, form, etc.). Renders exactly as given — only paste code from sources you trust.',
+      validation: (r) => r.required(),
+    }),
+  ],
+  preview: {
+    select: { code: 'code' },
+    prepare: ({ code }) => ({
+      title: 'HTML Embed',
+      subtitle: (code ?? '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'Empty',
+    }),
+  },
+});
+
 /** Pulls the first run of plain text out of a block array for list previews. */
 function firstLine(content?: { _type?: string; children?: { text?: string }[] }[]): string {
   const block = content?.find((b) => b._type === 'block');

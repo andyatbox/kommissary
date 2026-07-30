@@ -4,6 +4,7 @@ import { galleryImagesFromSanity, type SanityGalleryImage } from '@/lib/galleryI
 import VideoEmbed from './VideoEmbed';
 import ImageSlider from './ImageSlider';
 import GridCopy from './GridCopy';
+import HtmlEmbed from './HtmlEmbed';
 
 export type PageSection =
   | { _type: 'bodyCopy'; _key: string; content?: PortableTextBlock[] }
@@ -16,7 +17,8 @@ export type PageSection =
       column1?: PortableTextBlock[];
       column2?: PortableTextBlock[];
       column3?: PortableTextBlock[];
-    };
+    }
+  | { _type: 'htmlEmbed'; _key: string; code?: string };
 
 /** Renders one page section. Body Copy is a full-width cream band with centred text;
  *  video centres itself; the slider and grid go full browser width. */
@@ -48,6 +50,12 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
           column2={section.column2}
           column3={section.column3}
         />
+      );
+    case 'htmlEmbed':
+      return (
+        <div className="mx-auto w-full max-w-3xl px-6 sm:px-8">
+          <HtmlEmbed code={section.code ?? ''} />
+        </div>
       );
     default:
       return null;
