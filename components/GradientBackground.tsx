@@ -7,13 +7,14 @@ import { useEffect, useRef } from 'react';
  * between dark blue (#000666) and dark purple (#4b0043), drawn with a WebGL fragment
  * shader (domain-warped value noise), NOT a CSS gradient.
  *
- * Deliberately cheap and isolated so it can't tax the GPU or interfere with the R3F
- * scenes (homepage / Our Story), which run in their own contexts:
- *   - its own low-power WebGL context, one fullscreen triangle, a mediump shader;
- *   - rendered at half resolution (the diffuse look hides it) — a quarter of the pixels;
- *   - throttled to ~30fps and paused entirely while the tab is hidden;
- *   - a single draw call per frame, no per-frame allocations.
- * If WebGL is unavailable it renders nothing and the body's solid #000666 shows through.
+ * Cheap and defensive so it can't tax the GPU or interfere with the R3F scenes:
+ *   - one fullscreen triangle, highp shader, HALF resolution, ~30fps, paused when hidden;
+ *   - NO powerPreference hint — matching the R3F 'high-performance' hint would be fine
+ *     too, but requesting a *different* one ('low-power') can make a dual-GPU browser put
+ *     the two contexts on separate GPUs and crash compositing;
+ *   - shader compile/link is verified, resolution is clamped away from zero (a 0 divide
+ *     yields NaN → a white frame), and any failure hides the canvas so the body's solid
+ *     #000666 shows instead of a broken-canvas icon.
  */
 
 const VERT = `
@@ -22,15 +23,11 @@ void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
 `;
 
 const FRAG = `
-precision mediump float;
+precision highp float;
 uniform vec2 uRes;
 uniform float uTime;
 
-float hash(vec2 p) {
-  p = fract(p * vec2(123.34, 456.21));
-  p += dot(p, p + 45.32);
-  return fract(p.x * p.y);
-}
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
 float noise(vec2 p) {
   vec2 i = floor(p), f = fract(p);
   vec2 u = f * f * (3.0 - 2.0 * f);
@@ -40,21 +37,17 @@ float noise(vec2 p) {
 }
 float fbm(vec2 p) {
   float v = 0.0, a = 0.5;
-  for (int i = 0; i < 4; i++) {
-    v += a * noise(p);
-    p = p * 2.0 + vec2(3.1, 1.7);
-    a *= 0.5;
-  }
+  for (int i = 0; i < 4; i++) { v += a * noise(p); p = p * 2.0 + vec2(3.1, 1.7); a *= 0.5; }
   return v;
 }
 void main() {
-  vec2 uv = gl_FragCoord.xy / uRes;
+  vec2 res = max(uRes, vec2(1.0));       // never divide by zero (→ NaN → white)
+  vec2 uv = gl_FragCoord.xy / res;
   vec2 p = uv;
-  p.x *= uRes.x / uRes.y; // correct aspect so blobs stay round
+  p.x *= res.x / res.y;                   // aspect-correct so shapes stay round
   p *= 1.6;
-  float t = uTime * 0.04; // slow drift
+  float t = uTime * 0.04;                 // slow drift
 
-  // Two-level domain warp → organic, diffuse shapes.
   vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(4.3, -t * 0.8)));
   vec2 r = vec2(
     fbm(p + 1.8 * q + vec2(1.2, 7.4) + t * 0.5),
@@ -63,19 +56,17 @@ void main() {
   float f = clamp(fbm(p + 1.8 * r) * 1.15, 0.0, 1.0);
 
   vec3 navy   = vec3(0.000, 0.024, 0.400); // #000666
-  vec3 indigo = vec3(0.120, 0.010, 0.380); // a blue-purple midpoint
+  vec3 indigo = vec3(0.120, 0.010, 0.380); // blue-purple midpoint
   vec3 purple = vec3(0.294, 0.000, 0.263); // #4b0043
   vec3 col = f < 0.5 ? mix(navy, indigo, f * 2.0) : mix(indigo, purple, (f - 0.5) * 2.0);
-  col *= 0.88 + 0.24 * r.x; // gentle depth variation
+  col *= 0.88 + 0.24 * r.x;                // gentle depth variation
 
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }
 `;
 
-/** Half-resolution: the gradient is soft, so this is visually identical for 1/4 the work. */
-const SCALE = 0.5;
-/** ~30fps — plenty for a slow lava lamp; halves the render load vs. the display refresh. */
-const FRAME_MS = 1000 / 30;
+const SCALE = 0.5; // half resolution — soft gradient hides it, 1/4 the fragments
+const FRAME_MS = 1000 / 30; // ~30fps
 
 export default function GradientBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -87,39 +78,52 @@ export default function GradientBackground() {
     let raf = 0;
     let disposed = false;
     let gl: WebGLRenderingContext | null = null;
-    let program: WebGLProgram | null = null;
     let uRes: WebGLUniformLocation | null = null;
     let uTime: WebGLUniformLocation | null = null;
     let start = performance.now();
     let last = 0;
 
-    const compile = (type: number, src: string) => {
-      const s = gl!.createShader(type)!;
+    const compile = (type: number, src: string): WebGLShader | null => {
+      const s = gl!.createShader(type);
+      if (!s) return null;
       gl!.shaderSource(s, src);
       gl!.compileShader(s);
+      if (!gl!.getShaderParameter(s, gl!.COMPILE_STATUS)) {
+        console.warn('GradientBackground shader compile error:', gl!.getShaderInfoLog(s));
+        gl!.deleteShader(s);
+        return null;
+      }
       return s;
     };
 
-    const setup = () => {
+    const setup = (): boolean => {
       gl = canvas.getContext('webgl', {
-        alpha: false,
+        alpha: true, // failure/no-draw shows the navy body behind, never white/black
         antialias: false,
         depth: false,
         stencil: false,
-        powerPreference: 'low-power',
         preserveDrawingBuffer: false,
+        failIfMajorPerformanceCaveat: false,
       });
       if (!gl) return false;
 
-      program = gl.createProgram()!;
-      gl.attachShader(program, compile(gl.VERTEX_SHADER, VERT));
-      gl.attachShader(program, compile(gl.FRAGMENT_SHADER, FRAG));
+      const vs = compile(gl.VERTEX_SHADER, VERT);
+      const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+      if (!vs || !fs) return false;
+
+      const program = gl.createProgram();
+      if (!program) return false;
+      gl.attachShader(program, vs);
+      gl.attachShader(program, fs);
       gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.warn('GradientBackground link error:', gl.getProgramInfoLog(program));
+        return false;
+      }
       gl.useProgram(program);
 
       const buf = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      // One fullscreen triangle (covers the viewport, one primitive).
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
       const aPos = gl.getAttribLocation(program, 'aPos');
       gl.enableVertexAttribArray(aPos);
@@ -127,6 +131,7 @@ export default function GradientBackground() {
 
       uRes = gl.getUniformLocation(program, 'uRes');
       uTime = gl.getUniformLocation(program, 'uTime');
+      gl.clearColor(0.0, 0.024, 0.4, 1.0); // navy, in case a frame ever fails to cover
       return true;
     };
 
@@ -138,21 +143,21 @@ export default function GradientBackground() {
       canvas.width = w;
       canvas.height = h;
       gl.viewport(0, 0, w, h);
-      gl.uniform2f(uRes, w, h);
+      if (uRes) gl.uniform2f(uRes, w, h);
     };
 
     const frame = (now: number) => {
       if (disposed) return;
       raf = requestAnimationFrame(frame);
-      if (document.hidden || !gl) return;
+      if (document.hidden || !gl || gl.isContextLost()) return;
       if (now - last < FRAME_MS) return;
       last = now;
-      gl.uniform1f(uTime, (now - start) / 1000);
+      if (uTime) gl.uniform1f(uTime, (now - start) / 1000);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
     const onLost = (e: Event) => {
-      e.preventDefault();
+      e.preventDefault(); // allow a restore instead of the browser's broken-canvas icon
       cancelAnimationFrame(raf);
     };
     const onRestored = () => {
@@ -162,10 +167,15 @@ export default function GradientBackground() {
         start = performance.now();
         last = 0;
         raf = requestAnimationFrame(frame);
+      } else {
+        canvas.style.display = 'none';
       }
     };
 
-    if (!setup()) return; // no WebGL → body #000666 shows through
+    if (!setup()) {
+      canvas.style.display = 'none'; // no white / no broken icon — body #000666 shows
+      return;
+    }
     resize();
     window.addEventListener('resize', resize, { passive: true });
     canvas.addEventListener('webglcontextlost', onLost as EventListener);
