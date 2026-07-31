@@ -205,7 +205,9 @@ export default function KaiWidget() {
             maxLength={500}
             placeholder="Ask about Kommissary…"
             aria-label="Your question for Kai"
-            className="min-w-0 flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none transition-colors focus:border-[#ff6666]/60"
+            // text-base (16px), not text-sm: iOS Safari auto-zooms the page on focus for
+            // any input under 16px, which sticks and breaks this fixed-position layout.
+            className="min-w-0 flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/40 outline-none transition-colors focus:border-[#ff6666]/60"
           />
           <button
             type="submit"
