@@ -71,7 +71,7 @@ const ZONES: ZoneDef[] = [
         url: '/models/fist.glb',
         anchor: 'progressive',
         offset: [0, 0, 2],
-        target: 6,
+        target: 4,
         rotationY: 0,
         hoverAmp: 0.25,
         hoverFreq: 0.8,
