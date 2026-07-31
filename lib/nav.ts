@@ -16,7 +16,7 @@ export type NavGroup = {
 
 export const NAV_GROUPS: NavGroup[] = [
   { id: 'kommissary', label: 'Kommissary', heading: 'Who we are...' },
-  { id: 'what-we-do', label: 'What we do', heading: 'What we do...' },
+  { id: 'what-we-do', label: 'Our Services', heading: 'Our Services...' },
   { id: 'connect', label: 'Connect', heading: "Let's work together!" },
 ];
 

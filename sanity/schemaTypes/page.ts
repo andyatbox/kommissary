@@ -34,7 +34,7 @@ export const page = defineType({
       options: {
         list: [
           { title: 'Kommissary', value: 'kommissary' },
-          { title: 'What we do', value: 'what-we-do' },
+          { title: 'Our Services', value: 'what-we-do' },
           { title: 'Connect', value: 'connect' },
         ],
         layout: 'radio',
