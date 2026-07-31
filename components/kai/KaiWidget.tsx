@@ -146,12 +146,11 @@ export default function KaiWidget() {
         aria-modal="false"
         aria-label="Ask Kai"
         aria-hidden={!open}
-        className={`fixed bottom-4 right-4 z-[65] flex w-[calc(100vw-2rem)] max-w-[420px] flex-col overflow-hidden rounded-2xl border border-[#ff6666]/30 bg-[#000666] shadow-[0_24px_80px_rgba(0,0,0,0.55)] transition-all duration-300 sm:bottom-6 sm:right-6 ${
+        className={`fixed bottom-4 right-4 z-[65] flex w-[calc(100vw-2rem)] max-w-[440px] flex-col overflow-hidden rounded-2xl border border-[#ff6666]/30 bg-[#000666]/80 shadow-[0_24px_80px_rgba(0,0,0,0.55)] backdrop-blur-xl transition-all duration-300 sm:bottom-6 sm:right-6 sm:max-w-[500px] lg:max-w-[560px] h-[min(640px,calc(100dvh_-_5rem))] sm:h-[min(720px,calc(100dvh_-_6rem))] lg:h-[min(800px,calc(100dvh_-_6rem))] ${
           open
             ? 'pointer-events-auto translate-y-0 opacity-100'
             : 'pointer-events-none translate-y-4 opacity-0'
         }`}
-        style={{ height: 'min(600px, calc(100dvh - 6rem))' }}
       >
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
