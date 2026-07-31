@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 /**
@@ -67,9 +67,10 @@ void main() {
 }
 `;
 
-function GradientPlane() {
+function GradientPlane({ onReady }: { onReady: () => void }) {
   const material = useRef<THREE.ShaderMaterial>(null);
   const { size } = useThree();
+  const shown = useRef(false);
   const uniforms = useMemo(
     () => ({ uTime: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) } }),
     []
@@ -80,6 +81,12 @@ function GradientPlane() {
     if (!m) return;
     m.uniforms.uTime.value = state.clock.elapsedTime;
     m.uniforms.uRes.value.set(size.width, size.height);
+    // Signal ready once the first frame has actually drawn, so the fade-in reveals the
+    // gradient rather than a blank frame.
+    if (!shown.current) {
+      shown.current = true;
+      onReady();
+    }
   });
 
   return (
@@ -98,8 +105,16 @@ function GradientPlane() {
 }
 
 export default function GradientBackground() {
+  // Fade the canvas up once the first frame has drawn, so it eases out of the flat
+  // #000666 (on <html>) instead of popping in.
+  const [ready, setReady] = useState(false);
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
+    <div
+      aria-hidden
+      className={`pointer-events-none fixed inset-0 -z-10 transition-opacity duration-[1500ms] ease-out ${
+        ready ? 'opacity-100' : 'opacity-0'
+      }`}
+    >
       <Canvas
         dpr={0.5}
         gl={{ antialias: false, depth: false, stencil: false, powerPreference: 'high-performance' }}
@@ -107,7 +122,7 @@ export default function GradientBackground() {
       >
         {/* Opaque navy floor so any failed/blank frame is navy, never white. */}
         <color attach="background" args={['#000666']} />
-        <GradientPlane />
+        <GradientPlane onReady={() => setReady(true)} />
       </Canvas>
     </div>
   );
