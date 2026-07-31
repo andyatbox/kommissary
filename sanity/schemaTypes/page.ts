@@ -1,6 +1,14 @@
 import { defineArrayMember, defineField, defineType } from 'sanity';
 import { orderRankField, orderRankOrdering } from '@sanity/orderable-document-list';
 
+/** Single source of truth for the Dropdown menu field's options AND the Pages list
+ *  preview label below, so they can't drift out of sync again. */
+const NAV_GROUP_OPTIONS = [
+  { title: 'Kommissary', value: 'kommissary' },
+  { title: 'Our Services', value: 'what-we-do' },
+  { title: 'Connect', value: 'connect' },
+];
+
 /**
  * A standalone content page (e.g. /our-story, /services, /contact). The slug is the
  * URL path. The Navigation fields decide which header dropdown (if any) the page's
@@ -31,14 +39,7 @@ export const page = defineType({
       type: 'string',
       fieldset: 'nav',
       description: 'Which header dropdown this page appears in. Leave empty to hide it from the nav.',
-      options: {
-        list: [
-          { title: 'Kommissary', value: 'kommissary' },
-          { title: 'Our Services', value: 'what-we-do' },
-          { title: 'Connect', value: 'connect' },
-        ],
-        layout: 'radio',
-      },
+      options: { list: NAV_GROUP_OPTIONS, layout: 'radio' },
     }),
     defineField({
       name: 'navLabel',
@@ -86,11 +87,14 @@ export const page = defineType({
   ],
   preview: {
     select: { title: 'title', slug: 'slug.current', navGroup: 'navGroup' },
-    prepare: ({ title, slug, navGroup }) => ({
-      title,
-      subtitle: [slug ? `/${slug}` : 'no slug', navGroup ? `↳ ${navGroup}` : null]
-        .filter(Boolean)
-        .join('   '),
-    }),
+    prepare: ({ title, slug, navGroup }) => {
+      const groupLabel = NAV_GROUP_OPTIONS.find((g) => g.value === navGroup)?.title ?? navGroup;
+      return {
+        title,
+        subtitle: [slug ? `/${slug}` : 'no slug', navGroup ? `↳ ${groupLabel}` : null]
+          .filter(Boolean)
+          .join('   '),
+      };
+    },
   },
 });
