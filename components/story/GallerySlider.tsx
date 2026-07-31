@@ -91,7 +91,7 @@ export default function GallerySlider({
       >
         {images.map((image, i) => (
           <div
-            key={image.src}
+            key={`${i}-${image.src}`}
             role="group"
             aria-roledescription="slide"
             aria-label={`${i + 1} of ${images.length}`}
@@ -138,7 +138,7 @@ export default function GallerySlider({
         {/* Bullets sit inside a red pill; the row is centred. */}
         <ul className="flex items-center gap-2.5 rounded-full border border-coral px-4 py-2.5">
           {images.map((image, i) => (
-            <li key={image.src}>
+            <li key={`${i}-${image.src}`}>
               <button
                 type="button"
                 onClick={() => goTo(i)}
