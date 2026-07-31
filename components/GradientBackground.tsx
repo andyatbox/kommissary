@@ -49,7 +49,7 @@ void main() {
   vec2 p = vUv;
   p.x *= max(uRes.x, 1.0) / max(uRes.y, 1.0); // aspect-correct so shapes stay round
   p *= 1.1;
-  float t = uTime * 0.06;
+  float t = uTime * 0.085;
 
   vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(4.3, -t * 0.8)));
   vec2 r = vec2(
