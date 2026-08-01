@@ -29,7 +29,7 @@ type IntroCfg = {
 };
 
 const INTRO: IntroCfg[] = [
-  { url: '/models/intro-tray.glb', target: 4.2, startDeg: -90, sweepDeg: 180, tiltX: -20 },
+  { url: '/models/intro-tray.glb', target: 4.2, startDeg: -90, sweepDeg: 180, tiltX: 20 },
   { url: '/models/intro-deliver.glb', target: 5.5, startDeg: -180, sweepDeg: 180 },
   { url: '/models/intro-heart.glb', target: 4.6, startDeg: -90, sweepDeg: 180 },
 ];
