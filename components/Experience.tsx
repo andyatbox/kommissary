@@ -5,6 +5,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
 import Scene from './Scene';
 import CameraRig from './CameraRig';
+import IntroModels from './IntroModels';
 import Buttons from './Buttons';
 import { getQuality } from '@/lib/perf';
 
@@ -82,7 +83,9 @@ export default function Experience() {
           <Scene quality={quality} />
         </Suspense>
         <CameraRig />
-        {/* After CameraRig, so the CSS layer draws with the camera's current pose. */}
+        {/* After CameraRig, so both read the camera's current-frame pose: the intro
+            cycle screen-locks to it, and the CSS button layer draws against it. */}
+        <IntroModels />
         <Buttons />
         <ShadowThrottle interval={shadowInterval} />
         <AdaptiveResolution
