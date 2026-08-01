@@ -26,15 +26,11 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
   switch (section._type) {
     case 'bodyCopy':
       return (
-        // Small side margin so the cream band doesn't touch the browser edges.
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          {/* Full-width cream band: flatter corners, generous vertical padding. Text
-              goes black (links stay coral). */}
-          <div className="rounded-lg bg-[#FFE9CC] py-14 sm:py-16 lg:py-24">
-            {/* Copy stays in a readable centred column inside the full-width band. */}
-            <div className="mx-auto w-full max-w-3xl px-6 sm:px-10 lg:px-16">
-              <PortableBody value={section.content ?? []} tone="light" />
-            </div>
+        // Full-bleed cream band, edge to edge — no side margin, no rounded corners.
+        <div className="w-full bg-[#FFE9CC] py-14 sm:py-16 lg:py-24">
+          {/* Copy stays in a readable centred column inside the full-width band. */}
+          <div className="mx-auto w-full max-w-3xl px-6 sm:px-10 lg:px-16">
+            <PortableBody value={section.content ?? []} tone="light" />
           </div>
         </div>
       );
