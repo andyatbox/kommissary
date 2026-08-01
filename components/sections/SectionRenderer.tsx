@@ -26,11 +26,14 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
   switch (section._type) {
     case 'bodyCopy':
       return (
-        // Full-bleed cream band, edge to edge — no side margin, no rounded corners.
-        <div className="w-full bg-[#FFE9CC] py-14 sm:py-16 lg:py-24">
-          {/* Copy stays in a readable centred column inside the full-width band. */}
-          <div className="mx-auto w-full max-w-3xl px-6 sm:px-10 lg:px-16">
-            <PortableBody value={section.content ?? []} tone="light" />
+        // Parent blends the cream band against whatever sits behind it (exclusion).
+        <div className="mix-blend-exclusion">
+          {/* Full-bleed cream band, edge to edge — no side margin, no rounded corners. */}
+          <div className="w-full bg-[#FFE9CC] py-14 sm:py-16 lg:py-24">
+            {/* Copy stays in a readable centred column inside the full-width band. */}
+            <div className="mx-auto w-full max-w-3xl px-6 sm:px-10 lg:px-16">
+              <PortableBody value={section.content ?? []} tone="light" />
+            </div>
           </div>
         </div>
       );
