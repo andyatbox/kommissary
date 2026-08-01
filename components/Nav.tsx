@@ -71,6 +71,10 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
   const [open, setOpen] = useState<string | null>(null); // desktop dropdown
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  // Active on an exact match, or on any sub-path of the link (e.g. /weekly stays active
+  // on a /weekly/<post> page). Home ('/') matches exactly only, never as a prefix.
+  const isActive = (href: string) =>
+    href === pathname || (href !== '/' && pathname.startsWith(`${href}/`));
 
   // On the homepage, hide the whole header while a clicked pill's content modal is
   // open (matches the pre-layout behavior where the modal covered the nav). Stays
@@ -194,9 +198,9 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                         <a
                           key={j}
                           href={it.href}
-                          aria-current={it.href === pathname ? 'page' : undefined}
+                          aria-current={isActive(it.href) ? 'page' : undefined}
                           className={`font-spirit text-lg transition-colors duration-200 hover:text-[#ffcf33] ${
-                            it.href === pathname ? 'text-[#ffcf33]' : 'text-[#ff6666]'
+                            isActive(it.href) ? 'text-[#ffcf33]' : 'text-[#ff6666]'
                           }`}
                         >
                           {it.text}
@@ -242,9 +246,9 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                           <a
                             href={it.href}
                             onClick={() => setMobileOpen(false)}
-                            aria-current={it.href === pathname ? 'page' : undefined}
+                            aria-current={isActive(it.href) ? 'page' : undefined}
                             className={`text-xl transition-colors hover:text-[#ffcf33] ${
-                              it.href === pathname ? 'text-[#ffcf33]' : 'text-[#ff6666]'
+                              isActive(it.href) ? 'text-[#ffcf33]' : 'text-[#ff6666]'
                             }`}
                           >
                             {it.text}

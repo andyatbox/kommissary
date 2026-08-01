@@ -1,6 +1,7 @@
 import { siteSettings } from './siteSettings';
 import { homepage, pill, ctaButton } from './homepage';
 import { page } from './page';
+import { post } from './post';
 import { moment } from './moment';
 import { ourStoryPage } from './ourStoryPage';
 import { blockContent, link } from './blockContent';
@@ -11,6 +12,7 @@ export const schemaTypes = [
   siteSettings,
   homepage,
   page,
+  post,
   ourStoryPage,
   moment,
   // Objects

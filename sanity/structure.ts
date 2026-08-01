@@ -21,6 +21,15 @@ export const structure: StructureResolver = (S, context) =>
       // Pages drive the header nav (via each page's Navigation fields). Drag to
       // reorder — the list order sets link order within each nav column.
       orderableDocumentListDeskItem({ type: 'page', title: 'Pages', S, context }),
+      // Kommissary Weekly blog posts, newest first (ordered by the Published date field).
+      S.listItem()
+        .title('Kommissary Weekly (Posts)')
+        .id('posts')
+        .child(
+          S.documentTypeList('post')
+            .title('Posts')
+            .defaultOrdering([{ field: 'date', direction: 'desc' }])
+        ),
       S.divider(),
       // Our Story (/our-story): the page-level content singleton + the drag-orderable
       // timeline moments whose order runs down the page.
