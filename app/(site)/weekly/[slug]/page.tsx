@@ -10,12 +10,16 @@ import ShareButtons from '@/components/weekly/ShareButtons';
 
 export const revalidate = 60;
 
+type Adjacent = { title: string; slug: string } | null;
+
 type PostDoc = {
   title: string;
   date?: string;
   description?: string;
   thumbnail?: SanityGalleryImage | null;
   sections?: PageSection[];
+  prev?: Adjacent;
+  next?: Adjacent;
 };
 
 const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]{
@@ -23,7 +27,9 @@ const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]{
   date,
   description,
   "thumbnail": thumbnail{ asset, hotspot, crop, alt, "lqip": asset->metadata.lqip },
-  ${SECTIONS_PROJECTION}
+  ${SECTIONS_PROJECTION},
+  "prev": *[_type == "post" && defined(slug.current) && date < ^.date] | order(date desc)[0]{ title, "slug": slug.current },
+  "next": *[_type == "post" && defined(slug.current) && date > ^.date] | order(date asc)[0]{ title, "slug": slug.current }
 }`;
 
 const SLUGS_QUERY = `*[_type == "post" && defined(slug.current)].slug.current`;
@@ -114,15 +120,40 @@ export default async function PostPage({ params }: { params: { slug: string } })
         </div>
       ) : null}
 
-      {/* Back to the index */}
-      <div className="mx-auto mt-16 w-full max-w-3xl px-6 text-center sm:px-8">
-        <a
-          href="/weekly"
-          className="font-spirit text-[#ff6666] underline decoration-[#ff6666]/40 underline-offset-4 transition-colors hover:text-[#ffcf33]"
-        >
-          ← All of Kommissary Weekly
+      {/* Post navigation: previous · all · next */}
+      <nav
+        aria-label="Post navigation"
+        className="font-spirit mx-auto mt-16 flex w-full max-w-3xl flex-wrap items-center justify-center gap-3 px-6 sm:px-8"
+      >
+        {post.prev ? (
+          <a href={`/weekly/${post.prev.slug}`} className={pill} aria-label={`Previous post: ${post.prev.title}`}>
+            ← Previous Post
+          </a>
+        ) : (
+          <span className={pillDisabled} aria-disabled="true">
+            ← Previous Post
+          </span>
+        )}
+
+        <a href="/weekly" className={pill}>
+          All Posts
         </a>
-      </div>
+
+        {post.next ? (
+          <a href={`/weekly/${post.next.slug}`} className={pill} aria-label={`Next post: ${post.next.title}`}>
+            Next Post →
+          </a>
+        ) : (
+          <span className={pillDisabled} aria-disabled="true">
+            Next Post →
+          </span>
+        )}
+      </nav>
     </main>
   );
 }
+
+const pill =
+  'rounded-full border border-[#ff6666] px-5 py-2.5 text-[#ff6666] transition-colors hover:bg-[#ff6666] hover:text-[#000666]';
+const pillDisabled =
+  'pointer-events-none rounded-full border border-[#ff6666]/25 px-5 py-2.5 text-[#ff6666]/30';

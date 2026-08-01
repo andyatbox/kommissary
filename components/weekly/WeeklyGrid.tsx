@@ -60,7 +60,7 @@ export default function WeeklyGrid({ posts }: { posts: TeaserPost[] }) {
         <a
           key={post.slug}
           href={`/weekly/${post.slug}`}
-          className="group relative block aspect-[4/5] overflow-hidden rounded-2xl"
+          className="group relative block aspect-[4/5] overflow-hidden rounded-2xl transition-transform duration-300 ease-out will-change-transform hover:z-10 hover:scale-[1.04]"
         >
           {post.image ? (
             <>
@@ -75,7 +75,7 @@ export default function WeeklyGrid({ posts }: { posts: TeaserPost[] }) {
                 alt={post.image.alt}
                 loading="lazy"
                 style={post.image.objectPosition ? { objectPosition: post.image.objectPosition } : undefined}
-                className="absolute inset-x-0 -top-[8%] h-[116%] w-full object-cover transition-transform duration-500 will-change-transform group-hover:scale-[1.03]"
+                className="absolute inset-x-0 -top-[8%] h-[116%] w-full object-cover will-change-transform"
               />
               {/* Light scrim so the dark-blue text stays legible over any photo. */}
               <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#FFE9CC]/90 via-[#FFE9CC]/35 to-transparent" />
