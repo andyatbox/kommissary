@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -29,9 +29,9 @@ type IntroCfg = {
 };
 
 const INTRO: IntroCfg[] = [
-  { url: '/models/intro-tray.glb', target: 4.2, startDeg: 0, sweepDeg: 180 },
-  { url: '/models/intro-deliver.glb', target: 5.5, startDeg: 0, sweepDeg: 180 },
-  { url: '/models/intro-heart.glb', target: 4.6, startDeg: 0, sweepDeg: 180 },
+  { url: '/models/intro-tray.glb', target: 4.2, startDeg: 25, sweepDeg: 180 },
+  { url: '/models/intro-deliver.glb', target: 5.5, startDeg: 90, sweepDeg: 180 },
+  { url: '/models/intro-heart.glb', target: 4.6, startDeg: 90, sweepDeg: 180 },
 ];
 
 INTRO.forEach((c) => useGLTF.preload(c.url, DRACO_PATH));
@@ -41,27 +41,22 @@ const DIST = 13;
 /** Vertical nudge in the camera plane; 0 = perfectly centered behind the logo. */
 const Y_OFF = 0;
 
-/** Seconds each model is on screen, and the crossfade overlap between consecutive ones.
- *  ON_SCREEN also sets the rotation speed — a full ~180° sweep spans this whole window. */
-const ON_SCREEN = 8.5;
-const OVERLAP = 1.5;
-/** Time between successive model onsets — the overlap is what makes them dissolve/morph. */
-const STEP = ON_SCREEN - OVERLAP;
-const CYCLE = STEP * INTRO.length;
+/** Seconds each model is featured (fade in → rotate → fade out) before the next. The
+ *  ~180° sweep spans this whole window, so a larger value also means a slower turn. */
+const SLOT = 11;
+/** Fade in / fade out portion (seconds) at each end of a slot. */
+const FADE = 1.6;
+const CYCLE = SLOT * INTRO.length;
 
 /** How fast the whole cycle fades in on landing / fades away once you scroll in. */
-const VIS_IN_RATE = 3.2;
-const VIS_OUT_RATE = 6;
+const VIS_IN_RATE = 2.2;
+const VIS_OUT_RATE = 3.5;
 
-/** Shared, render-free cycle state advanced by the parent and read by each model. */
+/** Shared, render-free cycle state advanced by the parent and read by the model. */
 type Clock = { t: number; vis: number };
 
 export default function IntroModels() {
-  return (
-    <Suspense fallback={null}>
-      <IntroCycle />
-    </Suspense>
-  );
+  return <IntroCycle />;
 }
 
 function IntroCycle() {
@@ -69,9 +64,14 @@ function IntroCycle() {
   const root = useRef<THREE.Group>(null!);
   const clock = useRef<Clock>({ t: 0, vis: 0 });
 
-  // Mimic the camera's world transform every frame so the group's children are locked to
-  // screen space (dead center in front of the lens), no matter where the camera roams.
-  // Runs after CameraRig (mounted later in the Canvas), so the pose is this frame's.
+  // Only ONE model is mounted at a time (null = nothing, while scrolled in). Keeping a
+  // single GLB resident — and unmounting the intro entirely once reading — is the whole
+  // point of this rework: on a weak GPU it's the per-frame draw cost that kills the context.
+  const [index, setIndex] = useState<number | null>(0);
+
+  // Mimic the camera's world transform every frame so the mounted model is locked to
+  // screen space (dead center in front of the lens). Runs after CameraRig (mounted later
+  // in the Canvas), so the pose is this frame's — no lag.
   useFrame((_, rawDt) => {
     const g = root.current;
     if (!g) return;
@@ -81,24 +81,32 @@ function IntroCycle() {
     g.position.copy(camera.position);
     g.quaternion.copy(camera.quaternion);
 
-    // While reading (scrolled in) the cycle fades away and freezes; once fully hidden it
-    // resets to the first model, so scrolling back to the very top replays from the start.
     const started = useUX.getState().started;
     const c = clock.current;
+
     if (started) {
+      // Scrolled in: fade the cycle away, then unmount it completely and rewind, so the
+      // GPU is free while reading and the intro replays from the top on scroll-back.
       c.vis = M.damp(c.vis, 0, VIS_OUT_RATE, dt);
-      if (c.vis < 0.02) c.t = 0;
+      if (c.vis < 0.02) {
+        c.t = 0;
+        if (index !== null) setIndex(null);
+      }
     } else {
       c.vis = M.damp(c.vis, 1, VIS_IN_RATE, dt);
       c.t += dt;
+      const want = Math.floor((c.t % CYCLE) / SLOT);
+      if (want !== index) setIndex(want);
     }
   });
 
   return (
     <group ref={root}>
-      {INTRO.map((cfg, i) => (
-        <IntroModel key={cfg.url} cfg={cfg} index={i} clock={clock} />
-      ))}
+      {index !== null && (
+        <Suspense fallback={null}>
+          <IntroModel key={index} cfg={INTRO[index]} index={index} clock={clock} />
+        </Suspense>
+      )}
     </group>
   );
 }
@@ -117,8 +125,9 @@ function IntroModel({
   const { scene } = useGLTF(cfg.url, DRACO_PATH);
   const group = useRef<THREE.Group>(null!);
 
-  // Clone once: geometry is shared, materials are cloned so opacity can be driven per
-  // instance; the model is centered on its own origin so the Y spin turns it in place.
+  // Clone once: geometry is shared with the cached original (cheap); materials are cloned
+  // so opacity can fade without touching the cache. Centered on its own origin so the Y
+  // spin turns it in place. No shadows — one more cost this backdrop doesn't need.
   const data = useMemo(() => {
     const object = scene.clone(true);
     const mats: MatRec[] = [];
@@ -127,7 +136,6 @@ function IntroModel({
       if (!mesh.isMesh) return;
       mesh.castShadow = false;
       mesh.receiveShadow = false;
-      mesh.frustumCulled = false; // always dead center; never cull mid-fade
       const cloned = (mesh.material as THREE.Material).clone();
       mesh.material = cloned;
       mats.push({ mat: cloned, opacity: cloned.opacity });
@@ -141,6 +149,13 @@ function IntroModel({
     return { object, mats, baseScale: cfg.target / maxDim };
   }, [scene, cfg]);
 
+  // Free the cloned materials' GPU programs when this model unmounts (each cycle). The
+  // shared geometry and textures belong to the useGLTF cache and are left alone.
+  useEffect(() => {
+    const mats = data.mats;
+    return () => mats.forEach((m) => m.mat.dispose());
+  }, [data]);
+
   const startYaw = M.degToRad(cfg.startDeg ?? 0);
   const sweep = M.degToRad(cfg.sweepDeg ?? 180);
   const tiltX = M.degToRad(cfg.tiltX ?? 0);
@@ -150,26 +165,21 @@ function IntroModel({
     const c = clock.current;
     if (!g || !c) return;
 
-    // This model's phase within the looping cycle: 0 at its onset, climbing to ON_SCREEN.
-    const r = ((c.t - index * STEP) % CYCLE + CYCLE) % CYCLE;
-    const onScreen = r < ON_SCREEN;
+    // Phase within this model's own slot: 0 at fade-in, climbing to SLOT at fade-out.
+    const local = ((c.t % CYCLE) - index * SLOT + CYCLE) % CYCLE;
 
-    // Opacity + a subtle scale swell so the crossfade reads as a dissolve/morph rather
-    // than a hard swap: the incoming model grows in as the outgoing one lifts and fades.
-    let op = 0;
+    // Opacity + a subtle scale swell: grow in on entry, lift and fade on exit, so the
+    // swap reads as a soft morph rather than a hard cut.
+    let op = 1;
     let swell = 1;
-    if (onScreen) {
-      if (r < OVERLAP) {
-        const k = M.smoothstep(r / OVERLAP, 0, 1);
-        op = k;
-        swell = M.lerp(0.82, 1, k);
-      } else if (r > ON_SCREEN - OVERLAP) {
-        const k = M.smoothstep((ON_SCREEN - r) / OVERLAP, 0, 1);
-        op = k;
-        swell = M.lerp(1.12, 1, k);
-      } else {
-        op = 1;
-      }
+    if (local < FADE) {
+      const k = M.smoothstep(local / FADE, 0, 1);
+      op = k;
+      swell = M.lerp(0.82, 1, k);
+    } else if (local > SLOT - FADE) {
+      const k = M.smoothstep((SLOT - local) / FADE, 0, 1);
+      op = k;
+      swell = M.lerp(1.12, 1, k);
     }
     op *= c.vis;
 
@@ -179,8 +189,8 @@ function IntroModel({
     }
     g.visible = true;
 
-    // Rotate startYaw → startYaw + sweep across the on-screen span (slow, ~180°/5.5s).
-    const spin = onScreen ? sweep * M.clamp(r / ON_SCREEN, 0, 1) : 0;
+    // Rotate startYaw → startYaw + sweep across the slot (slow, ~180° over SLOT seconds).
+    const spin = sweep * M.clamp(local / SLOT, 0, 1);
     g.rotation.set(tiltX, startYaw + spin, 0);
     g.scale.setScalar(data.baseScale * swell * M.lerp(0.6, 1, c.vis));
 
