@@ -29,9 +29,9 @@ type IntroCfg = {
 };
 
 const INTRO: IntroCfg[] = [
-  { url: '/models/intro-tray.glb', target: 4.2, startDeg: -90, sweepDeg: 180, tiltX: 20 },
-  { url: '/models/intro-deliver.glb', target: 5.5, startDeg: -180, sweepDeg: 180 },
-  { url: '/models/intro-heart.glb', target: 4.6, startDeg: -90, sweepDeg: 180 },
+  { url: '/models/intro-tray.glb', target: 3.7, startDeg: -90, sweepDeg: 180, tiltX: 10 },
+  { url: '/models/intro-deliver.glb', target: 4.5, startDeg: -180, sweepDeg: 180 },
+  { url: '/models/intro-heart.glb', target: 3.8, startDeg: -90, sweepDeg: 180 },
 ];
 
 INTRO.forEach((c) => useGLTF.preload(c.url, DRACO_PATH));
@@ -45,7 +45,7 @@ const Y_OFF = 0;
  *  ~180° sweep spans this whole window, so a larger value also means a slower turn. */
 const SLOT = 11;
 /** Scale-in / scale-out portion (seconds) at each end of a slot. */
-const GROW = 1.6;
+const GROW = 0.6;
 const CYCLE = SLOT * INTRO.length;
 
 /** How fast the whole cycle scales in on landing / shrinks away once you scroll in. */
