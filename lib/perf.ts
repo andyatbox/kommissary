@@ -10,6 +10,9 @@ export type QualityTier = 0 | 1 | 2; // 0 = low, 1 = medium, 2 = high
 
 export type Quality = {
   tier: QualityTier;
+  /** True on phones / small touchscreens: forces the lightest settings AND swaps the
+   *  WebGL gradient background for a CSS one, so only ONE WebGL context is ever live. */
+  mobile: boolean;
   /** [min, max] device pixel ratio; runtime monitoring moves within this. */
   dpr: [number, number];
   antialias: boolean;
@@ -26,7 +29,7 @@ export type Quality = {
 // Note: tiers only ever trade *fidelity* (resolution, shadow detail, smoothness).
 // They never remove content — every device shows the same models and words.
 
-const PRESETS: Record<QualityTier, Omit<Quality, 'tier'>> = {
+const PRESETS: Record<QualityTier, Omit<Quality, 'tier' | 'mobile'>> = {
   0: {
     // Never render below native (a sub-1 DPR upscales and looks soft/blocky), and
     // keep hardware MSAA on: smoothing edges costs far less than the extra pixels
@@ -81,6 +84,24 @@ function readRenderer(): string {
   }
 }
 
+/**
+ * Phones and small touchscreens. Their GPUs aren't named by the desktop regexes below
+ * (Adreno / Mali / Apple GPU), so without this they'd land at medium (tier 1) with soft
+ * shadows — far too heavy. They're also where a second WebGL context (the gradient
+ * background) most often exhausts the browser's context budget and crashes, so `mobile`
+ * additionally routes the background to a CSS gradient. A coarse pointer with no fine
+ * pointer is the reliable signal; a ≤820px screen is the belt-and-braces fallback.
+ */
+export function isMobile(): boolean {
+  if (typeof window === 'undefined') return false;
+  const coarseOnly =
+    window.matchMedia?.('(pointer: coarse)').matches &&
+    !window.matchMedia?.('(pointer: fine)').matches;
+  const touch = (navigator.maxTouchPoints ?? 0) > 0 || 'ontouchstart' in window;
+  const small = window.innerWidth <= 820;
+  return Boolean((coarseOnly && touch) || (touch && small));
+}
+
 function detectTier(): QualityTier {
   if (typeof window === 'undefined') return 1;
 
@@ -90,7 +111,14 @@ function detectTier(): QualityTier {
     return Number(forced) as QualityTier;
   }
 
+  // Phones always run the lightest tier regardless of core count — see isMobile().
+  if (isMobile()) return 0;
+
   const cores = navigator.hardwareConcurrency ?? 4;
+  // Chrome-family exposes RAM in GB (rounded down, capped at 8). ≤4GB can't hold this
+  // many GLBs plus shadow maps without paging, so drop such machines to the low tier.
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  if (typeof memory === 'number' && memory <= 4) return 0;
   const renderer = readRenderer().toLowerCase();
 
   // Software rasterisers can't carry this scene at all.
@@ -114,6 +142,18 @@ let cached: Quality | null = null;
 export function getQuality(): Quality {
   if (cached) return cached;
   const tier = detectTier();
-  cached = { tier, ...PRESETS[tier] };
+  const mobile = isMobile();
+  const preset = { ...PRESETS[tier] };
+  if (mobile) {
+    // On top of tier 0: keep DPR near native but no higher (phone panels are dense
+    // enough that even 1.25 native is plenty), halve the shadow map, throttle the
+    // shadow rebuild, and coarsen the text — every one of these is a per-frame GPU
+    // saving on exactly the hardware that was hard-crashing.
+    preset.dpr = [1, 1.25];
+    preset.shadowMapSize = 1024;
+    preset.shadowInterval = 2;
+    preset.curveSegments = 5;
+  }
+  cached = { tier, mobile, ...preset };
   return cached;
 }

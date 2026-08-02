@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Overlay from '@/components/Overlay';
+import CanvasErrorBoundary from '@/components/CanvasErrorBoundary';
 import { useUX, type HomeContent } from '@/lib/store';
 
 const Experience = dynamic(() => import('@/components/Experience'), { ssr: false });
@@ -23,7 +24,9 @@ export default function HomeClient({ content }: { content: HomeContent }) {
   // can't fight the custom touch-driven camera scroll in CameraRig.tsx.
   return (
     <main className="fixed inset-0 touch-none select-none overflow-hidden overscroll-none">
-      <Experience />
+      <CanvasErrorBoundary>
+        <Experience />
+      </CanvasErrorBoundary>
       <Overlay />
     </main>
   );

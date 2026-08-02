@@ -11,7 +11,17 @@ export type PillContent = {
   body?: PortableTextBlock[];
   buttons?: PillButton[];
 };
-export type HomeContent = { sentence: string; pills: PillContent[] };
+/** The five "Our Team" photos that float around the word "minority-run", keyed by their
+ *  position in the cluster. Each value is a ready-to-load image URL built from the Sanity
+ *  asset; a slot with no uploaded image is omitted and that plane simply isn't rendered. */
+export type TeamSlot =
+  | 'teamTopLeft'
+  | 'teamTopRight'
+  | 'teamBottomLeft'
+  | 'teamBottomCenter'
+  | 'teamBottomRight';
+export type TeamImages = Partial<Record<TeamSlot, string>>;
+export type HomeContent = { sentence: string; pills: PillContent[]; team?: TeamImages };
 
 export type FocusDot = {
   id: number;
@@ -31,7 +41,11 @@ export type FocusDot = {
 /** World placement of a word, used to hang 3D models off it in its own oriented frame. */
 export type WordAnchor = {
   word: string;
+  /** Centroid of the word's letters — models hang off this (their offsets are tuned to it). */
   position: THREE.Vector3;
+  /** True center of the word's bounding box. Sits dead-center even on words with uneven
+   *  glyph widths (the centroid drifts sideways there), so pills read as centered. */
+  center: THREE.Vector3;
   /** Word basis: X = reading direction (screen-right), Y = up, Z = toward viewer. */
   quaternion: THREE.Quaternion;
   /** Curve parameter of the word's center along the spline. */

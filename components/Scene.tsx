@@ -160,8 +160,11 @@ function Letters({ curveSegments }: { curveSegments: number }) {
     const mat = new THREE.Matrix4();
     const quat = new THREE.Quaternion();
 
-    // Collect per-word letter poses so each word still gets a single anchor.
-    const perWord = new Map<number, { pts: THREE.Vector3[]; u: number[]; q: THREE.Quaternion[] }>();
+    // Collect per-word letter poses (+ group indices) so each word gets a single anchor.
+    const perWord = new Map<
+      number,
+      { pts: THREE.Vector3[]; idx: number[]; u: number[]; q: THREE.Quaternion[] }
+    >();
 
     placed.forEach(({ i, center }) => {
       const u = M.clamp(center / len, 0, 1);
@@ -175,22 +178,39 @@ function Letters({ curveSegments }: { curveSegments: number }) {
       g.quaternion.copy(quat);
 
       const wi = tokens[i].word;
-      if (!perWord.has(wi)) perWord.set(wi, { pts: [], u: [], q: [] });
+      if (!perWord.has(wi)) perWord.set(wi, { pts: [], idx: [], u: [], q: [] });
       const rec = perWord.get(wi)!;
       rec.pts.push(point.clone());
+      rec.idx.push(i);
       rec.u.push(u);
       rec.q.push(quat.clone());
     });
 
-    // Word anchor: centroid of its letters, oriented off its middle letter.
+    // Word anchor, oriented off its middle letter, with two centers:
+    //  - position: centroid of the letters' curve points (models hang off this).
+    //  - center:   the word's true bounding-box center. The centroid is the width-weighted
+    //    average of letter centers, which drifts sideways on words with uneven glyph widths
+    //    (~0.7u to the right on "Kommissary"); the box center sits dead-center, so a pill
+    //    placed on it reads as centered over the word.
     const anchors: WordAnchor[] = [];
+    const wordBox = new THREE.Box3();
     perWord.forEach((rec, wi) => {
       if (wi < 0 || !rec.pts.length) return;
       const c = new THREE.Vector3();
       rec.pts.forEach((p) => c.add(p));
       c.multiplyScalar(1 / rec.pts.length);
+
+      wordBox.makeEmpty();
+      rec.idx.forEach((i) => {
+        const g = groups.current[i];
+        if (!g) return;
+        g.updateMatrixWorld(true);
+        wordBox.expandByObject(g);
+      });
+      const center = wordBox.isEmpty() ? c.clone() : wordBox.getCenter(new THREE.Vector3());
+
       const midIdx = Math.floor((rec.pts.length - 1) / 2);
-      anchors.push({ word: words[wi], position: c, quaternion: rec.q[midIdx], u: rec.u[midIdx] });
+      anchors.push({ word: words[wi], position: c, center, quaternion: rec.q[midIdx], u: rec.u[midIdx] });
     });
 
     // Match a pill's anchor word to an anchor — exact first, then punctuation-tolerant.
@@ -204,7 +224,7 @@ function Letters({ curveSegments }: { curveSegments: number }) {
         .filter((a): a is WordAnchor => a != null);
       if (!group.length) return [];
       const center = new THREE.Vector3();
-      group.forEach((a) => center.add(a.position));
+      group.forEach((a) => center.add(a.center));
       center.multiplyScalar(1 / group.length);
       const mid = group[Math.floor((group.length - 1) / 2)];
       const up = new THREE.Vector3(0, 1, 0).applyQuaternion(mid.quaternion);

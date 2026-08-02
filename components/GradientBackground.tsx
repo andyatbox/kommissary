@@ -1,8 +1,9 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { isMobile } from '@/lib/perf';
 
 /**
  * Site-wide animated background — an organic, slowly-morphing "lava lamp" gradient
@@ -105,9 +106,27 @@ function GradientPlane({ onReady }: { onReady: () => void }) {
 }
 
 export default function GradientBackground() {
+  // Which background to draw is a client-only decision (it depends on the device), so
+  // start 'pending' — server and first client paint render nothing but the <html> navy
+  // floor, avoiding both a hydration mismatch and a WebGL context we may not want.
+  const [mode, setMode] = useState<'pending' | 'webgl' | 'css'>('pending');
+  useEffect(() => setMode(isMobile() ? 'css' : 'webgl'), []);
+
   // Fade the canvas up once the first frame has drawn, so it eases out of the flat
   // #000666 (on <html>) instead of popping in.
   const [ready, setReady] = useState(false);
+
+  // Phones get a pure-CSS animated gradient: no WebGL context at all, so the only live
+  // context on the page is the 3D scene. Two contexts is what exhausts a mobile
+  // browser's budget and crashes compositing — this removes the second one entirely.
+  if (mode === 'css') {
+    return <div aria-hidden className="gradient-css-bg pointer-events-none fixed inset-0 -z-10" />;
+  }
+
+  if (mode === 'pending') {
+    return <div aria-hidden className="pointer-events-none fixed inset-0 -z-10" />;
+  }
+
   return (
     <div
       aria-hidden

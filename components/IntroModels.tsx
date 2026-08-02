@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -29,9 +29,8 @@ type IntroCfg = {
 };
 
 const INTRO: IntroCfg[] = [
-  { url: '/models/intro-tray.glb', target: 3.7, startDeg: -90, sweepDeg: 180, tiltX: 10 },
-  { url: '/models/intro-deliver.glb', target: 4.5, startDeg: -180, sweepDeg: 180 },
-  { url: '/models/intro-heart.glb', target: 3.8, startDeg: -90, sweepDeg: 180 },
+  { url: '/models/intro-tray.glb', target: 3.4, startDeg: -90, sweepDeg: 180, tiltX: 10 },
+  { url: '/models/intro-deliver.glb', target: 4.2, startDeg: -180, sweepDeg: 180 },
 ];
 
 INTRO.forEach((c) => useGLTF.preload(c.url, DRACO_PATH));
@@ -43,7 +42,7 @@ const Y_OFF = 0;
 
 /** Seconds each model is featured (scale in → rotate → scale out) before the next. The
  *  ~180° sweep spans this whole window, so a larger value also means a slower turn. */
-const SLOT = 11;
+const SLOT = 16;
 /** Scale-in / scale-out portion (seconds) at each end of a slot. */
 const GROW = 0.6;
 const CYCLE = SLOT * INTRO.length;
@@ -55,6 +54,21 @@ const VIS_OUT_RATE = 3.5;
 /** Shared, render-free cycle state advanced by the parent and read by the model. */
 type Clock = { t: number; vis: number };
 
+/** On phones (≤767px) the models are shrunk by 40% so they don't crowd the small logo. */
+const NARROW_SCALE = 0.6;
+
+function useNarrowScale() {
+  const [mul, setMul] = useState(1);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setMul(mq.matches ? NARROW_SCALE : 1);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return mul;
+}
+
 export default function IntroModels() {
   return <IntroCycle />;
 }
@@ -63,6 +77,7 @@ function IntroCycle() {
   const camera = useThree((s) => s.camera);
   const root = useRef<THREE.Group>(null!);
   const clock = useRef<Clock>({ t: 0, vis: 0 });
+  const scaleMul = useNarrowScale();
 
   // Only ONE model is mounted at a time (null = nothing, while scrolled in). Keeping a
   // single GLB resident — and unmounting the intro entirely once reading — is the whole
@@ -104,7 +119,7 @@ function IntroCycle() {
     <group ref={root}>
       {index !== null && (
         <Suspense fallback={null}>
-          <IntroModel key={index} cfg={INTRO[index]} index={index} clock={clock} />
+          <IntroModel key={index} cfg={INTRO[index]} index={index} clock={clock} scaleMul={scaleMul} />
         </Suspense>
       )}
     </group>
@@ -115,10 +130,12 @@ function IntroModel({
   cfg,
   index,
   clock,
+  scaleMul,
 }: {
   cfg: IntroCfg;
   index: number;
   clock: React.RefObject<Clock>;
+  scaleMul: number;
 }) {
   const { scene } = useGLTF(cfg.url, DRACO_PATH);
   const group = useRef<THREE.Group>(null!);
@@ -162,7 +179,7 @@ function IntroModel({
     if (local < GROW) env = M.smoothstep(local / GROW, 0, 1);
     else if (local > SLOT - GROW) env = M.smoothstep((SLOT - local) / GROW, 0, 1);
 
-    const s = data.baseScale * env * c.vis;
+    const s = data.baseScale * env * c.vis * scaleMul;
     if (s < 0.001) {
       g.visible = false;
       return;

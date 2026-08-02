@@ -60,18 +60,39 @@ export const pill = defineType({
   preview: { select: { title: 'label', subtitle: 'title' } },
 });
 
+/** Reusable definition for one of the five "Our Team" photos. */
+const teamPhoto = (name: string, title: string) =>
+  defineField({
+    name,
+    title,
+    type: 'image',
+    fieldset: 'team',
+    options: { hotspot: true },
+    description: 'Photo for this position in the on-screen cluster. Leave empty to hide this plane.',
+  });
+
 /** Singleton for the homepage 3D experience content. */
 export const homepage = defineType({
   name: 'homepage',
   title: 'Homepage',
   type: 'document',
+  fieldsets: [
+    {
+      name: 'team',
+      title: 'Our Team photos',
+      description:
+        'The five photos that float around the word “minority-run”. Each is labelled by its position in the on-screen cluster.',
+      options: { collapsible: true, collapsed: false, columns: 2 },
+    },
+  ],
   fields: [
     defineField({
       name: 'sentence',
       title: '3D sentence',
       type: 'text',
       rows: 3,
-      description: 'The full message rendered as the snaking 3D word-stream.',
+      description:
+        'This is the 3D sentence that the camera follows. Many of the words have 3D models, CTAs, and overlayed content attached directly to them. If removed, we\'ll lose all that. Consult Andy before editing.',
     }),
     defineField({
       name: 'pills',
@@ -79,6 +100,11 @@ export const homepage = defineType({
       type: 'array',
       of: [defineArrayMember({ type: 'pill' })],
     }),
+    teamPhoto('teamTopLeft', 'Top left'),
+    teamPhoto('teamTopRight', 'Top right'),
+    teamPhoto('teamBottomLeft', 'Bottom left'),
+    teamPhoto('teamBottomCenter', 'Bottom center'),
+    teamPhoto('teamBottomRight', 'Bottom right'),
   ],
   preview: { prepare: () => ({ title: 'Homepage' }) },
 });

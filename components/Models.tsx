@@ -1,10 +1,10 @@
 'use client';
 
-import { type RefObject, Suspense, useMemo, useRef, useState } from 'react';
+import { type RefObject, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
-import { useUX, view, type WordAnchor } from '@/lib/store';
+import { useUX, view, type TeamSlot, type WordAnchor } from '@/lib/store';
 
 const M = THREE.MathUtils;
 
@@ -20,7 +20,12 @@ const DRACO_PATH = '/draco/';
 type ModelSpec = {
   /** 'gltf' (default) auto-fits a GLB; 'image' shows a JPG/PNG on a plane (`target` = width). */
   kind?: 'gltf' | 'image';
-  url: string;
+  /** Bundled asset path (GLBs, and image planes that ship with the site). Team photos omit
+   *  this — they're sourced from Sanity via `contentKey`; a slot with no uploaded image is
+   *  simply not rendered. Guaranteed present for every model that actually mounts. */
+  url?: string;
+  /** For team photos: the Sanity homepage image slot that supplies this plane's image. */
+  contentKey?: TeamSlot;
   anchor: string;
   offset: [number, number, number];
   target: number;
@@ -36,12 +41,12 @@ type ZoneDef = { id: string; triggers: string[]; models: ModelSpec[] };
 const ZONES: ZoneDef[] = [
   {
     id: 'kommissary',
-    triggers: ['Kommissary—a'],
+    triggers: ['Kommissary'],
     models: [
       // Behind and above the word, toward the left.
       {
         url: '/models/fish-market.glb',
-        anchor: 'Kommissary—a',
+        anchor: 'Kommissary',
         offset: [-5.2, -2, -4],
         target: 7,
         rotationY: 1,
@@ -52,7 +57,7 @@ const ZONES: ZoneDef[] = [
       // so spin it ~180° plus a bit to show a three-quarter front view.
       {
         url: '/models/korilla.glb',
-        anchor: 'Kommissary—a',
+        anchor: 'Kommissary',
         offset: [4, 2.6, -3],
         target: 7.5,
         rotationX: 0.3,
@@ -79,16 +84,17 @@ const ZONES: ZoneDef[] = [
     ],
   },
   {
-    // Team photos as textured planes scattered around the word. team-1 (the owners)
-    // sits bottom-centre — largest and closest to camera — where team-5 used to be.
+    // Team photos as textured planes scattered around the word — each sourced from a
+    // Sanity homepage image slot (see `contentKey`). The bottom-centre plane is the
+    // largest and closest to camera.
     id: 'minority-run',
     triggers: ['minority-run'],
     models: [
-      { kind: 'image', url: '/images/team-1.jpg', anchor: 'minority-run', offset: [0.7, -2, 4], target: 5.0, rotationY: -0.5, hoverAmp: 0.32, hoverFreq: 0.9 },
-      { kind: 'image', url: '/images/team-2.jpg', anchor: 'minority-run', offset: [-5.6, 2, -1.5], target: 4, rotationY: -0.2, rotationZ: -0.13, hoverAmp: 0.34, hoverFreq: 1.05 },
-      { kind: 'image', url: '/images/team-3.jpg', anchor: 'minority-run', offset: [5.3, 2, -3], target: 3.2, rotationY: -1.8, rotationZ: 0.1, hoverAmp: 0.3, hoverFreq: 0.88 },
-      { kind: 'image', url: '/images/team-4.jpg', anchor: 'minority-run', offset: [-4.9, -2, 3.5], target: 3.2, rotationY: 0.1, rotationZ: 0.15, hoverAmp: 0.33, hoverFreq: 1.12 },
-      { kind: 'image', url: '/images/team-6.jpg', anchor: 'minority-run', offset: [5.0, -2.0, 1.9], target: 3.5, rotationY: -1.5, rotationZ: -0.12, hoverAmp: 0.34, hoverFreq: 1.15 },
+      { kind: 'image', contentKey: 'teamBottomCenter', anchor: 'minority-run', offset: [0.7, -2, 4], target: 5.0, rotationY: -0.5, hoverAmp: 0.32, hoverFreq: 0.9 },
+      { kind: 'image', contentKey: 'teamTopLeft', anchor: 'minority-run', offset: [-5.6, 2, -1.5], target: 4, rotationY: -0.2, rotationZ: -0.13, hoverAmp: 0.34, hoverFreq: 1.05 },
+      { kind: 'image', contentKey: 'teamTopRight', anchor: 'minority-run', offset: [5.3, 2, -3], target: 3.2, rotationY: -1.8, rotationZ: 0.1, hoverAmp: 0.3, hoverFreq: 0.88 },
+      { kind: 'image', contentKey: 'teamBottomLeft', anchor: 'minority-run', offset: [-4.9, -2, 3.5], target: 3.2, rotationY: 0.1, rotationZ: 0.15, hoverAmp: 0.33, hoverFreq: 1.12 },
+      { kind: 'image', contentKey: 'teamBottomRight', anchor: 'minority-run', offset: [5.0, -2.0, 1.9], target: 3.5, rotationY: -1.5, rotationZ: -0.12, hoverAmp: 0.34, hoverFreq: 1.15 },
     ],
   },
   {
@@ -270,6 +276,22 @@ type ZoneRange = { def: ZoneDef; uStart: number; uEnd: number; centerU: number }
 
 export default function Models() {
   const anchors = useUX((s) => s.anchors);
+  const team = useUX((s) => s.content?.team);
+
+  // Team photos are Sanity-driven: give each team plane the uploaded image for its slot,
+  // and drop any slot with no image so nothing points at a missing asset. Non-team models
+  // pass through untouched. Stable across renders (content is hydrated once) so zones
+  // never needlessly remount.
+  const zones = useMemo<ZoneDef[]>(() => {
+    return ZONES.map((z) => ({
+      ...z,
+      models: z.models.flatMap((m) => {
+        if (!m.contentKey) return [m];
+        const url = team?.[m.contentKey];
+        return url ? [{ ...m, url }] : [];
+      }),
+    }));
+  }, [team]);
 
   // Match a zone trigger / model anchor to a sentence word, tolerating trailing
   // punctuation on the token — so an anchor of 'meals' still resolves when the
@@ -288,7 +310,7 @@ export default function Models() {
 
   const ranges = useMemo<ZoneRange[]>(() => {
     if (!anchors.length) return [];
-    return ZONES.flatMap((def) => {
+    return zones.flatMap((def) => {
       const us = def.triggers
         .map((w) => byWord.get(w)?.u)
         .filter((u): u is number => u != null);
@@ -297,7 +319,7 @@ export default function Models() {
       const uEnd = Math.max(...us) + MARGIN_U;
       return [{ def, uStart, uEnd, centerU: (uStart + uEnd) / 2 }];
     });
-  }, [anchors, byWord]);
+  }, [anchors, byWord, zones]);
 
   // Zones currently in the tree (mounted early, revealed later) and which are revealing.
   const [mounted, setMounted] = useState<string[]>([]);
@@ -316,11 +338,10 @@ export default function Models() {
     for (const r of ranges) {
       if (preloadAll || Math.abs(u - r.centerU) < LOOKAHEAD_U) {
         for (const m of r.def.models) {
-          if (!preloaded.current.has(m.url)) {
-            preloaded.current.add(m.url);
-            if (m.kind === 'image') useTexture.preload(m.url);
-            else useGLTF.preload(m.url, DRACO_PATH);
-          }
+          if (!m.url || preloaded.current.has(m.url)) continue;
+          preloaded.current.add(m.url);
+          if (m.kind === 'image') useTexture.preload(m.url);
+          else useGLTF.preload(m.url, DRACO_PATH);
         }
       }
     }
@@ -498,7 +519,7 @@ function useReveal(
 type ModelProps = { spec: ModelSpec; anchor: WordAnchor; active: boolean; delay: number };
 
 function GltfModel({ spec, anchor, active, delay }: ModelProps) {
-  const { scene } = useGLTF(spec.url, DRACO_PATH);
+  const { scene } = useGLTF(spec.url!, DRACO_PATH);
   const group = useRef<THREE.Group>(null!);
 
   // Per-instance clone: geometry is shared (cheap), materials are cloned so opacity
@@ -534,6 +555,18 @@ function GltfModel({ spec, anchor, active, delay }: ModelProps) {
     return { object, mats, meshes, baseScale, worldPos, phase: Math.random() * Math.PI * 2 };
   }, [scene, spec, anchor]);
 
+  // Free the per-instance cloned materials when this zone unmounts. Geometry and
+  // textures are shared with the GLTF cache (cloned by reference), so they're left
+  // alone; only the clones we made here are ours to dispose. Without this, every
+  // scroll past a zone leaks a material program on the GPU — the slow buildup that
+  // eventually exhausts memory on weak devices.
+  useEffect(
+    () => () => {
+      for (const rec of data.mats) rec.mat.dispose();
+    },
+    [data]
+  );
+
   useReveal(group, data, spec, active, delay);
   return (
     <group ref={group}>
@@ -543,7 +576,7 @@ function GltfModel({ spec, anchor, active, delay }: ModelProps) {
 }
 
 function ImageModel({ spec, anchor, active, delay }: ModelProps) {
-  const texture = useTexture(spec.url) as THREE.Texture;
+  const texture = useTexture(spec.url!) as THREE.Texture;
   const group = useRef<THREE.Group>(null!);
 
   // A photo on a double-sided plane sized to its aspect ratio (target = width). It
@@ -578,6 +611,16 @@ function ImageModel({ spec, anchor, active, delay }: ModelProps) {
       phase: Math.random() * Math.PI * 2,
     };
   }, [texture, spec, anchor]);
+
+  // The plane geometry and material are built per instance here (the texture comes from
+  // the shared useTexture cache), so dispose those two on unmount to avoid leaking them.
+  useEffect(
+    () => () => {
+      (data.object as THREE.Mesh).geometry.dispose();
+      for (const rec of data.mats) rec.mat.dispose();
+    },
+    [data]
+  );
 
   useReveal(group, data, spec, active, delay);
   return (
