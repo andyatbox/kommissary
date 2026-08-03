@@ -8,6 +8,10 @@ import { blockContent, link } from './blockContent';
 import { bodyCopy, videoEmbed, imageSlider, gridCopy, htmlEmbed } from './sections';
 
 export const schemaTypes = [
+  // Shared rich text — must come before any type that references it (e.g. `pill`'s body
+  // block below uses the named `link` annotation), since types are resolved in list order.
+  link,
+  blockContent,
   // Documents
   siteSettings,
   homepage,
@@ -18,9 +22,7 @@ export const schemaTypes = [
   // Objects
   pill,
   ctaButton,
-  // Page-builder sections + shared rich text
-  link,
-  blockContent,
+  // Page-builder sections
   bodyCopy,
   videoEmbed,
   imageSlider,
