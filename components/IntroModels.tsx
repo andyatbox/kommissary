@@ -37,8 +37,9 @@ INTRO.forEach((c) => useGLTF.preload(c.url, DRACO_PATH));
 
 /** Distance in front of the camera the cycle sits — clear of the fog (near = 22). */
 const DIST = 13;
-/** Vertical nudge in the camera plane; 0 = perfectly centered behind the logo. */
-const Y_OFF = 0;
+/** Vertical nudge in the camera plane; 0 = perfectly centered behind the logo. Lifted a
+ *  touch so the models sit slightly higher, tucked further up behind the arched logo. */
+const Y_OFF = 0.6;
 
 /** Seconds each model is featured (scale in → rotate → scale out) before the next. The
  *  ~180° sweep spans this whole window, so a larger value also means a slower turn. */

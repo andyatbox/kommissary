@@ -46,7 +46,28 @@ export const pill = defineType({
       name: 'body',
       title: 'Overlay body',
       type: 'array',
-      of: [defineArrayMember({ type: 'block' })],
+      // A bare `{ type: 'block' }` falls back to Sanity's default annotations, whose link
+      // type is re-resolved on every keystroke — which closes the link-edit popover as you
+      // type the URL. Reference the named `link` type instead (same fix as blockContent).
+      // Marks/styles are limited to what the pill overlay (Modal.tsx) actually renders:
+      // paragraphs, lists, strong/em, and links.
+      of: [
+        defineArrayMember({
+          type: 'block',
+          styles: [{ title: 'Normal', value: 'normal' }],
+          lists: [
+            { title: 'Bullet', value: 'bullet' },
+            { title: 'Numbered', value: 'number' },
+          ],
+          marks: {
+            decorators: [
+              { title: 'Strong', value: 'strong' },
+              { title: 'Emphasis', value: 'em' },
+            ],
+            annotations: [defineArrayMember({ type: 'link' })],
+          },
+        }),
+      ],
       description: 'Body copy shown under the title.',
     }),
     defineField({

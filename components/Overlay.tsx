@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useUX } from '@/lib/store';
 import Modal from './Modal';
 import HomeControls from './HomeControls';
+import HomeWeekly from './HomeWeekly';
+import type { TeaserPost } from './weekly/WeeklyGrid';
 
-export default function Overlay() {
+export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }) {
   const started = useUX((s) => s.started);
   const overviewActive = useUX((s) => s.overviewActive);
 
@@ -22,9 +24,10 @@ export default function Overlay() {
 
   return (
     <>
-      {/* Splash logo: center-contained, slides off to the left on first scroll. */}
+      {/* Splash logo: center-contained, slides off to the left on first scroll. The
+          scroll hint is nested directly under the logo, tucked up into the arch. */}
       <div
-        className={`pointer-events-none fixed inset-0 z-20 flex items-center justify-center p-8 transition-all duration-[900ms] ease-[cubic-bezier(0.7,0,0.2,1)] ${
+        className={`pointer-events-none fixed inset-0 z-20 flex flex-col items-center justify-center p-8 transition-all duration-[900ms] ease-[cubic-bezier(0.7,0,0.2,1)] ${
           started
             ? '-translate-x-[130vw] opacity-0'
             : 'translate-x-0 opacity-100'
@@ -36,6 +39,24 @@ export default function Overlay() {
           alt="Kommissary"
           className="h-auto w-[min(72vw,640px)] max-w-full object-contain"
         />
+        <div className="-mt-6 text-center sm:-mt-8">
+          <div className="font-spirit text-base font-medium tracking-normal text-[#ff6666]">
+            Scroll to Explore
+          </div>
+          <svg
+            className="mx-auto mt-2 h-8 w-8 animate-bounce text-[#ff6666]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 4v15" />
+            <path d="M6 13l6 6 6-6" />
+          </svg>
+        </div>
       </div>
 
       {/* End screen: once the camera has pulled out and all models are shown, bring the
@@ -56,8 +77,6 @@ export default function Overlay() {
           className="h-auto w-[min(72vw,640px)] max-w-full object-contain"
         />
         <h2 className="font-spirit max-w-2xl text-center text-xl font-medium leading-snug text-[#ff6666] min-[900px]:-mt-6 sm:text-2xl">
-          This is only the beginning.
-          <br />
           Use the menu to explore,
           <br />
           or let&rsquo;s{' '}
@@ -67,35 +86,12 @@ export default function Overlay() {
           >
             connect
           </a>
-          .
         </h2>
       </div>
 
       <Modal />
       <HomeControls />
-
-      <div
-        className={`pointer-events-none fixed bottom-10 left-1/2 z-10 -translate-x-1/2 text-center transition-opacity duration-700 ${
-          started ? 'opacity-0' : 'opacity-100'
-        }`}
-      >
-        <div className="font-spirit text-base font-medium tracking-normal text-[#ff6666]">
-          Scroll to Explore
-        </div>
-        <svg
-          className="mx-auto mt-3 h-8 w-8 animate-bounce text-[#ff6666]"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M12 4v15" />
-          <path d="M6 13l6 6 6-6" />
-        </svg>
-      </div>
+      <HomeWeekly posts={latestWeekly} visible={!started || endReady} />
     </>
   );
 }
