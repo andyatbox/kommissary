@@ -13,8 +13,9 @@ export const SECTIONS_PROJECTION = `sections[]{
   _type == "imageSlider" => {
     "images": images[]{ asset, hotspot, crop, alt, "lqip": asset->metadata.lqip }
   },
-  _type == "gridCopy" => { columns, column1, column2, column3 },
-  _type == "htmlEmbed" => { code }
+  _type == "gridCopy" => { columns, column1, column2, column3, topDivider, bottomDivider },
+  _type == "htmlEmbed" => { code },
+  _type == "contactForm" => { heading, intro }
 }`;
 
 /** Vimeo has no thumbnail-by-URL convention (unlike YouTube), so fetch its poster via

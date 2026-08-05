@@ -20,11 +20,15 @@ export default function GridCopy({
   column1,
   column2,
   column3,
+  topDivider,
+  bottomDivider,
 }: {
   columns?: string;
   column1?: PortableTextBlock[];
   column2?: PortableTextBlock[];
   column3?: PortableTextBlock[];
+  topDivider?: boolean;
+  bottomDivider?: boolean;
 }) {
   const three = columns === '3';
   const cols: (PortableTextBlock[] | undefined)[] = three
@@ -34,8 +38,17 @@ export default function GridCopy({
   // Centre only a two-column layout, and only when one of the two holds an image.
   const centre = !three && cols.some(hasImageBlock);
 
+  // Optional red rules. The border sits outside the section's X padding, so it spans the
+  // full browser width; the margin opens up space beyond it, away from the content.
+  const dividers = [
+    topDivider ? 'border-t-[3px] border-[#ff6666] mt-24 pt-12 sm:mt-32 sm:pt-16' : '',
+    bottomDivider ? 'border-b-[3px] border-[#ff6666] mb-24 pb-12 sm:mb-32 sm:pb-16' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <section className="w-full px-6 sm:px-10 lg:px-24 xl:px-32">
+    <section className={`w-full px-6 sm:px-10 lg:px-24 xl:px-32 ${dividers}`}>
       <div
         className={`mx-auto grid grid-cols-1 gap-10 px-0 md:gap-12 lg:px-8 ${
           three ? 'md:grid-cols-3' : 'md:grid-cols-2'

@@ -78,6 +78,22 @@ export const gridCopy = defineType({
   title: 'Grid Copy',
   type: 'object',
   fields: [
+    // Optional red rules above/below the section, for a hard visual break between
+    // sections. Kept first so they read as section-level options, before the content.
+    defineField({
+      name: 'topDivider',
+      title: 'Top divider',
+      type: 'boolean',
+      initialValue: false,
+      description: 'Adds a red rule across the top of this section, with space above it.',
+    }),
+    defineField({
+      name: 'bottomDivider',
+      title: 'Bottom divider',
+      type: 'boolean',
+      initialValue: false,
+      description: 'Adds a red rule across the bottom of this section, with space below it.',
+    }),
     defineField({
       name: 'columns',
       title: 'Columns',
@@ -136,3 +152,36 @@ function firstLine(content?: { _type?: string; children?: { text?: string }[] }[
   const block = content?.find((b) => b._type === 'block');
   return block?.children?.map((c) => c.text).join('') ?? 'Empty';
 }
+
+/**
+ * The contact form. Renders our own Tailwind-styled form (not a Google iframe) that
+ * posts through /api/contact into the "Contact Kommissary" Google Form, so responses
+ * still land in the client's existing spreadsheet + notification flow.
+ *
+ * The fields themselves live in code, not here — they have to mirror the Google Form's
+ * questions exactly, so they aren't editor-configurable. Only the surrounding copy is.
+ */
+export const contactForm = defineType({
+  name: 'contactForm',
+  title: 'Contact Form',
+  type: 'object',
+  fields: [
+    defineField({
+      name: 'heading',
+      title: 'Heading',
+      type: 'string',
+      description: 'Optional heading shown above the form, e.g. "Send us a message".',
+    }),
+    defineField({
+      name: 'intro',
+      title: 'Intro text',
+      type: 'text',
+      rows: 3,
+      description: 'Optional short paragraph between the heading and the first field.',
+    }),
+  ],
+  preview: {
+    select: { heading: 'heading' },
+    prepare: ({ heading }) => ({ title: 'Contact Form', subtitle: heading || 'No heading' }),
+  },
+});

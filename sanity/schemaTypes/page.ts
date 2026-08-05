@@ -82,6 +82,7 @@ export const page = defineType({
         defineArrayMember({ type: 'imageSlider' }),
         defineArrayMember({ type: 'gridCopy' }),
         defineArrayMember({ type: 'htmlEmbed' }),
+        defineArrayMember({ type: 'contactForm' }),
       ],
     }),
   ],

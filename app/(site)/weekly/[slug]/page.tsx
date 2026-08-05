@@ -113,7 +113,12 @@ export default async function PostPage({ params }: { params: { slug: string } })
       {sections.length ? (
         <div className="mt-12 space-y-16 md:mt-16 md:space-y-24">
           {sections.map((section) => (
-            <Reveal key={section._key}>
+            // Body Copy's cream card blends against whatever's behind it (exclusion);
+            // that only takes effect one level up from the card itself, on this wrapper.
+            <Reveal
+              key={section._key}
+              className={section._type === 'bodyCopy' ? 'mix-blend-exclusion' : undefined}
+            >
               <SectionRenderer section={section} />
             </Reveal>
           ))}

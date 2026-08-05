@@ -4,13 +4,14 @@ import { page } from './page';
 import { post } from './post';
 import { moment } from './moment';
 import { ourStoryPage } from './ourStoryPage';
-import { blockContent, link } from './blockContent';
-import { bodyCopy, videoEmbed, imageSlider, gridCopy, htmlEmbed } from './sections';
+import { blockContent, link, anchor } from './blockContent';
+import { bodyCopy, videoEmbed, imageSlider, gridCopy, htmlEmbed, contactForm } from './sections';
 
 export const schemaTypes = [
   // Shared rich text — must come before any type that references it (e.g. `pill`'s body
   // block below uses the named `link` annotation), since types are resolved in list order.
   link,
+  anchor,
   blockContent,
   // Documents
   siteSettings,
@@ -28,4 +29,5 @@ export const schemaTypes = [
   imageSlider,
   gridCopy,
   htmlEmbed,
+  contactForm,
 ];

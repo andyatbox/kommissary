@@ -77,6 +77,17 @@ function makeComponents(tone: Tone): PortableTextComponents {
       // Alignment is applied at the block level (see isCentered); the mark itself is a
       // no-op wrapper so it doesn't add an inline span or warn.
       center: ({ children }) => <>{children}</>,
+      // Jump target. Invisible by design — it only names a spot on the page. scroll-mt
+      // matches the fixed header's height, so landing on it doesn't hide it behind the
+      // nav (the same clearance the page templates use for their top padding).
+      anchor: ({ children, value }) => (
+        <span
+          id={(value as { id?: string })?.id}
+          className="scroll-mt-[120px] md:scroll-mt-[168px]"
+        >
+          {children}
+        </span>
+      ),
       // Hyperlinks stay coral in both tones (the one exception to "all black").
       link: ({ children, value }) => {
         const href = (value as { href?: string })?.href ?? '#';
