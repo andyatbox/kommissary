@@ -114,10 +114,14 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
           Holds the scroll-progress fill (behind) and the certifications image (right edge
           matching the nav padding, so it sits under the Connect chevron). */}
       <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[25px] overflow-hidden">
-        <div
-          id="scroll-progress"
-          className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-0 bg-[#ff6666]"
-        />
+        {/* The homepage shows its scroll progress at the BOTTOM instead (HomeProgress),
+            where it becomes the sentence filling in — so the top rule is omitted there. */}
+        {pathname !== '/' && (
+          <div
+            id="scroll-progress"
+            className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-0 bg-[#ff6666]"
+          />
+        )}
         <a
           href="/certification"
           aria-label="Certification & compliance"

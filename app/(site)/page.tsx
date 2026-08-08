@@ -15,6 +15,7 @@ export const revalidate = 60;
 const PAGE_QUERY = `{
   "home": *[_type == "homepage"][0]{
     sentence,
+    typedLines,
     "pills": pills[]{
       label,
       words,
@@ -81,6 +82,10 @@ export default async function Page() {
         sentence: data.home.sentence,
         pills: data.home.pills ?? [],
         team: buildTeam(data.home),
+        // Fall back to the bundled lines until an editor sets their own.
+        typedLines: data.home.typedLines?.length
+          ? data.home.typedLines
+          : DEFAULT_CONTENT.typedLines,
       };
     }
     latestWeekly = buildTeasers(data?.latestWeekly);

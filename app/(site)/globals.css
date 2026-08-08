@@ -68,6 +68,27 @@ body {
   touch-action: none;
 }
 
+/* Typewriter caret (TypedLines on the homepage landing). steps(1) so it snaps on/off
+   like a real cursor rather than fading. */
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.caret-blink {
+  animation: caret-blink 1s steps(1, end) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .caret-blink {
+    animation: none;
+  }
+}
+
 /* Mobile fallback for the WebGL gradient (GradientBackground): a lava-lamp feel built
    from layered radial gradients between navy (#000666) and purple (#4b0043). The drift
    is a slow opacity crossfade between two pseudo-layers, which the compositor animates

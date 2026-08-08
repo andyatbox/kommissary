@@ -21,7 +21,13 @@ export type TeamSlot =
   | 'teamBottomCenter'
   | 'teamBottomRight';
 export type TeamImages = Partial<Record<TeamSlot, string>>;
-export type HomeContent = { sentence: string; pills: PillContent[]; team?: TeamImages };
+export type HomeContent = {
+  sentence: string;
+  pills: PillContent[];
+  team?: TeamImages;
+  /** Landing tagline sentences, typed out and cycled above the arched logo. */
+  typedLines?: string[];
+};
 
 export type FocusDot = {
   id: number;

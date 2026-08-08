@@ -4,12 +4,28 @@ import { useEffect, useState } from 'react';
 import { useUX } from '@/lib/store';
 import Modal from './Modal';
 import HomeControls from './HomeControls';
+import HomeProgress from './HomeProgress';
 import HomeWeekly from './HomeWeekly';
+import TypedLines from './TypedLines';
 import type { TeaserPost } from './weekly/WeeklyGrid';
+
+/** Shared style for the inline links in the end-state call to action. */
+const END_LINK =
+  'pointer-events-auto underline decoration-2 underline-offset-4 transition-colors hover:text-[#ffcf33]';
+
+/**
+ * Bottom edge of the band that sits between the nav links and the arched logo — used by
+ * both the landing tagline and the end-state call to action. The logo is centred and
+ * sized `min(72vw,640px)` wide, and its SVG is 0.2523 as tall as it is wide, so its top
+ * edge is half that height above the midline; the extra 20px keeps copy off the arch's
+ * peak, which is its highest point and sits dead centre.
+ */
+const BAND_BOTTOM = 'calc(50% + min(72vw, 640px) * 0.126155 + 20px)';
 
 export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }) {
   const started = useUX((s) => s.started);
   const overviewActive = useUX((s) => s.overviewActive);
+  const typedLines = useUX((s) => s.content?.typedLines) ?? [];
 
   // Wait until the models have finished cascading in before revealing the end screen.
   const [endReady, setEndReady] = useState(false);
@@ -39,7 +55,7 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
           alt="Kommissary"
           className="h-auto w-[min(72vw,640px)] max-w-full object-contain"
         />
-        <div className="-mt-6 text-center sm:-mt-8">
+        <div className="-mt-12 text-center sm:-mt-16">
           <div className="font-spirit text-base font-medium tracking-normal text-[#ff6666]">
             Scroll to Explore
           </div>
@@ -76,21 +92,38 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
           alt="Kommissary"
           className="h-auto w-[min(72vw,640px)] max-w-full object-contain"
         />
-        <h2 className="font-spirit max-w-2xl text-center text-xl font-medium leading-snug text-[#ff6666] min-[900px]:-mt-6 sm:text-2xl">
-          Use the menu to explore,
-          <br />
-          or let&rsquo;s{' '}
-          <a
-            href="/contact"
-            className="pointer-events-auto underline decoration-2 underline-offset-4 transition-colors hover:text-[#ffcf33]"
-          >
-            connect
-          </a>
-        </h2>
+      </div>
+
+      {/* Landing tagline, in the band between the nav links and the arched logo — the
+          same slot the end-state call to action uses (the two never show at once). */}
+      <div
+        className={`pointer-events-none fixed inset-x-0 top-[100px] z-40 flex items-center justify-center px-4 transition-opacity duration-700 ease-out md:top-[112px] ${
+          started ? 'opacity-0' : 'opacity-100'
+        }`}
+        style={{ bottom: BAND_BOTTOM }}
+      >
+        <TypedLines lines={typedLines} className="max-w-2xl text-lg sm:text-xl" />
+      </div>
+
+      {/* End-state call to action, in the band between the header and the arched logo. */}
+      <div
+        className={`pointer-events-none fixed inset-x-0 top-[100px] z-40 flex items-center justify-center px-4 transition-[opacity,transform] duration-700 ease-out md:top-[112px] ${
+          endReady ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+        }`}
+        style={{ bottom: BAND_BOTTOM }}
+      >
+        <h3 className="font-spirit max-w-xl text-center text-lg font-medium leading-snug text-[#ff6666] sm:text-xl">
+          Hear <a href="/our-story" className={END_LINK}>our story</a>, see{' '}
+          <a href="/our-impact" className={END_LINK}>our impact</a>, learn about{' '}
+          <a href="/bespoke-meals" className={END_LINK}>bespoke meals</a> and{' '}
+          <a href="/logistics" className={END_LINK}>logistics</a>, or{' '}
+          <a href="/contact" className={END_LINK}>get in-touch</a>!
+        </h3>
       </div>
 
       <Modal />
       <HomeControls />
+      <HomeProgress />
       <HomeWeekly posts={latestWeekly} visible={!started || endReady} />
     </>
   );

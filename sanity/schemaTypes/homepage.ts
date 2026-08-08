@@ -116,6 +116,14 @@ export const homepage = defineType({
         'This is the 3D sentence that the camera follows. Many of the words have 3D models, CTAs, and overlayed content attached directly to them. If removed, we\'ll lose all that. Consult Andy before editing.',
     }),
     defineField({
+      name: 'typedLines',
+      title: 'Landing tagline lines',
+      type: 'array',
+      of: [defineArrayMember({ type: 'string' })],
+      description:
+        'Typed out one at a time above the logo on the landing screen, then rewound and replaced by the next, looping. Drag to reorder.',
+    }),
+    defineField({
       name: 'pills',
       title: 'Pill buttons',
       type: 'array',

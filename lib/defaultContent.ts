@@ -7,6 +7,7 @@ import type { HomeContent } from './store';
 export const DEFAULT_CONTENT: HomeContent = {
   sentence:
     "We're Kommissary – a progressive, minority-run purveyor of chef-crafted meals and a logistics leader serving the communities of New York City.",
+  typedLines: ['Food is a right.', 'Farm-fresh meals made right.', 'Right in New York City.'],
   pills: [
     { label: 'Our Story', words: ['Kommissary'], title: 'Our Story' },
     { label: 'Food Is A Right', words: ['progressive,'], title: 'Food Is A Right' },
