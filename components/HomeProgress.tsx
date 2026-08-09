@@ -15,7 +15,7 @@ import { useUX, view } from '@/lib/store';
  * Progress is read from `view` in a rAF loop and written straight to the DOM: it changes
  * every frame, and re-rendering React at 60fps to move a line would be wasteful.
  */
-export default function HomeProgress() {
+export default function HomeProgress({ visible }: { visible: boolean }) {
   const sentence = useUX((s) => s.content?.sentence ?? '');
 
   const bar = useRef<HTMLDivElement>(null);
@@ -65,12 +65,14 @@ export default function HomeProgress() {
       // breakpoint (they shift to bottom-8 from `sm`) and the same 40px height — so
       // items-center lands this on their vertical centre line. The side padding clears
       // the controls (which end 124px in once they move to left-8) and the Kai launcher.
-      className="pointer-events-none fixed inset-x-0 bottom-6 z-30 flex h-10 items-center justify-center px-32 sm:bottom-8 sm:px-36"
+      className={`pointer-events-none fixed inset-x-0 bottom-6 z-30 flex h-10 items-center justify-center px-32 transition-opacity duration-500 ease-out sm:bottom-8 sm:px-36 ${
+        visible ? 'opacity-100' : 'opacity-0'
+      }`}
     >
       <div ref={track} className="relative w-full">
         {/* Under 992px: the plain rule. */}
-        <div className="h-px w-full bg-white/15 min-[992px]:hidden">
-          <div ref={bar} className="h-full w-full origin-left scale-x-0 bg-[#ff6666]" />
+        <div className="h-px w-full bg-[#ff6666]/40 min-[992px]:hidden">
+          <div ref={bar} className="h-full w-full origin-left scale-x-0 bg-[#ffcf33]" />
         </div>
 
         {/* 992px and up: the sentence, filling in as you scroll. */}
@@ -87,13 +89,13 @@ export default function HomeProgress() {
             style={{ transform: 'translate(-50%, -50%)' }}
             className="font-spirit absolute left-1/2 top-1/2 w-max whitespace-nowrap text-[13px] font-medium leading-none tracking-tight"
           >
-            <span className="block text-white/25">
+            <span className="block text-[#ff6666]">
               {sentence}
             </span>
             <span
               ref={fill}
               style={{ clipPath: 'inset(0 100% 0 0)' }}
-              className="absolute inset-0 block text-[#ff6666]"
+              className="absolute inset-0 block text-[#ffcf33]"
             >
               {sentence}
             </span>

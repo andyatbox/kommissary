@@ -38,6 +38,20 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
     return () => clearTimeout(t);
   }, [overviewActive]);
 
+  // The Weekly strip and the progress meter share the bottom slot: the strip holds it on
+  // the landing and again at the end, the meter only while you're travelling between the
+  // two. The meter waits out the strip's fade before appearing, so they never cross over.
+  const showWeekly = !started || endReady;
+  const [showProgress, setShowProgress] = useState(false);
+  useEffect(() => {
+    if (showWeekly) {
+      setShowProgress(false);
+      return;
+    }
+    const t = setTimeout(() => setShowProgress(true), 750);
+    return () => clearTimeout(t);
+  }, [showWeekly]);
+
   return (
     <>
       {/* Splash logo: center-contained, slides off to the left on first scroll. The
@@ -123,8 +137,8 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
 
       <Modal />
       <HomeControls />
-      <HomeProgress />
-      <HomeWeekly posts={latestWeekly} visible={!started || endReady} />
+      <HomeProgress visible={showProgress} />
+      <HomeWeekly posts={latestWeekly} visible={showWeekly} />
     </>
   );
 }

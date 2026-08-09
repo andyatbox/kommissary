@@ -43,9 +43,10 @@ export default function HomeWeekly({ posts, visible }: { posts: TeaserPost[]; vi
     <div
       aria-hidden={!show}
       className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4 transition-[bottom] duration-500 ease-out"
-      // Sits above the scroll-progress meter (HomeProgress, pinned at the bottom centre);
-      // `lifted` raises it further still when it would otherwise reach the corner CTAs.
-      style={{ bottom: lifted ? 156 : 88 }}
+      // Sits right at the bottom — it and the progress meter share this slot and are
+      // never shown at the same time. `lifted` raises it when it would otherwise reach
+      // the corner CTAs.
+      style={{ bottom: lifted ? 104 : 24 }}
     >
       <div
         ref={contentRef}
