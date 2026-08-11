@@ -9,10 +9,9 @@
  * treatments a card should use.
  */
 
-const GRAPH = 'https://graph.instagram.com/v21.0';
+import { getAccessToken } from './token';
 
-/** Long-lived token (~60 days). Server-only — never expose this to the browser. */
-const TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN ?? '';
+const GRAPH = 'https://graph.instagram.com/v21.0';
 
 /** How long fetched media is cached. Instagram's file URLs expire, so keep this short
  *  enough that a cached page never hands the browser a dead link. */
@@ -64,9 +63,10 @@ function toReel(m: RawMedia): Reel | null {
  * token or a bad response should leave a quiet gap in the page, never break the render.
  */
 export async function getReels(limit = 24): Promise<Reel[]> {
-  if (!TOKEN) return [];
+  const token = await getAccessToken();
+  if (!token) return [];
   try {
-    const url = `${GRAPH}/me/media?fields=${FIELDS}&limit=${Math.min(limit * 2, 100)}&access_token=${TOKEN}`;
+    const url = `${GRAPH}/me/media?fields=${FIELDS}&limit=${Math.min(limit * 2, 100)}&access_token=${token}`;
     const res = await fetch(url, { next: { revalidate: REVALIDATE_SECONDS } });
     if (!res.ok) {
       console.error('Instagram media fetch failed:', res.status);
@@ -86,9 +86,11 @@ export async function getReels(limit = 24): Promise<Reel[]> {
 
 /** One media item by id — used to resolve a fresh file URL at play time. */
 export async function getMediaUrl(id: string): Promise<string | null> {
-  if (!TOKEN || !/^\d+$/.test(id)) return null;
+  if (!/^\d+$/.test(id)) return null;
+  const token = await getAccessToken();
+  if (!token) return null;
   try {
-    const res = await fetch(`${GRAPH}/${id}?fields=media_url&access_token=${TOKEN}`, {
+    const res = await fetch(`${GRAPH}/${id}?fields=media_url&access_token=${token}`, {
       // Deliberately short: these URLs expire, and this call exists to get a live one.
       next: { revalidate: 300 },
     });

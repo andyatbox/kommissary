@@ -29,6 +29,17 @@ export default function Reveal({
       return;
     }
 
+    // Anything already on screen when the page loads is shown straight away — the reveal
+    // is meant for content you scroll TO. The observer alone can't be trusted here: its
+    // threshold is a fraction of the ELEMENT's own height, so a tall section (the reels
+    // grid, a long slider) can have its top well above the fold while the visible slice
+    // is still under 5% of it, leaving it invisible until you scroll.
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      setShown(true);
+      return;
+    }
+
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {

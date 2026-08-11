@@ -1,4 +1,5 @@
 import { siteSettings } from './siteSettings';
+import { instagramAuth } from './instagramAuth';
 import { homepage, pill, ctaButton } from './homepage';
 import { page } from './page';
 import { post } from './post';
@@ -31,4 +32,6 @@ export const schemaTypes = [
   htmlEmbed,
   contactForm,
   instagramReels,
+  // System documents (written by code, not editors)
+  instagramAuth,
 ];
