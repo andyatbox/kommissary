@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import ReelCard from '@/components/instagram/ReelCard';
+import type { Reel } from '@/lib/instagram/api';
 
 type Parsed =
   | { kind: 'iframe'; src: string; thumbnail?: string; facade: boolean }
@@ -89,14 +91,28 @@ export default function VideoEmbed({
   caption,
   /** Poster fetched server-side (e.g. Vimeo). Falls back to the provider thumbnail. */
   poster,
+  /** Present when the URL is one of @kommissary's own reels (see enrichSections). */
+  reel,
 }: {
   url: string;
   caption?: string;
   poster?: string;
+  reel?: Reel;
 }) {
   const [playing, setPlaying] = useState(false);
   const video = parseVideo(url);
   const thumbnail = poster ?? (video.kind === 'iframe' ? video.thumbnail : undefined);
+
+  // One of our own reels: use the same card as the feed, so the play / link-out buttons
+  // match. Instagram's own embed can't play video inline, which is what this replaces.
+  if (reel) {
+    return (
+      <figure className="mx-auto w-full max-w-[380px] px-6 sm:px-8">
+        <ReelCard reel={reel} />
+        {caption && <Caption>{caption}</Caption>}
+      </figure>
+    );
+  }
 
   if (video.kind === 'unknown') {
     return (

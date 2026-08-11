@@ -83,6 +83,7 @@ export const page = defineType({
         defineArrayMember({ type: 'gridCopy' }),
         defineArrayMember({ type: 'htmlEmbed' }),
         defineArrayMember({ type: 'contactForm' }),
+        defineArrayMember({ type: 'instagramReels' }),
       ],
     }),
   ],

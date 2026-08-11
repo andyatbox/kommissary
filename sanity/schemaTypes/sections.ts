@@ -185,3 +185,30 @@ export const contactForm = defineType({
     prepare: ({ heading }) => ({ title: 'Contact Form', subtitle: heading || 'No heading' }),
   },
 });
+
+/**
+ * The @kommissary Instagram reels feed. Pulled live from the Instagram API — there's
+ * nothing to maintain here, only how many to show.
+ */
+export const instagramReels = defineType({
+  name: 'instagramReels',
+  title: 'Instagram Reels Feed',
+  type: 'object',
+  fields: [
+    defineField({
+      name: 'count',
+      title: 'How many reels',
+      type: 'number',
+      initialValue: 12,
+      validation: (r) => r.min(1).max(48).integer(),
+      description: 'Most recent first. Up to 48.',
+    }),
+  ],
+  preview: {
+    select: { count: 'count' },
+    prepare: ({ count }) => ({
+      title: 'Instagram Reels Feed',
+      subtitle: `${count ?? 12} most recent`,
+    }),
+  },
+});

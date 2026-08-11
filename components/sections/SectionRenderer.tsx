@@ -6,10 +6,20 @@ import ImageSlider from './ImageSlider';
 import GridCopy from './GridCopy';
 import HtmlEmbed from './HtmlEmbed';
 import ContactForm from './ContactForm';
+import ReelsWaterfall from '@/components/instagram/ReelsWaterfall';
+import type { Reel } from '@/lib/instagram/api';
 
 export type PageSection =
   | { _type: 'bodyCopy'; _key: string; content?: PortableTextBlock[] }
-  | { _type: 'videoEmbed'; _key: string; url: string; caption?: string; poster?: string }
+  | {
+      _type: 'videoEmbed';
+      _key: string;
+      url: string;
+      caption?: string;
+      poster?: string;
+      /** Set when the URL is one of our own reels — see enrichSections. */
+      reel?: Reel;
+    }
   | { _type: 'imageSlider'; _key: string; images?: SanityGalleryImage[] }
   | {
       _type: 'gridCopy';
@@ -22,7 +32,8 @@ export type PageSection =
       bottomDivider?: boolean;
     }
   | { _type: 'htmlEmbed'; _key: string; code?: string }
-  | { _type: 'contactForm'; _key: string; heading?: string; intro?: string };
+  | { _type: 'contactForm'; _key: string; heading?: string; intro?: string }
+  | { _type: 'instagramReels'; _key: string; count?: number; reels?: Reel[] };
 
 /** Renders one page section. Body Copy is a full-width cream band with centred text;
  *  video centres itself; the slider and grid go full browser width. */
@@ -40,7 +51,14 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
         </div>
       );
     case 'videoEmbed':
-      return <VideoEmbed url={section.url} caption={section.caption} poster={section.poster} />;
+      return (
+        <VideoEmbed
+          url={section.url}
+          caption={section.caption}
+          poster={section.poster}
+          reel={section.reel}
+        />
+      );
     case 'imageSlider':
       return <ImageSlider images={galleryImagesFromSanity(section.images, '100vw')} />;
     case 'gridCopy':
@@ -62,6 +80,8 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
       );
     case 'contactForm':
       return <ContactForm heading={section.heading} intro={section.intro} />;
+    case 'instagramReels':
+      return <ReelsWaterfall reels={section.reels ?? []} />;
     default:
       return null;
   }

@@ -1,4 +1,5 @@
 import type { PageSection } from '@/components/sections/SectionRenderer';
+import { getReels, getReelsByCode } from '@/lib/instagram/api';
 
 /**
  * Shared GROQ projection + server enrichment for the page-builder `sections` array,
@@ -15,7 +16,8 @@ export const SECTIONS_PROJECTION = `sections[]{
   },
   _type == "gridCopy" => { columns, column1, column2, column3, topDivider, bottomDivider },
   _type == "htmlEmbed" => { code },
-  _type == "contactForm" => { heading, intro }
+  _type == "contactForm" => { heading, intro },
+  _type == "instagramReels" => { count }
 }`;
 
 /** Vimeo has no thumbnail-by-URL convention (unlike YouTube), so fetch its poster via
@@ -34,13 +36,37 @@ async function vimeoPoster(url: string): Promise<string | undefined> {
   }
 }
 
-/** Resolve any server-side extras a section needs (currently: Vimeo poster images). */
+/** Shortcode out of an Instagram post/reel URL, or null if it isn't one. */
+function instagramCode(url: string): string | null {
+  if (!/(^|\.)instagram\.com/.test(url)) return null;
+  return url.match(/\/(?:reel|p|tv)\/([\w-]+)/)?.[1] ?? null;
+}
+
+/**
+ * Resolve the server-side extras a section needs: Vimeo poster images, the Instagram
+ * reels feed, and — for a Video Embed pointing at one of our own reels — that reel's
+ * data, so it gets the same play / link-out treatment as the feed instead of Instagram's
+ * own embed (which can't play video inline at all).
+ */
 export async function enrichSections(sections: PageSection[]): Promise<PageSection[]> {
+  // Only look up the reel index if a Video Embed actually points at Instagram.
+  const needsIgIndex = sections.some(
+    (s) => s._type === 'videoEmbed' && instagramCode(s.url) !== null
+  );
+  const byCode = needsIgIndex ? await getReelsByCode() : null;
+
   return Promise.all(
-    sections.map(async (s) =>
-      s._type === 'videoEmbed' && s.url.includes('vimeo.com')
-        ? { ...s, poster: await vimeoPoster(s.url) }
-        : s
-    )
+    sections.map(async (s) => {
+      if (s._type === 'instagramReels') {
+        return { ...s, reels: await getReels(s.count ?? 12) };
+      }
+      if (s._type === 'videoEmbed') {
+        if (s.url.includes('vimeo.com')) return { ...s, poster: await vimeoPoster(s.url) };
+        const code = instagramCode(s.url);
+        // Falls through to Instagram's iframe embed when the post isn't one of ours.
+        if (code && byCode?.has(code)) return { ...s, reel: byCode.get(code) };
+      }
+      return s;
+    })
   );
 }
