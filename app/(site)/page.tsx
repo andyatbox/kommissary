@@ -2,6 +2,7 @@ import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
 import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
 import { galleryImageFromSanity, type SanityGalleryImage } from '@/lib/galleryImage';
+import { getReels } from '@/lib/instagram/api';
 import { DEFAULT_CONTENT } from '@/lib/defaultContent';
 import type { HomeContent, TeamImages, TeamSlot } from '@/lib/store';
 import type { TeaserPost } from '@/components/weekly/WeeklyGrid';
@@ -16,6 +17,7 @@ const PAGE_QUERY = `{
   "home": *[_type == "homepage"][0]{
     sentence,
     typedLines,
+    endCta,
     "pills": pills[]{
       label,
       words,
@@ -75,6 +77,12 @@ function buildTeasers(posts: RawPost[] | null | undefined): TeaserPost[] {
 export default async function Page() {
   let content: HomeContent = DEFAULT_CONTENT;
   let latestWeekly: TeaserPost[] = [];
+
+  // Newest reel with a playable file — it becomes the video texture on the phone model
+  // behind "We're". Most reels don't expose one (Instagram withholds the file when the
+  // audio is licensed), so this looks past the ones it can't use.
+  const playable = (await getReels(24)).find((r) => r.canPlayInline) ?? null;
+  const phoneReel = playable ? { id: playable.id, poster: playable.poster } : null;
   try {
     const data = await client.fetch<RawResult | null>(PAGE_QUERY);
     if (data?.home?.sentence) {
@@ -86,6 +94,8 @@ export default async function Page() {
         typedLines: data.home.typedLines?.length
           ? data.home.typedLines
           : DEFAULT_CONTENT.typedLines,
+        endCta: data.home.endCta,
+        phoneReel,
       };
     }
     latestWeekly = buildTeasers(data?.latestWeekly);
@@ -93,5 +103,5 @@ export default async function Page() {
     // Keep the default fallback if Sanity is unreachable.
   }
 
-  return <HomeClient content={content} latestWeekly={latestWeekly} />;
+  return <HomeClient content={{ ...content, phoneReel }} latestWeekly={latestWeekly} />;
 }

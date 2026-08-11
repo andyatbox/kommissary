@@ -103,7 +103,12 @@ export default function Modal() {
       aria-hidden={!modalOpen}
       aria-label={title ?? 'Content'}
       className={`fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-[#000666]/50 backdrop-blur-md transition-[opacity,visibility] duration-500 ${
-        modalOpen ? 'visible opacity-100' : 'invisible opacity-0'
+        // pointer-events-none as well as invisible: `visibility` transitions discretely
+        // and only flips at the END of the duration, so for the whole fade-out the
+        // overlay is fully transparent but still swallowing clicks on its buttons.
+        modalOpen
+          ? 'visible opacity-100'
+          : 'pointer-events-none invisible opacity-0'
       }`}
     >
       <button

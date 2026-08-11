@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { PortableText } from 'next-sanity';
+import type { PortableTextComponents } from '@portabletext/react';
 import { useUX } from '@/lib/store';
 import Modal from './Modal';
 import HomeControls from './HomeControls';
@@ -22,10 +24,34 @@ const END_LINK =
  */
 const BAND_BOTTOM = 'calc(50% + min(72vw, 640px) * 0.126155 + 20px)';
 
+/**
+ * Renders the Sanity end-screen copy INSIDE the heading, so a paragraph block emits its
+ * children rather than its own <p> — the styling belongs to the h3 around it.
+ */
+const END_CTA_COMPONENTS: PortableTextComponents = {
+  block: { normal: ({ children }) => <>{children}</> },
+  marks: {
+    link: ({ children, value }) => {
+      const href = (value as { href?: string })?.href ?? '#';
+      const external = /^https?:\/\//.test(href);
+      return (
+        <a
+          href={href}
+          {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          className={END_LINK}
+        >
+          {children}
+        </a>
+      );
+    },
+  },
+};
+
 export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }) {
   const started = useUX((s) => s.started);
   const overviewActive = useUX((s) => s.overviewActive);
   const typedLines = useUX((s) => s.content?.typedLines) ?? [];
+  const endCta = useUX((s) => s.content?.endCta);
 
   // Wait until the models have finished cascading in before revealing the end screen.
   const [endReady, setEndReady] = useState(false);
@@ -59,8 +85,8 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
       <div
         className={`pointer-events-none fixed inset-0 z-20 flex flex-col items-center justify-center p-8 transition-all duration-[900ms] ease-[cubic-bezier(0.7,0,0.2,1)] ${
           started
-            ? '-translate-x-[130vw] opacity-0'
-            : 'translate-x-0 opacity-100'
+            ? 'invisible -translate-x-[130vw] opacity-0'
+            : 'visible translate-x-0 opacity-100'
         }`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -97,7 +123,7 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
             'radial-gradient(circle at center, rgba(0,6,102,0.85) 0%, rgba(0,6,102,0) 65%)',
         }}
         className={`pointer-events-none fixed inset-0 z-20 flex flex-col items-center justify-center p-8 transition-opacity duration-1000 ${
-          endReady ? 'opacity-100' : 'opacity-0'
+          endReady ? 'visible opacity-100' : 'invisible opacity-0'
         }`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -112,7 +138,7 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
           same slot the end-state call to action uses (the two never show at once). */}
       <div
         className={`pointer-events-none fixed inset-x-0 top-[100px] z-40 flex items-center justify-center px-4 transition-opacity duration-700 ease-out md:top-[112px] ${
-          started ? 'opacity-0' : 'opacity-100'
+          started ? 'invisible opacity-0' : 'visible opacity-100'
         }`}
         style={{ bottom: BAND_BOTTOM }}
       >
@@ -122,16 +148,29 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
       {/* End-state call to action, in the band between the header and the arched logo. */}
       <div
         className={`pointer-events-none fixed inset-x-0 top-[100px] z-40 flex items-center justify-center px-4 transition-[opacity,transform] duration-700 ease-out md:top-[112px] ${
-          endReady ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+          // `invisible` when closed, not merely opacity-0: the links inside set
+          // pointer-events-auto on THEMSELVES, which overrides pointer-events-none on
+          // this container — so a faded-out call to action still caught clicks.
+          // visibility hides descendants outright, whatever they ask for.
+          endReady
+            ? 'visible translate-y-0 opacity-100'
+            : 'invisible translate-y-6 opacity-0'
         }`}
         style={{ bottom: BAND_BOTTOM }}
       >
         <h3 className="font-spirit max-w-xl text-center text-lg font-medium leading-snug text-[#ff6666] sm:text-xl">
-          Hear <a href="/our-story" className={END_LINK}>our story</a>, see{' '}
-          <a href="/our-impact" className={END_LINK}>our impact</a>, learn about{' '}
-          <a href="/bespoke-meals" className={END_LINK}>bespoke meals</a> and{' '}
-          <a href="/logistics" className={END_LINK}>logistics</a>, or{' '}
-          <a href="/contact" className={END_LINK}>get in-touch</a>!
+          {endCta?.length ? (
+            <PortableText value={endCta} components={END_CTA_COMPONENTS} />
+          ) : (
+            // Built-in copy until someone sets their own in Sanity.
+            <>
+              Hear <a href="/our-story" className={END_LINK}>our story</a>, see{' '}
+              <a href="/our-impact" className={END_LINK}>our impact</a>, learn about{' '}
+              <a href="/bespoke-meals" className={END_LINK}>bespoke meals</a> and{' '}
+              <a href="/logistics" className={END_LINK}>logistics</a>, or{' '}
+              <a href="/contact" className={END_LINK}>get in-touch</a>!
+            </>
+          )}
         </h3>
       </div>
 

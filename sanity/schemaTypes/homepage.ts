@@ -124,6 +124,26 @@ export const homepage = defineType({
         'Typed out one at a time above the logo on the landing screen, then rewound and replaced by the next, looping. Drag to reorder.',
     }),
     defineField({
+      name: 'endCta',
+      title: 'End-screen call to action',
+      type: 'array',
+      of: [
+        defineArrayMember({
+          type: 'block',
+          // One plain paragraph with links — it's styled as a single heading on screen,
+          // so headings, lists and quotes would have nowhere sensible to render.
+          styles: [{ title: 'Normal', value: 'normal' }],
+          lists: [],
+          marks: {
+            decorators: [],
+            annotations: [defineArrayMember({ type: 'link' })],
+          },
+        }),
+      ],
+      description:
+        'Shown above the logo once the camera pulls out at the end. Highlight words and use the link button to point them at pages. Leave empty for the built-in copy.',
+    }),
+    defineField({
       name: 'pills',
       title: 'Pill buttons',
       type: 'array',

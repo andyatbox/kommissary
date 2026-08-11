@@ -27,6 +27,11 @@ export type HomeContent = {
   team?: TeamImages;
   /** Landing tagline sentences, typed out and cycled above the arched logo. */
   typedLines?: string[];
+  /** End-screen call to action, one paragraph with inline links. */
+  endCta?: PortableTextBlock[];
+  /** Newest @kommissary reel we can actually play, shown on the phone model's screen.
+   *  Null when none of the recent reels expose a playable file. */
+  phoneReel?: { id: string; poster: string } | null;
 };
 
 export type FocusDot = {

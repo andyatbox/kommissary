@@ -4,14 +4,17 @@ const M = THREE.MathUtils;
 
 /** Portion of the scroll over which the start-of-track lateral pan eases in. Sized so
  *  the pan's speed matches the word-tracking that follows, so entry feels continuous. */
-export const APPROACH = 0.1;
+// Kept short so the words arrive almost as soon as you scroll. The splash clears at
+// ~1.2% (START_THRESHOLD in CameraRig); anything much longer than this leaves a stretch
+// of empty scene between the logo sliding off and the sentence reaching the camera.
+export const APPROACH = 0.04;
 /** Progress at which travel along the spline begins — tiny, so entering the experience is quick. */
 export const PAN_START = 0.02;
 
 /** Reading distance — constant for the whole track (no zoom in at the start). */
 const CAM_DIST_READ = 13;
 /** World -X the camera is offset by at the very start; scrolling pans it (+X) to zero. */
-const APPROACH_PAN_X = 17;
+const APPROACH_PAN_X = 11;
 /** Camera rides slightly above the word so the gaze tilts a touch downward. */
 const CAM_HEIGHT = 1.2;
 
