@@ -5,6 +5,7 @@ import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useUX, view, type WordAnchor } from '@/lib/store';
+import type { PhonePlacement } from '@/lib/phones';
 
 const M = THREE.MathUtils;
 
@@ -14,19 +15,7 @@ const M = THREE.MathUtils;
  * the viewer. So "behind and above" is +Y, −Z.
  */
 const MODEL_URL = '/models/iphone/scene.gltf';
-/** The word it hangs off. The sentence uses a curly apostrophe — a straight one won't match. */
-const ANCHOR_WORD = 'We’re';
-/** Behind the word and slightly above centre. */
-const OFFSET: [number, number, number] = [0, 1.6, -4];
-/** Largest world dimension the model is fit to, whatever its authored scale. */
-const TARGET_SIZE = 6;
-/** Resting rotation, radians. */
-const ROT_X = 0.12;
-const ROT_Y = -2.5;
-const ROT_Z = 0.05;
-/** Hover bob and drift, matching the other models' feel. */
-const HOVER_AMP = 0.3;
-const HOVER_FREQ = 0.9;
+
 
 /** How far in front of the camera the phone sits once tapped. */
 const FOCUS_DIST = 6;
@@ -78,29 +67,34 @@ useGLTF.preload(MODEL_URL);
  * and this scene already has a history of overwhelming weak hardware.
  */
 export default function PhoneModel({
+  placement,
   reel,
-  mobile,
+  allowVideo,
 }: {
+  placement: PhonePlacement;
   reel: { id: string; poster: string } | null;
-  mobile: boolean;
+  /** False only on hardware that genuinely can't take it — see Quality.videoTextures. */
+  allowVideo: boolean;
 }) {
   const anchors = useUX((s) => s.anchors);
   const anchor = useMemo(
-    () => anchors.find((a) => a.word === ANCHOR_WORD),
-    [anchors]
+    () => anchors.find((a) => a.word === placement.anchorWord),
+    [anchors, placement.anchorWord]
   );
   if (!anchor || !reel) return null;
-  return <Phone anchor={anchor} reel={reel} mobile={mobile} />;
+  return <Phone anchor={anchor} reel={reel} allowVideo={allowVideo} placement={placement} />;
 }
 
 function Phone({
   anchor,
   reel,
-  mobile,
+  allowVideo,
+  placement,
 }: {
   anchor: WordAnchor;
   reel: { id: string; poster: string };
-  mobile: boolean;
+  allowVideo: boolean;
+  placement: PhonePlacement;
 }) {
   const { scene } = useGLTF(MODEL_URL);
   const camera = useThree((s) => s.camera);
@@ -121,11 +115,10 @@ function Phone({
   const media = useMemo(() => {
     if (typeof document === 'undefined') return null;
 
-    // Phones get the reel's cover image, not the reel. A playing video hands the GPU a
-    // fresh frame to decode and upload every tick, on exactly the hardware the tier-0
-    // work exists to protect — and this scene has hard-crashed such devices before. The
-    // screen still shows the latest reel, it just doesn't move.
-    if (mobile) {
+    // Only the genuinely incapable get a still instead — a software rasteriser, or a
+    // machine reporting almost no memory or cores. Phones play the reel like everything
+    // else; one muted clip is minor next to the 3D scene they're already running.
+    if (!allowVideo) {
       const texture = new THREE.TextureLoader().load(reel.poster);
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.flipY = SCREEN_FLIP_Y;
@@ -158,7 +151,7 @@ function Phone({
       texture.repeat.x = -1;
     }
     return { el: el as HTMLVideoElement | null, texture };
-  }, [reel.id, reel.poster, mobile]);
+  }, [reel.id, reel.poster, allowVideo]);
 
   // Clone the model, fit it to TARGET_SIZE, and put the video on the screen.
   const data = useMemo(() => {
@@ -199,15 +192,15 @@ function Phone({
     return {
       object,
       screenAspect,
-      baseScale: TARGET_SIZE / maxDim,
+      baseScale: placement.targetSize / maxDim,
       /** Height at scale 1, so the focused size can be solved from the camera frustum. */
       unitHeight: size.y || 1,
       home: anchor.position
         .clone()
-        .add(new THREE.Vector3(...OFFSET).applyQuaternion(anchor.quaternion)),
+        .add(new THREE.Vector3(...placement.offset).applyQuaternion(anchor.quaternion)),
       phase: Math.random() * Math.PI * 2,
     };
-  }, [scene, anchor, media]);
+  }, [scene, anchor, media, placement]);
 
   /**
    * Fit the reel to the screen without distorting it: crop the overhanging axis rather
@@ -361,11 +354,11 @@ function Phone({
 
     // Resting pose: hovering just behind the word.
     vecs.home.copy(data.home);
-    vecs.home.y += Math.sin(t * HOVER_FREQ + data.phase) * HOVER_AMP;
+    vecs.home.y += Math.sin(t * placement.hoverFreq + data.phase) * placement.hoverAmp;
     vecs.euler.set(
-      ROT_X + Math.sin(t * 0.7 + data.phase) * 0.04,
-      ROT_Y + Math.sin(t * 0.6 + data.phase) * 0.1,
-      ROT_Z + Math.sin(t * 0.85 + data.phase) * 0.04
+      placement.rotX + Math.sin(t * 0.7 + data.phase) * 0.04,
+      placement.rotY + Math.sin(t * 0.6 + data.phase) * 0.1,
+      placement.rotZ + Math.sin(t * 0.85 + data.phase) * 0.04
     );
     vecs.restQuat.setFromEuler(vecs.euler);
 

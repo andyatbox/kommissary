@@ -24,12 +24,18 @@ export type Quality = {
   curveSegments: number;
   /** Re-render the shadow map every N frames (1 = every frame). */
   shadowInterval: number;
+  /**
+   * Whether the scene may play video textures. On by default, including phones — one
+   * muted clip is minor next to the 3D scene, and phones play video all day. Only the
+   * genuinely incapable fall back to a still image.
+   */
+  videoTextures: boolean;
 };
 
 // Note: tiers only ever trade *fidelity* (resolution, shadow detail, smoothness).
 // They never remove content — every device shows the same models and words.
 
-const PRESETS: Record<QualityTier, Omit<Quality, 'tier' | 'mobile'>> = {
+const PRESETS: Record<QualityTier, Omit<Quality, 'tier' | 'mobile' | 'videoTextures'>> = {
   0: {
     // Never render below native (a sub-1 DPR upscales and looks soft/blocky), and
     // keep hardware MSAA on: smoothing edges costs far less than the extra pixels
@@ -93,13 +99,40 @@ function readRenderer(): string {
  * pointer is the reliable signal; a ≤820px screen is the belt-and-braces fallback.
  */
 export function isMobile(): boolean {
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
+
+  // The PRIMARY pointer. A phone or tablet reports coarse; a laptop reports fine even
+  // when it has a touchscreen. Deliberately not sniffing `ontouchstart` or
+  // maxTouchPoints: desktop Chrome exposes both in plenty of situations (and keeps
+  // doing so for the rest of the session once device emulation has been opened), which
+  // wrongly demoted real laptops to the phone settings.
+  if (!window.matchMedia('(pointer: coarse)').matches) return false;
+
+  // Coarse primary, but something attached is precise — a tablet with a trackpad, or a
+  // touch laptop. Only treat that as mobile if the viewport is phone-sized as well.
+  const hasFinePointer = window.matchMedia('(any-pointer: fine)').matches;
+  return !hasFinePointer || window.innerWidth <= 820;
+}
+
+let rendererCache: string | null = null;
+/** The GPU name, read once — probing it spins up a throwaway WebGL context. */
+function gpu(): string {
+  if (rendererCache === null) rendererCache = readRenderer().toLowerCase();
+  return rendererCache;
+}
+
+/**
+ * Hardware that can't be asked to decode video on top of everything else: a software
+ * rasteriser (no GPU at all), or a machine reporting very little memory or very few
+ * cores. Note this is a far higher bar than "is a phone" — a modern handset comfortably
+ * clears it.
+ */
+function isVeryWeakDevice(): boolean {
   if (typeof window === 'undefined') return false;
-  const coarseOnly =
-    window.matchMedia?.('(pointer: coarse)').matches &&
-    !window.matchMedia?.('(pointer: fine)').matches;
-  const touch = (navigator.maxTouchPoints ?? 0) > 0 || 'ontouchstart' in window;
-  const small = window.innerWidth <= 820;
-  return Boolean((coarseOnly && touch) || (touch && small));
+  if (/swiftshader|llvmpipe|software|basic render/.test(gpu())) return true;
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  if (typeof memory === 'number' && memory <= 2) return true;
+  return (navigator.hardwareConcurrency ?? 4) <= 2;
 }
 
 function detectTier(): QualityTier {
@@ -119,7 +152,7 @@ function detectTier(): QualityTier {
   // many GLBs plus shadow maps without paging, so drop such machines to the low tier.
   const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
   if (typeof memory === 'number' && memory <= 4) return 0;
-  const renderer = readRenderer().toLowerCase();
+  const renderer = gpu();
 
   // Software rasterisers can't carry this scene at all.
   if (/swiftshader|llvmpipe|software|basic render/.test(renderer)) return 0;
@@ -154,6 +187,6 @@ export function getQuality(): Quality {
     preset.shadowInterval = 2;
     preset.curveSegments = 5;
   }
-  cached = { tier, mobile, ...preset };
+  cached = { tier, mobile, videoTextures: !isVeryWeakDevice(), ...preset };
   return cached;
 }

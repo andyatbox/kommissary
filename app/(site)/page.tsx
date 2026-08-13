@@ -3,6 +3,7 @@ import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
 import { galleryImageFromSanity, type SanityGalleryImage } from '@/lib/galleryImage';
 import { getReels } from '@/lib/instagram/api';
+import { PHONES } from '@/lib/phones';
 import { DEFAULT_CONTENT } from '@/lib/defaultContent';
 import type { HomeContent, TeamImages, TeamSlot } from '@/lib/store';
 import type { TeaserPost } from '@/components/weekly/WeeklyGrid';
@@ -78,11 +79,13 @@ export default async function Page() {
   let content: HomeContent = DEFAULT_CONTENT;
   let latestWeekly: TeaserPost[] = [];
 
-  // Newest reel with a playable file — it becomes the video texture on the phone model
-  // behind "We're". Most reels don't expose one (Instagram withholds the file when the
-  // audio is licensed), so this looks past the ones it can't use.
-  const playable = (await getReels(24)).find((r) => r.canPlayInline) ?? null;
-  const phoneReel = playable ? { id: playable.id, poster: playable.poster } : null;
+  // One playable reel per phone model, newest first, so no two phones show the same
+  // clip. Most reels expose no file at all (Instagram withholds it when the audio is
+  // licensed), so this looks past the ones it can't use.
+  const phoneReels = (await getReels(24))
+    .filter((r) => r.canPlayInline)
+    .slice(0, PHONES.length)
+    .map((r) => ({ id: r.id, poster: r.poster }));
   try {
     const data = await client.fetch<RawResult | null>(PAGE_QUERY);
     if (data?.home?.sentence) {
@@ -95,7 +98,7 @@ export default async function Page() {
           ? data.home.typedLines
           : DEFAULT_CONTENT.typedLines,
         endCta: data.home.endCta,
-        phoneReel,
+        phoneReels,
       };
     }
     latestWeekly = buildTeasers(data?.latestWeekly);
@@ -103,5 +106,5 @@ export default async function Page() {
     // Keep the default fallback if Sanity is unreachable.
   }
 
-  return <HomeClient content={{ ...content, phoneReel }} latestWeekly={latestWeekly} />;
+  return <HomeClient content={{ ...content, phoneReels }} latestWeekly={latestWeekly} />;
 }

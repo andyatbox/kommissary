@@ -29,9 +29,9 @@ export type HomeContent = {
   typedLines?: string[];
   /** End-screen call to action, one paragraph with inline links. */
   endCta?: PortableTextBlock[];
-  /** Newest @kommissary reel we can actually play, shown on the phone model's screen.
-   *  Null when none of the recent reels expose a playable file. */
-  phoneReel?: { id: string; poster: string } | null;
+  /** Playable @kommissary reels for the phone models, newest first — one per phone.
+   *  Shorter than the phone list (or empty) when few recent reels expose a file. */
+  phoneReels?: { id: string; poster: string }[];
 };
 
 export type FocusDot = {

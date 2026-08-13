@@ -9,6 +9,7 @@ import { splineFrame } from '@/lib/path';
 import type { Quality } from '@/lib/perf';
 import Models from './Models';
 import PhoneModel from './PhoneModel';
+import { PHONES } from '@/lib/phones';
 
 const M = THREE.MathUtils;
 
@@ -378,7 +379,7 @@ function KeyLight({ mapSize }: { mapSize: number }) {
 }
 
 export default function Scene({ quality }: { quality: Quality }) {
-  const phoneReel = useUX((s) => s.content?.phoneReel) ?? null;
+  const phoneReels = useUX((s) => s.content?.phoneReels) ?? [];
   return (
     <>
       {/* No scene background — the canvas is transparent so the animated gradient
@@ -397,8 +398,15 @@ export default function Scene({ quality }: { quality: Quality }) {
 
       <Letters curveSegments={quality.curveSegments} />
       <Models />
-      {/* Hand-placed one-off: the phone behind "We're" playing the latest reel. */}
-      <PhoneModel reel={phoneReel} mobile={quality.mobile} />
+      {/* Hand-placed one-offs: a phone per placement, each on its own reel. */}
+      {PHONES.map((placement, i) => (
+        <PhoneModel
+          key={placement.anchorWord}
+          placement={placement}
+          reel={phoneReels[i] ?? null}
+          allowVideo={quality.videoTextures}
+        />
+      ))}
 
       <Environment resolution={256} frames={1}>
         <Lightformer intensity={2.4} position={[0, 8, -12]} scale={[20, 10, 1]} color="#fff2e2" />
