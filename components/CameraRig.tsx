@@ -109,6 +109,9 @@ export default function CameraRig() {
     if (!isTouch) window.addEventListener('mousemove', onMouseMove, { passive: true });
 
     const onWheel = (e: WheelEvent) => {
+      // Nothing moves until the sentence has been measured and the path built. Scrolling
+      // before that just runs the camera down a path the words aren't on yet.
+      if (!useUX.getState().ready) return;
       if (useUX.getState().modalOpen) return; // modal owns scrolling while it's up
       if (useUX.getState().navTarget != null) useUX.getState().setNavTarget(null); // user takes over
       // Add velocity right away — the camera moves this frame, no ease-in ramp.
@@ -116,6 +119,7 @@ export default function CameraRig() {
     };
 
     const onTouchStart = (e: TouchEvent) => {
+      if (!useUX.getState().ready) return;
       if (useUX.getState().navTarget != null) useUX.getState().setNavTarget(null); // user takes over
       s.touching = true;
       s.vel = 0;
@@ -123,7 +127,7 @@ export default function CameraRig() {
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (!s.touching || useUX.getState().modalOpen) return;
+      if (!s.touching || useUX.getState().modalOpen || !useUX.getState().ready) return;
       const y = e.touches[0].clientY;
       const dy = s.lastY - y;
       s.lastY = y;

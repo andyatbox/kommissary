@@ -2,28 +2,55 @@ import { NextResponse } from 'next/server';
 import { getKnowledge } from '@/lib/kai/knowledge';
 
 /**
- * Ask Kai — the site chatbot, backed by Google Gemini's FREE tier.
+ * Ask Kai — the site chatbot, backed by Google Gemini.
  *
- * Cost safety, in layers:
- *  1. The API key must be an AI Studio key on a project with NO billing account —
- *     Google then hard-blocks usage past the free quota (429) and cannot charge.
- *  2. Self-imposed caps below keep us safely inside the free per-minute/per-day
- *     quotas so real users rarely even hit Google's limiter.
- *  3. Any 429/quota error from Gemini temporarily disables the bot (client shows a
- *     "recharging" state) until the cooldown passes.
+ * The key belongs to the company's own Google account, so billing is their decision
+ * rather than something this route has to design around. What it still does guard
+ * against is ABUSE: this endpoint is public and unauthenticated, so a script pointed at
+ * it could otherwise run up either a bill or a quota outage.
+ *
+ *  1. The caps below bound how much this route will ever spend in a minute or a day,
+ *     whatever traffic arrives.
+ *  2. Per-request limits (MAX_TURNS, MAX_CHARS) bound the size of any single call.
+ *  3. Any 429/quota error from Gemini temporarily disables the bot (the client shows a
+ *     "recharging" state) rather than hammering a limiter that's already refusing.
+ *
+ * With no billing attached the key simply stops at Google's free quota — a safe default,
+ * and the caps here sit within it.
  */
 
 /**
- * The "-latest" alias always resolves to a currently-available flash model, so it
- * won't 404 when Google retires a pinned version (as happened to gemini-2.x-flash).
- * Flash = fast, cheap, free-tier eligible, plenty capable for grounded site Q&A.
+ * Models to try, in order. Flash is fast, inexpensive and plenty capable for grounded
+ * site Q&A. Two entries rather than one because both of Gemini's failure modes are
+ * real here and neither is our fault:
+ *
+ *  - 503 UNAVAILABLE. The "-latest" alias is popular and gets oversubscribed; Google
+ *    sheds larger requests first, so this route (which sends the whole site knowledge
+ *    as a system instruction) is refused while trivial ones still succeed.
+ *  - 404 NOT_FOUND. Google retires pinned versions, and a newly-created project can't
+ *    use older ones at all — gemini-2.5-flash already answers "no longer available to
+ *    new users" for this key.
+ *
+ * Falling through on either means one model being unavailable doesn't take Kai down.
  */
-const MODEL = 'gemini-flash-latest';
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+const MODELS = ['gemini-flash-latest', 'gemini-3.6-flash'];
+const modelUrl = (model: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-/** Self-imposed caps, kept below Google's free-tier quotas. */
+/**
+ * Kept BELOW Google's free-tier quotas, which for Flash models run around 10-15 requests
+ * a minute and 1,500 a day. Those limits apply per PROJECT, not per key, so a second key
+ * wouldn't buy more.
+ *
+ * Sitting under them matters: exceeding a free-tier quota earns a 429, and this route
+ * responds to that by putting Kai to sleep for an hour (see QUOTA_COOLDOWN_MS). Better
+ * to turn away one request at the door than to have the bot go dark for real visitors.
+ *
+ * Raise these only alongside attaching billing to the Google project — and then treat
+ * them as a spend ceiling, since this endpoint is public and unauthenticated.
+ */
 const RPM_CAP = 8;
-const RPD_CAP = 400;
+const RPD_CAP = 1200;
 /** How long the bot naps after Gemini reports quota exhaustion. */
 const QUOTA_COOLDOWN_MS = 60 * 60 * 1000;
 
@@ -104,11 +131,7 @@ export async function POST(req: Request) {
   const knowledge = await getKnowledge();
 
   try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      // Newer Gemini keys (AQ.* format) authenticate via this header rather than ?key=.
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
+    const body = JSON.stringify({
         systemInstruction: { parts: [{ text: `${SYSTEM_PROMPT}\n\n${knowledge}` }] },
         contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
         // This model spends internal "thinking" tokens out of the SAME budget as the
@@ -116,8 +139,27 @@ export async function POST(req: Request) {
         // maxOutputTokens must be well above that or the reply gets cut off mid-sentence
         // (finishReason MAX_TOKENS). 2048 leaves comfortable headroom either way.
         generationConfig: { temperature: 0.5, maxOutputTokens: 2048 },
-      }),
     });
+
+    const call = (model: string) =>
+      fetch(modelUrl(model), {
+        method: 'POST',
+        // Newer Gemini keys (AQ.* format) authenticate via this header rather than ?key=.
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body,
+      });
+
+    // Work down MODELS until one answers. A 503 gets one quick retry first, since the
+    // congestion is often momentary and the preferred model is worth a second attempt.
+    let res = await call(MODELS[0]);
+    if (res.status === 503) {
+      await new Promise((r) => setTimeout(r, 700));
+      res = await call(MODELS[0]);
+    }
+    for (let i = 1; i < MODELS.length && (res.status === 503 || res.status === 404); i++) {
+      console.warn(`Kai: ${MODELS[i - 1]} returned ${res.status}, trying ${MODELS[i]}`);
+      res = await call(MODELS[i]);
+    }
 
     if (res.status === 429) {
       // Free quota exhausted — nap until it refreshes. No billing attached, so this

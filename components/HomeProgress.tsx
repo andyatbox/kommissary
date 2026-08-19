@@ -44,7 +44,11 @@ export default function HomeProgress({ visible }: { visible: boolean }) {
     return () => window.removeEventListener('resize', fit);
   }, [sentence]);
 
+  // Only runs while the meter is actually on screen. It's hidden for the whole landing
+  // and end state, and there's no sense writing a transform and a clip-path 60 times a
+  // second at something nobody can see.
   useEffect(() => {
+    if (!visible) return;
     let raf = 0;
     const tick = () => {
       raf = requestAnimationFrame(tick);
@@ -55,7 +59,7 @@ export default function HomeProgress({ visible }: { visible: boolean }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [visible]);
 
   return (
     // Side padding clears the ‹ › controls and the Kai launcher in the bottom corners.

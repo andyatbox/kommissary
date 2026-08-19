@@ -35,6 +35,9 @@ export default function HomeControls() {
   // Read live progress off `view` in a rAF loop; only re-render when the boolean flips.
   const [canPrev, setCanPrev] = useState(false);
   useEffect(() => {
+    // Paused while the content modal covers the controls — they're not visible, and the
+    // answer can't change without the scroll moving, which it can't while a modal is up.
+    if (modalOpen) return;
     let raf = 0;
     const tick = () => {
       raf = requestAnimationFrame(tick);
@@ -43,7 +46,7 @@ export default function HomeControls() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [pillPs]);
+  }, [pillPs, modalOpen]);
 
   const goPrev = () => {
     for (let i = pillPs.length - 1; i >= 0; i--) {

@@ -51,6 +51,8 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
   const started = useUX((s) => s.started);
   const overviewActive = useUX((s) => s.overviewActive);
   const typedLines = useUX((s) => s.content?.typedLines) ?? [];
+  // The path has been measured and the words placed — scrolling does something now.
+  const ready = useUX((s) => s.ready);
   const endCta = useUX((s) => s.content?.endCta);
 
   // Wait until the models have finished cascading in before revealing the end screen.
@@ -95,7 +97,14 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
           alt="Kommissary"
           className="h-auto w-[min(72vw,640px)] max-w-full object-contain"
         />
-        <div className="-mt-12 text-center sm:-mt-16">
+        {/* Tucked into the arch, but far less on a phone, where the logo is small enough
+            that the desktop offset put the hint on top of the wordmark. Held back until
+            the scene is ready, so it never invites a scroll that does nothing. */}
+        <div
+          className={`-mt-4 text-center transition-opacity duration-500 sm:-mt-12 md:-mt-16 ${
+            ready ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
           <div className="font-spirit text-base font-medium tracking-normal text-[#ff6666]">
             Scroll to Explore
           </div>
@@ -172,6 +181,28 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
             </>
           )}
         </h3>
+      </div>
+
+      {/* Phones held sideways: the experience is built around a tall viewport, and in
+          landscape the words and the arched logo have nowhere to go. Driven purely by a
+          media query — short AND landscape, so tablets and laptops never see it. */}
+      <div className="fixed inset-0 z-[70] hidden flex-col items-center justify-center gap-4 bg-[#000666] px-8 text-center [@media(orientation:landscape)and(max-height:520px)]:flex">
+        <svg
+          className="h-12 w-12 text-[#ff6666]"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="7" y="2" width="10" height="20" rx="2" />
+          <path d="M11 18h2" />
+          <path d="M20 9a8 8 0 0 0-3-4M4 15a8 8 0 0 0 3 4" />
+        </svg>
+        <p className="font-spirit text-xl font-medium text-[#ff6666]">Rotate your device</p>
+        <p className="text-sm text-white/60">This experience is built for portrait.</p>
       </div>
 
       <Modal />

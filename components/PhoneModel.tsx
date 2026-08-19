@@ -53,6 +53,11 @@ const MARGIN_U = 0.04;
  *  deliberate scroll sends it back, large enough to ride out the camera settling. */
 const SCROLL_RELEASE_U = 0.002;
 
+/** How far ahead of its zone, in curve-u, a phone starts fetching its reel. Wide enough
+ *  that the clip is buffered by the time you arrive, narrow enough that someone who
+ *  never scrolls that far never downloads it. */
+const PRELOAD_U = 0.16;
+
 useGLTF.preload(MODEL_URL);
 
 
@@ -130,7 +135,16 @@ function Phone({
     el.loop = true;
     el.muted = true;
     el.playsInline = true;
-    el.preload = 'auto';
+    // iOS Safari reads these as ATTRIBUTES, not properties. Without them it refuses to
+    // play inline — it either does nothing or tries to take the video fullscreen, and
+    // either way the texture never receives a frame.
+    el.setAttribute('playsinline', '');
+    el.setAttribute('webkit-playsinline', '');
+    el.setAttribute('muted', '');
+    // Metadata only up front. At 'auto' the two phones pulled their whole reels (~6MB
+    // together) on every homepage load, including for visitors who never scroll past the
+    // splash; this fetches a few KB instead and the rest arrives on approach, below.
+    el.preload = 'metadata';
     el.src = `/api/instagram/video/${reel.id}`;
     // Kept in the document rather than detached. Browsers treat a detached media element
     // as a second-class citizen — Safari in particular can refuse to output audio for one
@@ -276,6 +290,8 @@ function Phone({
   const lastPlayAttempt = useRef(-1);
   /** Scroll position when the phone came forward — scrolling from here sends it back. */
   const focusU = useRef(0);
+  /** Whether the reel has been asked for yet; it isn't fetched until you near the zone. */
+  const loadStarted = useRef(false);
   const vecs = useMemo(
     () => ({
       home: new THREE.Vector3(),
@@ -317,13 +333,20 @@ function Phone({
       g.visible = true;
     }
 
-    // Loop for as long as the phone is on screen — including the pulled-back overview.
-    // It still stops once the phone is gone, so a video isn't decoding and uploading a
-    // frame per tick for something nobody can see. Muted unless it's come to the camera.
-    const shouldPlay = visible;
-    // `media.el` is null on phones, where the screen is a still — nothing to drive.
+    // Loops whenever the phone is being read, but NOT in the pulled-back overview: the
+    // screens are a few pixels tall there, and that shot already carries every model
+    // revealing at once, so two video decodes are the last thing it needs.
+    const shouldPlay = inZone && !overview;
+    // `media.el` is null where the screen is a still — nothing to drive.
     if (media?.el) {
       const el = media.el;
+      // Buffer the rest while it's still approaching, so it's ready on arrival.
+      // Deliberately NOT calling load(): that resets the element and aborts any play()
+      // already in flight, which left the reels stuck and never playing at all.
+      if (!loadStarted.current && Math.abs(view.u - anchor.u) < PRELOAD_U) {
+        loadStarted.current = true;
+        el.preload = 'auto';
+      }
       if (shouldPlay) {
         // Checked against the element itself rather than a flag we set, so playback
         // recovers on its own if the browser stopped it (backgrounded tab, decode

@@ -89,46 +89,6 @@ body {
   }
 }
 
-/* Mobile fallback for the WebGL gradient (GradientBackground): a lava-lamp feel built
-   from layered radial gradients between navy (#000666) and purple (#4b0043). The drift
-   is a slow opacity crossfade between two pseudo-layers, which the compositor animates
-   WITHOUT per-frame repaints — so it costs a fraction of the fbm shader and, crucially,
-   uses zero WebGL contexts, leaving the whole context budget for the 3D scene. */
-.gradient-css-bg {
-  overflow: hidden;
-  background-color: #000666;
-}
-.gradient-css-bg::before,
-.gradient-css-bg::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-}
-.gradient-css-bg::before {
-  background-image:
-    radial-gradient(60% 60% at 25% 30%, #4b0043 0%, rgba(75, 0, 67, 0) 60%),
-    radial-gradient(60% 60% at 80% 70%, #12006b 0%, rgba(18, 0, 107, 0) 60%);
-}
-.gradient-css-bg::after {
-  background-image:
-    radial-gradient(55% 55% at 72% 25%, #2a0a5e 0%, rgba(42, 10, 94, 0) 60%),
-    radial-gradient(65% 65% at 28% 82%, #1a0050 0%, rgba(26, 0, 80, 0) 60%);
-  opacity: 0;
-  animation: gradient-bg-fade 24s ease-in-out infinite alternate;
-}
-@keyframes gradient-bg-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .gradient-css-bg::after {
-    animation: none;
-  }
-}
 
 /* Kommissary wordmark: each letter starts painted the page background (invisible),
    then flips to #F66 one after another on hover of the .group logo link. The flip is

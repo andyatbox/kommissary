@@ -3,7 +3,6 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { isMobile } from '@/lib/perf';
 
 /**
  * Site-wide animated background — an organic, slowly-morphing "lava lamp" gradient
@@ -12,12 +11,24 @@ import { isMobile } from '@/lib/perf';
  *
  * Built with React-Three-Fiber rather than a hand-rolled WebGL context: the raw context
  * was crashing on some machines (white / broken-canvas icon), whereas R3F manages
- * context creation, loss and cleanup robustly — the same stack the 3D scenes already run
- * on here. Kept light: half DPR, a single fullscreen NDC quad, a mediump shader, and
- * `powerPreference: 'high-performance'` to MATCH the 3D scenes so a dual-GPU browser
- * can't split the two contexts across GPUs (which crashes compositing). The `<color>`
- * background is an opaque navy floor, so a failed frame is navy, never white.
+ * context creation, loss and cleanup robustly. `powerPreference: 'high-performance'`
+ * MATCHES the 3D scenes so a dual-GPU browser can't split the two contexts across GPUs
+ * (which crashes compositing). The `<color>` background is an opaque navy floor, so a
+ * failed frame is navy, never white.
+ *
+ * ── Cost ────────────────────────────────────────────────────────────────────────
+ * This runs on every page, alongside the homepage's 3D scene, so the frame RATE is what's
+ * cut rather than the image: it renders on demand at BACKGROUND_FPS instead of every
+ * frame. The morph is very slow (see the uTime scale below), so this is imperceptible and
+ * costs well under half as much.
+ *
+ * The shader itself is deliberately left alone. Cheapening it — a fract() hash in place of
+ * sin(), or three octaves instead of four — does save a lot per pixel, but it visibly
+ * coarsens the gradient into larger, flatter blobs. Not worth it; the look is the point.
  */
+
+/** Redraws per second. The animation is slow enough that this reads as continuous. */
+const BACKGROUND_FPS = 24;
 
 const vertexShader = /* glsl */ `
 varying vec2 vUv;
@@ -70,12 +81,20 @@ void main() {
 
 function GradientPlane({ onReady }: { onReady: () => void }) {
   const material = useRef<THREE.ShaderMaterial>(null);
-  const { size } = useThree();
+  const { size, invalidate } = useThree();
   const shown = useRef(false);
   const uniforms = useMemo(
     () => ({ uTime: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) } }),
     []
   );
+
+  // The canvas only draws when asked (frameloop="demand"), so drive it on a timer
+  // instead of every animation frame. uTime still comes from the real clock, so the
+  // morph runs at the same speed — it's just sampled less often.
+  useEffect(() => {
+    const id = window.setInterval(invalidate, 1000 / BACKGROUND_FPS);
+    return () => window.clearInterval(id);
+  }, [invalidate]);
 
   useFrame((state) => {
     const m = material.current;
@@ -106,27 +125,9 @@ function GradientPlane({ onReady }: { onReady: () => void }) {
 }
 
 export default function GradientBackground() {
-  // Which background to draw is a client-only decision (it depends on the device), so
-  // start 'pending' — server and first client paint render nothing but the <html> navy
-  // floor, avoiding both a hydration mismatch and a WebGL context we may not want.
-  const [mode, setMode] = useState<'pending' | 'webgl' | 'css'>('pending');
-  useEffect(() => setMode(isMobile() ? 'css' : 'webgl'), []);
-
   // Fade the canvas up once the first frame has drawn, so it eases out of the flat
   // #000666 (on <html>) instead of popping in.
   const [ready, setReady] = useState(false);
-
-  // Phones get a pure-CSS animated gradient: no WebGL context at all, so the only live
-  // context on the page is the 3D scene. Two contexts is what exhausts a mobile
-  // browser's budget and crashes compositing — this removes the second one entirely.
-  if (mode === 'css') {
-    return <div aria-hidden className="gradient-css-bg pointer-events-none fixed inset-0 -z-10" />;
-  }
-
-  if (mode === 'pending') {
-    return <div aria-hidden className="pointer-events-none fixed inset-0 -z-10" />;
-  }
-
   return (
     <div
       aria-hidden
@@ -135,6 +136,8 @@ export default function GradientBackground() {
       }`}
     >
       <Canvas
+        // Draws only when invalidated — see the timer in GradientPlane.
+        frameloop="demand"
         dpr={0.5}
         gl={{ antialias: false, depth: false, stencil: false, powerPreference: 'high-performance' }}
         style={{ width: '100%', height: '100%' }}
