@@ -31,7 +31,7 @@ export type HomeContent = {
   endCta?: PortableTextBlock[];
   /** Playable @kommissary reels for the phone models, newest first — one per phone.
    *  Shorter than the phone list (or empty) when few recent reels expose a file. */
-  phoneReels?: { id: string; poster: string }[];
+  phoneReels?: { id: string; poster: string; videoUrl?: string }[];
 };
 
 export type FocusDot = {

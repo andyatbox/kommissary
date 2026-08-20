@@ -85,7 +85,7 @@ export default async function Page() {
   const phoneReels = (await getReels(24))
     .filter((r) => r.canPlayInline)
     .slice(0, PHONES.length)
-    .map((r) => ({ id: r.id, poster: r.poster }));
+    .map((r) => ({ id: r.id, poster: r.poster, videoUrl: r.videoUrl }));
   try {
     const data = await client.fetch<RawResult | null>(PAGE_QUERY);
     if (data?.home?.sentence) {

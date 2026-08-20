@@ -14,8 +14,13 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'No playable video for this media.' }, { status: 404 });
   }
   return NextResponse.redirect(url, {
-    // Let the browser reuse the resolved file briefly, but expire well inside
-    // Instagram's own signature lifetime.
-    headers: { 'Cache-Control': 'public, max-age=300' },
+    headers: {
+      // Let the browser reuse the resolved file briefly, but expire well inside
+      // Instagram's own signature lifetime.
+      'Cache-Control': 'public, max-age=300',
+      // Safari checks CORS on the REDIRECT, not only on where it lands, so a
+      // crossOrigin <video> pointed here fails on iOS without this.
+      'Access-Control-Allow-Origin': '*',
+    },
   });
 }

@@ -30,6 +30,9 @@ export type Reel = {
    * False means the card must link out — see the note at the top of this file.
    */
   canPlayInline: boolean;
+  /** The file itself, when there is one. Signed and time-limited (~33h), so it's fine
+   *  to hand to a <video> for a page view but not to store anywhere long-lived. */
+  videoUrl?: string;
 };
 
 type RawMedia = {
@@ -55,6 +58,7 @@ function toReel(m: RawMedia): Reel | null {
     caption: m.caption ?? '',
     timestamp: m.timestamp ?? '',
     canPlayInline: Boolean(m.media_url),
+    videoUrl: m.media_url,
   };
 }
 

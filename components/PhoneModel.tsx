@@ -77,7 +77,7 @@ export default function PhoneModel({
   allowVideo,
 }: {
   placement: PhonePlacement;
-  reel: { id: string; poster: string } | null;
+  reel: { id: string; poster: string; videoUrl?: string } | null;
   /** False only on hardware that genuinely can't take it — see Quality.videoTextures. */
   allowVideo: boolean;
 }) {
@@ -97,7 +97,7 @@ function Phone({
   placement,
 }: {
   anchor: WordAnchor;
-  reel: { id: string; poster: string };
+  reel: { id: string; poster: string; videoUrl?: string };
   allowVideo: boolean;
   placement: PhonePlacement;
 }) {
@@ -145,7 +145,22 @@ function Phone({
     // together) on every homepage load, including for visitors who never scroll past the
     // splash; this fetches a few KB instead and the rest arrives on approach, below.
     el.preload = 'metadata';
-    el.src = `/api/instagram/video/${reel.id}`;
+    // Point at Instagram's CDN directly, NOT at our own /api/instagram/video route.
+    // That route answers with a 307 to the same place, and Chrome is happy to follow it
+    // — but for a crossOrigin request Safari demands the REDIRECT itself carry CORS
+    // headers, not just its destination, so on iOS the video never loaded at all. These
+    // signed URLs stay valid ~33 hours, far longer than the page's own cache, and the
+    // route remains as a fallback below for the rare expired one.
+    el.src = reel.videoUrl ?? `/api/instagram/video/${reel.id}`;
+
+    // If the signed URL has lapsed, fall back to the route, which resolves a fresh one.
+    let triedFallback = false;
+    el.addEventListener('error', () => {
+      if (triedFallback || !reel.videoUrl) return;
+      triedFallback = true;
+      el.src = `/api/instagram/video/${reel.id}`;
+      el.load();
+    });
     // Kept in the document rather than detached. Browsers treat a detached media element
     // as a second-class citizen — Safari in particular can refuse to output audio for one
     // — so it lives here, one transparent pixel, out of the way of everything.
@@ -165,7 +180,7 @@ function Phone({
       texture.repeat.x = -1;
     }
     return { el: el as HTMLVideoElement | null, texture };
-  }, [reel.id, reel.poster, allowVideo]);
+  }, [reel.id, reel.poster, reel.videoUrl, allowVideo]);
 
   // Clone the model, fit it to TARGET_SIZE, and put the video on the screen.
   const data = useMemo(() => {
