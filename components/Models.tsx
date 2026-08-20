@@ -81,6 +81,16 @@ const ZONES: ZoneDef[] = [
         hoverAmp: 0.25,
         hoverFreq: 0.8,
       },
+      // Behind the word and off to the right, turned toward the camera.
+      {
+        url: '/models/free-food-truck.glb',
+        anchor: 'progressive',
+        offset: [5.6, 2, -4],
+        target: 6.5,
+        rotationY: -0.5,
+        hoverAmp: 0.3,
+        hoverFreq: 0.92,
+      },
     ],
   },
   {
@@ -184,9 +194,9 @@ const ZONES: ZoneDef[] = [
       {
         url: '/models/kommy-truck.glb',
         anchor: 'logistics',
-        offset: [3.5, -2, 3],
-        target: 6.5,
-        rotationY: 0,
+        offset: [7, 1.5, -2],
+        target: 7,
+        rotationY: -0.3,
         hoverAmp: 0.3,
         hoverFreq: 0.95,
       },

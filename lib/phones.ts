@@ -31,7 +31,7 @@ export type PhonePlacement = {
 export const PHONES: PhonePlacement[] = [
   {
     anchorWord: 'We’re',
-    offset: [0, 1.6, -4],
+    offset: [0, 1.0, -4],
     targetSize: 12,
     rotX: 0.12,
     rotY: -2.5,
@@ -41,7 +41,7 @@ export const PHONES: PhonePlacement[] = [
   },
   {
     anchorWord: 'serving',
-    offset: [0, 1.6, -4],
+    offset: [0, 1.0, -4],
     targetSize: 12,
     // Turned the other way, and drifting at its own rate, so the two don't look cloned.
     rotX: 0.1,
