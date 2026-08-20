@@ -52,6 +52,26 @@ float noise(vec2 p) {
   float c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
   return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
+/**
+ * How far the gold pools go toward true yellow at their centre, and how much of the
+ * canvas they claim.
+ *
+ * AMOUNT has to be high. Navy and yellow are near-complementary, so a partial mix
+ * between them travels through grey — at 0.3 the result was a muddy grey-magenta rather
+ * than anything yellow. Taking it close to 1.0 inside a SMALLER area gives actual yellow
+ * where it appears, instead of a wash that desaturates everything.
+ */
+const float GOLD_AMOUNT = 0.92;
+/**
+ * Field thresholds, and the real control over HOW MUCH yellow there is. The field they
+ * cut into averages about 0.7 and tops out near 1.4, so a low threshold catches most of
+ * the canvas. Set high, only the field's peaks come through — a few small accents rather
+ * than a wash. Raise both for less yellow, lower them for more; leave AMOUNT alone, since
+ * lowering THAT is what turns the yellow grey.
+ */
+const float GOLD_LO = 1.02;
+const float GOLD_HI = 1.14;
+
 float fbm(vec2 p) {
   float v = 0.0, a = 0.5;
   for (int i = 0; i < 4; i++) { v += a * noise(p); p = p * 2.0 + vec2(3.1, 1.7); a *= 0.5; }
@@ -61,7 +81,10 @@ void main() {
   vec2 p = vUv;
   p.x *= max(uRes.x, 1.0) / max(uRes.y, 1.0); // aspect-correct so shapes stay round
   p *= 1.1;
-  float t = uTime * 0.085;
+  // Drives every warp below and the final field, so this alone sets how fast the whole
+  // thing moves. Deliberately languid: it's a backdrop, and at this speed it reads as
+  // drifting rather than churning.
+  float t = uTime * 0.035;
 
   vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(4.3, -t * 0.8)));
   vec2 r = vec2(
@@ -70,10 +93,21 @@ void main() {
   );
   float f = smoothstep(0.25, 0.78, fbm(p + 1.6 * r));
 
+  // Where the gold pools. Built from the warp vectors already computed above rather
+  // than another fbm — those are the costly part, and this needs only a field that
+  // drifts differently from f, so the gold gathers in its own places instead of just
+  // tinting the same blobs the purple occupies.
+  float g = smoothstep(GOLD_LO, GOLD_HI, q.y * 0.7 + r.x * 0.8);
+
   vec3 navy   = vec3(0.000, 0.024, 0.400); // #000666
   vec3 purple = vec3(0.294, 0.000, 0.263); // #4b0043
+  vec3 gold   = vec3(1.000, 0.812, 0.200); // #ffcf33, the site's highlight yellow
+
   vec3 col = mix(navy, purple, f);
+  col = mix(col, gold, g * GOLD_AMOUNT);
   col += smoothstep(0.6, 1.0, f) * vec3(0.10, 0.0, 0.12); // subtle glow in the purple cores
+  // Warm lift in the gold cores, matching what the line above does for the purple.
+  col += smoothstep(0.75, 1.0, g) * vec3(0.12, 0.07, 0.0);
 
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }
