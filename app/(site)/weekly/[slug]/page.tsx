@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
-import { galleryImageFromSanity, type SanityGalleryImage } from '@/lib/galleryImage';
+import { type SanityGalleryImage } from '@/lib/galleryImage';
 import { SECTIONS_PROJECTION, enrichSections } from '@/lib/sections';
 import Reveal from '@/components/Reveal';
 import SectionRenderer, { type PageSection } from '@/components/sections/SectionRenderer';
@@ -10,7 +10,7 @@ import ShareButtons from '@/components/weekly/ShareButtons';
 
 export const revalidate = 60;
 
-type Adjacent = { title: string; slug: string } | null;
+type Adjacent = { title: string; slug: string; thumbnail?: SanityGalleryImage | null } | null;
 
 type PostDoc = {
   title: string;
@@ -28,8 +28,8 @@ const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]{
   description,
   "thumbnail": thumbnail{ asset, hotspot, crop, alt, "lqip": asset->metadata.lqip },
   ${SECTIONS_PROJECTION},
-  "prev": *[_type == "post" && defined(slug.current) && date < ^.date] | order(date desc)[0]{ title, "slug": slug.current },
-  "next": *[_type == "post" && defined(slug.current) && date > ^.date] | order(date asc)[0]{ title, "slug": slug.current }
+  "prev": *[_type == "post" && defined(slug.current) && date < ^.date] | order(date desc)[0]{ title, "slug": slug.current, "thumbnail": thumbnail{ asset, hotspot, crop, alt } },
+  "next": *[_type == "post" && defined(slug.current) && date > ^.date] | order(date asc)[0]{ title, "slug": slug.current, "thumbnail": thumbnail{ asset, hotspot, crop, alt } }
 }`;
 
 const SLUGS_QUERY = `*[_type == "post" && defined(slug.current)].slug.current`;
@@ -74,7 +74,12 @@ export default async function PostPage({ params }: { params: { slug: string } })
   if (!post) notFound();
 
   const sections = await enrichSections(post.sections ?? []);
-  const hero = post.thumbnail?.asset ? galleryImageFromSanity(post.thumbnail, '(min-width: 768px) 768px, 100vw') : null;
+  /** Crops for the previous/next links, 16:9 to suit the pill-shaped thumbs. Small and
+   *  fixed-size, so a plain urlFor beats the responsive gallery helper here. */
+  const adjacentThumb = (a: Adjacent) =>
+    a?.thumbnail?.asset ? urlFor(a.thumbnail).width(320).height(180).fit('crop').url() : undefined;
+  const prevThumb = adjacentThumb(post.prev ?? null);
+  const nextThumb = adjacentThumb(post.next ?? null);
 
   return (
     <main className="min-h-dvh pb-28 pt-[120px] md:pt-[168px]">
@@ -94,21 +99,6 @@ export default async function PostPage({ params }: { params: { slug: string } })
           </div>
         </header>
       </Reveal>
-
-      {/* Feature image (the thumbnail), if set */}
-      {hero && (
-        <Reveal className="mx-auto mt-10 w-full max-w-4xl px-6 sm:px-8">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={hero.src}
-            srcSet={hero.srcSet}
-            sizes="(min-width: 896px) 896px, 100vw"
-            alt={hero.alt}
-            className="aspect-[16/9] w-full rounded-2xl object-cover"
-            style={hero.objectPosition ? { objectPosition: hero.objectPosition } : undefined}
-          />
-        </Reveal>
-      )}
 
       {sections.length ? (
         <div className="mt-12 space-y-16 md:mt-16 md:space-y-24">
@@ -131,7 +121,16 @@ export default async function PostPage({ params }: { params: { slug: string } })
         className="font-spirit mx-auto mt-16 flex w-full max-w-3xl flex-wrap items-center justify-center gap-3 px-6 sm:px-8"
       >
         {post.prev ? (
-          <a href={`/weekly/${post.prev.slug}`} className={pill} aria-label={`Previous post: ${post.prev.title}`}>
+          <a
+            href={`/weekly/${post.prev.slug}`}
+            className={prevThumb ? navWithThumb('prev') : pill}
+            aria-label={`Previous post: ${post.prev.title}`}
+          >
+            {prevThumb && (
+              // Decorative: the link is already named by its aria-label and its own text.
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={prevThumb} alt="" className={thumb} />
+            )}
             ← Previous Post
           </a>
         ) : (
@@ -145,8 +144,16 @@ export default async function PostPage({ params }: { params: { slug: string } })
         </a>
 
         {post.next ? (
-          <a href={`/weekly/${post.next.slug}`} className={pill} aria-label={`Next post: ${post.next.title}`}>
+          <a
+            href={`/weekly/${post.next.slug}`}
+            className={nextThumb ? navWithThumb('next') : pill}
+            aria-label={`Next post: ${post.next.title}`}
+          >
             Next Post →
+            {nextThumb && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={nextThumb} alt="" className={thumb} />
+            )}
           </a>
         ) : (
           <span className={pillDisabled} aria-disabled="true">
@@ -159,6 +166,16 @@ export default async function PostPage({ params }: { params: { slug: string } })
 }
 
 const pill =
-  'rounded-full border border-[#ff6666] px-5 py-2.5 text-[#ff6666] transition-colors hover:bg-[#ff6666] hover:text-[#000666]';
+  'rounded-full border border-[#ff6666] px-7 py-4 text-lg text-[#ff6666] transition-colors hover:bg-[#ff6666] hover:text-[#000666]';
+/** A pill in its own right rather than a circle, echoing the buttons it sits inside. */
+const thumb = 'h-11 w-20 shrink-0 rounded-full object-cover';
+/** The same pill, opened up on whichever side carries the thumbnail so the image sits
+ *  flush in the rounded end instead of floating in the middle of the padding. The 11-unit
+ *  thumb plus py-2 comes to the same height as the plain pill's text plus py-4, so all
+ *  three buttons in the row line up. */
+const navWithThumb = (side: 'prev' | 'next') =>
+  `inline-flex items-center gap-4 rounded-full border border-[#ff6666] py-2 text-lg text-[#ff6666] transition-colors hover:bg-[#ff6666] hover:text-[#000666] ${
+    side === 'prev' ? 'pl-2 pr-7' : 'pl-7 pr-2'
+  }`;
 const pillDisabled =
-  'pointer-events-none rounded-full border border-[#ff6666]/25 px-5 py-2.5 text-[#ff6666]/30';
+  'pointer-events-none rounded-full border border-[#ff6666]/25 px-7 py-4 text-lg text-[#ff6666]/30';

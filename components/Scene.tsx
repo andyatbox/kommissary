@@ -224,7 +224,20 @@ function Letters({ curveSegments }: { curveSegments: number }) {
       const group = (pill.words ?? [])
         .map((w) => findAnchor(w))
         .filter((a): a is WordAnchor => a != null);
-      if (!group.length) return [];
+      if (!group.length) {
+        // A pill whose words match nothing is dropped, and silently — which is how the
+        // "Kommissary" button disappeared when the sentence changed to "Kommissary – a"
+        // while the pill still asked for the older "Kommissary—a" token. Say so in dev,
+        // since nothing else surfaces it.
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(
+            `[pills] "${pill.label}" matches no word in the sentence — button not shown. ` +
+              `It wants: ${JSON.stringify(pill.words ?? [])}. ` +
+              `The sentence has: ${JSON.stringify(words)}`
+          );
+        }
+        return [];
+      }
       const center = new THREE.Vector3();
       group.forEach((a) => center.add(a.center));
       center.multiplyScalar(1 / group.length);

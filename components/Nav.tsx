@@ -122,14 +122,12 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
             className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-0 bg-[#ff6666]"
           />
         )}
-        <a
-          href="/certification"
-          aria-label="Certification & compliance"
-          className="pointer-events-auto absolute right-6 top-0 block h-full sm:right-8"
-        >
+        {/* Not a link for now — it stays pointer-events-none with the bar so it can't
+            swallow clicks meant for the scene behind it. */}
+        <div className="absolute right-6 top-0 block h-full sm:right-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/certs.svg" alt="Certifications" className="h-full w-auto" />
-        </a>
+        </div>
       </div>
 
       {/* On mobile, clear the 25px top bar so the logo/hamburger sit at the same lower
@@ -161,9 +159,22 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                     onMouseEnter={() => setOpen(m.id)}
                     onFocus={() => setOpen(m.id)}
                     onClick={() => setOpen((o) => (o === m.id ? null : m.id))}
-                    className={`pointer-events-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 transition-colors duration-200 hover:text-[#ffcf33] focus-visible:text-[#ffcf33] ${
-                      activeMenu ? 'bg-transparent' : 'bg-[#000666]'
-                    } ${open === m.id ? 'text-[#ffcf33]' : 'text-[#ff6666]'}`}
+                    // The stroke tracks the label's colour rather than staying red, so an
+                    // open or hovered trigger reads as one piece instead of yellow text in
+                    // a red box.
+                    className={`pointer-events-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 transition-colors duration-200 hover:border-[#ffcf33] hover:text-[#ffcf33] focus-visible:border-[#ffcf33] focus-visible:text-[#ffcf33] ${
+                      // Tinted rather than solid, matching the panel's own treatment. Goes
+                      // fully transparent once a menu is open, since the whole header is
+                      // already tinted and blurred behind them by then — stacking a second
+                      // blur on top would darken those triggers against their own bar.
+                      activeMenu
+                        ? 'bg-transparent'
+                        : 'bg-[#000666]/60 backdrop-blur-sm'
+                    } ${
+                      open === m.id
+                        ? 'border-[#ffcf33] text-[#ffcf33]'
+                        : 'border-[#ff6666] text-[#ff6666]'
+                    }`}
                   >
                     {m.label}
                     <Chevron open={open === m.id} />
