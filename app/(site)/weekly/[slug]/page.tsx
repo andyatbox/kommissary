@@ -85,7 +85,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
     <main className="min-h-dvh pb-28 pt-[120px] md:pt-[168px]">
       {/* Header: date, title, share */}
       <Reveal>
-        <header className="mx-auto w-full max-w-3xl px-6 text-center sm:px-8">
+        <header className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 text-center sm:px-8">
           {post.date && (
             <time className="font-spirit text-sm uppercase tracking-[0.2em] text-[#ff6666]">
               {formatDate(post.date)}
@@ -118,7 +118,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
       {/* Post navigation: previous · all · next */}
       <nav
         aria-label="Post navigation"
-        className="font-spirit mx-auto mt-16 flex w-full max-w-3xl flex-wrap items-center justify-center gap-3 px-6 sm:px-8"
+        className="font-spirit mx-auto mt-16 flex w-full max-w-3xl wide:max-w-4xl flex-wrap items-center justify-center gap-3 px-6 sm:px-8"
       >
         {post.prev ? (
           <a

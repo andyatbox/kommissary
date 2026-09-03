@@ -60,7 +60,7 @@ export default function ContactForm({ heading, intro }: { heading?: string; intr
 
   if (status === 'sent') {
     return (
-      <section className="mx-auto w-full max-w-3xl px-6 sm:px-8">
+      <section className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
         <div
           role="status"
           className="rounded-2xl border border-[#ff6666]/30 bg-white/5 px-6 py-12 text-center"
@@ -77,7 +77,7 @@ export default function ContactForm({ heading, intro }: { heading?: string; intr
   }
 
   return (
-    <section className="mx-auto w-full max-w-3xl px-6 sm:px-8">
+    <section className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
       {heading && (
         <h2 className="font-spirit text-3xl font-medium text-[#ff6666] sm:text-4xl">{heading}</h2>
       )}

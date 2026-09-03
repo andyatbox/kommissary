@@ -116,7 +116,7 @@ export default function VideoEmbed({
 
   if (video.kind === 'unknown') {
     return (
-      <figure className="mx-auto w-full max-w-3xl px-6 sm:px-8">
+      <figure className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
         <a href={url} target="_blank" rel="noopener noreferrer" className="text-[#ff6666] underline">
           Watch video
         </a>
@@ -145,7 +145,7 @@ export default function VideoEmbed({
   }
 
   return (
-    <figure className="mx-auto w-full max-w-3xl px-6 sm:px-8">
+    <figure className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
       {/* Full width at 16:9 — no max-height, so the frame is never distorted. */}
       <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
         {playing ? (

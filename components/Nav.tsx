@@ -113,7 +113,7 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
           so it doesn't add to the header's height and stays visible while the menu is open.
           Holds the scroll-progress fill (behind) and the certifications image (right edge
           matching the nav padding, so it sits under the Connect chevron). */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[25px] overflow-hidden">
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[25px] overflow-hidden wide:h-[38px]">
         {/* The homepage shows its scroll progress at the BOTTOM instead (HomeProgress),
             where it becomes the sentence filling in — so the top rule is omitted there. */}
         {pathname !== '/' && (
@@ -149,7 +149,7 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
 
             {/* Desktop trigger buttons. Fade out while the logo (peer) is hovered, so the
                 wordmark writing itself out has clear room instead of colliding with them. */}
-            <ul className="font-spirit hidden items-center gap-5 text-lg font-medium transition-opacity duration-200 peer-hover:pointer-events-none peer-hover:opacity-0 md:flex lg:gap-7">
+            <ul className="font-spirit hidden items-center gap-5 text-lg font-medium transition-opacity duration-200 peer-hover:pointer-events-none peer-hover:opacity-0 md:flex lg:gap-7 wide:gap-9 wide:text-2xl">
               {menus.map((m) => (
                 <li key={m.id}>
                   <button

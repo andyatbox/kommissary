@@ -26,6 +26,33 @@ nav * {
   font-family: 'New Spirit', ui-serif, Georgia, serif;
 }
 
+/**
+ * Width of the arched Kommissary logo on the landing/end screens.
+ *
+ * Lives here as a custom property because TWO things must agree on it: the <img> itself,
+ * and the bottom edge of the copy band above it (see BAND_BOTTOM in Overlay.tsx), which
+ * is derived from this width times the SVG's aspect ratio. Hard-coding the number in both
+ * places meant a change to one silently dropped the tagline onto the arch's peak.
+ */
+:root {
+  --arched-logo-w: min(72vw, 640px);
+}
+
+@media (min-width: 1441px) {
+  :root {
+    /* Large displays have vertical room to spare — let the arch fill more of it. */
+    --arched-logo-w: min(66vw, 880px);
+  }
+
+  html {
+    /* The site-wide "raw" size. Every rem-based Tailwind size (type, spacing, max-widths)
+       scales from this, so a modest bump lifts body copy everywhere at once. Kept to
+       +6.25% rather than a full 18px: the landing overlay pins several elements at fixed
+       pixel offsets, and a larger jump starts crowding them. */
+    font-size: 17px;
+  }
+}
+
 html {
   height: 100%;
   /* The base/fallback color lives HERE, not on <body>: the animated GradientBackground

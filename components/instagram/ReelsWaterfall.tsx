@@ -8,7 +8,7 @@ import ReelCard from './ReelCard';
 export default function ReelsWaterfall({ reels }: { reels: Reel[] }) {
   if (!reels.length) {
     return (
-      <p className="mx-auto w-full max-w-3xl px-6 text-center text-white/50 sm:px-8">
+      <p className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 text-center text-white/50 sm:px-8">
         Instagram feed is unavailable right now.
       </p>
     );

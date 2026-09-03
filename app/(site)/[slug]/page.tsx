@@ -81,7 +81,7 @@ export default async function SlugPage({ params }: { params: { slug: string } })
     // Top padding clears the fixed header (25px bar + nav + logo).
     <main className="min-h-dvh pb-28 pt-[120px] md:pt-[168px]">
       <Reveal>
-        <div className="mx-auto w-full max-w-3xl px-6 sm:px-8">
+        <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
           <h1 className="font-spirit text-4xl font-medium text-[#ff6666] sm:text-5xl md:text-center">
             {page.title}
           </h1>
@@ -102,7 +102,7 @@ export default async function SlugPage({ params }: { params: { slug: string } })
           ))}
         </div>
       ) : (
-        <div className="mx-auto w-full max-w-3xl px-6 pt-8 sm:px-8">
+        <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 pt-8 sm:px-8">
           <p className="text-lg text-white/60">Content coming soon.</p>
         </div>
       )}

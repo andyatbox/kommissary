@@ -17,12 +17,15 @@ const END_LINK =
 
 /**
  * Bottom edge of the band that sits between the nav links and the arched logo — used by
- * both the landing tagline and the end-state call to action. The logo is centred and
- * sized `min(72vw,640px)` wide, and its SVG is 0.2523 as tall as it is wide, so its top
- * edge is half that height above the midline; the extra 20px keeps copy off the arch's
- * peak, which is its highest point and sits dead centre.
+ * both the landing tagline and the end-state call to action. The logo is centred and its
+ * SVG is 0.2523 as tall as it is wide, so its top edge is half that height above the
+ * midline; the extra 20px keeps copy off the arch's peak, which is its highest point and
+ * sits dead centre.
+ *
+ * The width comes from --arched-logo-w (globals.css) rather than a literal, so the band
+ * follows the logo automatically when large displays enlarge it.
  */
-const BAND_BOTTOM = 'calc(50% + min(72vw, 640px) * 0.126155 + 20px)';
+const BAND_BOTTOM = 'calc(50% + var(--arched-logo-w) * 0.126155 + 20px)';
 
 /**
  * Renders the Sanity end-screen copy INSIDE the heading, so a paragraph block emits its
@@ -95,7 +98,7 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
         <img
           src="/images/kommissary-arched-logo.svg"
           alt="Kommissary"
-          className="h-auto w-[min(72vw,640px)] max-w-full object-contain"
+          className="h-auto w-[var(--arched-logo-w)] max-w-full object-contain"
         />
         {/* Tucked into the arch, but far less on a phone, where the logo is small enough
             that the desktop offset put the hint on top of the wordmark. Held back until
@@ -139,24 +142,24 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
         <img
           src="/images/kommissary-arched-logo.svg"
           alt="Kommissary"
-          className="h-auto w-[min(72vw,640px)] max-w-full object-contain"
+          className="h-auto w-[var(--arched-logo-w)] max-w-full object-contain"
         />
       </div>
 
       {/* Landing tagline, in the band between the nav links and the arched logo — the
           same slot the end-state call to action uses (the two never show at once). */}
       <div
-        className={`pointer-events-none fixed inset-x-0 top-[100px] z-40 flex items-center justify-center px-4 transition-opacity duration-700 ease-out md:top-[112px] ${
+        className={`pointer-events-none fixed inset-x-0 top-[100px] z-40 flex items-center justify-center px-4 transition-opacity duration-700 ease-out md:top-[112px] wide:top-[128px] ${
           started ? 'invisible opacity-0' : 'visible opacity-100'
         }`}
         style={{ bottom: BAND_BOTTOM }}
       >
-        <TypedLines lines={typedLines} className="max-w-2xl text-lg sm:text-xl" />
+        <TypedLines lines={typedLines} className="max-w-2xl text-lg sm:text-xl wide:max-w-4xl wide:text-3xl" />
       </div>
 
       {/* End-state call to action, in the band between the header and the arched logo. */}
       <div
-        className={`pointer-events-none fixed inset-x-0 top-[100px] z-40 flex items-center justify-center px-4 transition-[opacity,transform] duration-700 ease-out md:top-[112px] ${
+        className={`pointer-events-none fixed inset-x-0 top-[100px] z-40 flex items-center justify-center px-4 transition-[opacity,transform] duration-700 ease-out md:top-[112px] wide:top-[128px] ${
           // `invisible` when closed, not merely opacity-0: the links inside set
           // pointer-events-auto on THEMSELVES, which overrides pointer-events-none on
           // this container — so a faded-out call to action still caught clicks.
@@ -167,7 +170,7 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
         }`}
         style={{ bottom: BAND_BOTTOM }}
       >
-        <h3 className="font-spirit max-w-xl text-center text-lg font-medium leading-snug text-[#ff6666] sm:text-xl">
+        <h3 className="font-spirit max-w-xl text-center text-lg font-medium leading-snug text-[#ff6666] sm:text-xl wide:max-w-3xl wide:text-3xl">
           {endCta?.length ? (
             <PortableText value={endCta} components={END_CTA_COMPONENTS} />
           ) : (

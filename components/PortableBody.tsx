@@ -31,27 +31,27 @@ function makeComponents(tone: Tone): PortableTextComponents {
   return {
     block: {
       normal: ({ children, value }) => (
-        <p className={`mt-5 text-lg leading-relaxed ${body} first:mt-0 ${isCentered(value) ? 'text-center' : ''}`}>
+        <p className={`mt-5 text-lg leading-relaxed wide:text-xl ${body} first:mt-0 ${isCentered(value) ? 'text-center' : ''}`}>
           {children}
         </p>
       ),
       h2: ({ children, value }) => (
         <h2
-          className={`font-spirit mt-12 text-3xl font-medium ${heading} first:mt-0 sm:text-4xl ${isCentered(value) ? 'text-center' : ''}`}
+          className={`font-spirit mt-12 text-3xl font-medium wide:text-5xl ${heading} first:mt-0 sm:text-4xl ${isCentered(value) ? 'text-center' : ''}`}
         >
           {children}
         </h2>
       ),
       h3: ({ children, value }) => (
         <h3
-          className={`font-spirit mt-9 text-2xl font-medium ${sub} first:mt-0 ${isCentered(value) ? 'text-center' : ''}`}
+          className={`font-spirit mt-9 text-2xl font-medium wide:text-3xl ${sub} first:mt-0 ${isCentered(value) ? 'text-center' : ''}`}
         >
           {children}
         </h3>
       ),
       blockquote: ({ children, value }) => (
         <blockquote
-          className={`mt-6 border-l-2 border-[#ff6666] pl-5 text-lg italic ${quote} ${isCentered(value) ? 'text-center' : ''}`}
+          className={`mt-6 border-l-2 border-[#ff6666] pl-5 text-lg italic wide:text-xl ${quote} ${isCentered(value) ? 'text-center' : ''}`}
         >
           {children}
         </blockquote>
@@ -60,12 +60,12 @@ function makeComponents(tone: Tone): PortableTextComponents {
     // Tailwind's preflight strips list markers/indent, so restore them.
     list: {
       bullet: ({ children }) => (
-        <ul className={`mt-5 list-disc space-y-2 pl-6 text-lg leading-relaxed ${body} ${marker}`}>
+        <ul className={`mt-5 list-disc space-y-2 pl-6 text-lg leading-relaxed wide:text-xl ${body} ${marker}`}>
           {children}
         </ul>
       ),
       number: ({ children }) => (
-        <ol className={`mt-5 list-decimal space-y-2 pl-6 text-lg leading-relaxed ${body} ${marker}`}>
+        <ol className={`mt-5 list-decimal space-y-2 pl-6 text-lg leading-relaxed wide:text-xl ${body} ${marker}`}>
           {children}
         </ol>
       ),

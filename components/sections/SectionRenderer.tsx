@@ -41,7 +41,7 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
   switch (section._type) {
     case 'bodyCopy':
       return (
-        <div className="mx-auto w-full max-w-3xl px-6 sm:px-8">
+        <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
           {/* Cream card behind the copy; text goes black (links stay coral). Padding
               grows with the breakpoint. Blended against whatever's behind it (exclusion)
               via the Reveal wrapper one level up — see the section map in page.tsx. */}
@@ -74,7 +74,7 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
       );
     case 'htmlEmbed':
       return (
-        <div className="mx-auto w-full max-w-3xl px-6 sm:px-8">
+        <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
           <HtmlEmbed code={section.code ?? ''} />
         </div>
       );

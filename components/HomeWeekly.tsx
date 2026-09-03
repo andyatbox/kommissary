@@ -50,11 +50,11 @@ export default function HomeWeekly({ posts, visible }: { posts: TeaserPost[]; vi
     >
       <div
         ref={contentRef}
-        className={`w-full max-w-[520px] text-center transition-[opacity,transform] duration-700 ease-out ${
+        className={`w-full max-w-[520px] text-center transition-[opacity,transform] duration-700 ease-out wide:max-w-[760px] ${
           show ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
         }`}
       >
-        <h3 className="font-spirit text-sm font-medium tracking-wide text-[#ff6666] sm:text-base">
+        <h3 className="font-spirit text-sm font-medium tracking-wide text-[#ff6666] sm:text-base wide:text-xl">
           Kommissary Weekly
           <span aria-hidden className="mx-2 font-normal text-[#ff6666]/40">
             |
@@ -70,12 +70,12 @@ export default function HomeWeekly({ posts, visible }: { posts: TeaserPost[]; vi
         </h3>
 
         {/* Never stacks: a flex row where each teaser shrinks (min-w-0) to stay in line. */}
-        <div className="mt-3 flex items-start justify-center gap-2.5 sm:gap-3">
+        <div className="mt-3 flex items-start justify-center gap-2.5 sm:gap-3 wide:mt-4 wide:gap-4">
           {posts.map((post) => (
             <a
               key={post.slug}
               href={`/weekly/${post.slug}`}
-              className={`group relative block aspect-[16/10] min-w-0 flex-1 basis-0 overflow-hidden rounded-lg ring-1 ring-white/15 transition-transform duration-300 ease-out hover:z-10 hover:scale-[1.04] sm:max-w-[160px] ${
+              className={`group relative block aspect-[16/10] min-w-0 flex-1 basis-0 overflow-hidden rounded-lg ring-1 ring-white/15 transition-transform duration-300 ease-out hover:z-10 hover:scale-[1.04] sm:max-w-[160px] wide:max-w-[240px] ${
                 show ? 'pointer-events-auto' : ''
               }`}
             >
@@ -100,7 +100,7 @@ export default function HomeWeekly({ posts, visible }: { posts: TeaserPost[]; vi
 
               {/* Gradient tint below + the title overlaid on it, in red. */}
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#000666]/95 via-[#000666]/55 to-transparent px-2 pb-1.5 pt-6">
-                <h4 className="font-spirit line-clamp-2 text-left text-[10px] font-medium leading-tight text-[#ff6666] transition-colors group-hover:text-[#ffcf33] sm:text-xs">
+                <h4 className="font-spirit line-clamp-2 text-left text-[10px] font-medium leading-tight text-[#ff6666] transition-colors group-hover:text-[#ffcf33] sm:text-xs wide:text-sm">
                   {post.title}
                 </h4>
               </div>
