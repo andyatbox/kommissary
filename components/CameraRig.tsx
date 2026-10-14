@@ -26,6 +26,13 @@ const FOCUS_DIST = 5.5;
 
 /** Viewport width the scene is tuned for; narrower windows back the camera off proportionally. */
 const REF_WIDTH = 1440;
+/**
+ * Extra reading distance on desktop (768px and up), as a multiple of the computed scale.
+ * 1 restores the original framing; higher backs the camera further off the sentence.
+ * Applies on top of the width-derived scale, so it pulls back evenly at every desktop
+ * size rather than only where the clamp bites.
+ */
+const DESKTOP_PULLBACK = 1.08;
 /** Max sideways/vertical camera shift from mouse parallax, in world units (scaled by distance). */
 const PARALLAX = 3.6;
 /** Scroll progress past which the splash logo is considered dismissed. */
@@ -94,9 +101,10 @@ export default function CameraRig() {
     const computeScale = () => {
       // Narrower viewports back the camera off proportionally; at 767px and below,
       // back it off a bit further still so more of the sentence reads in frame
-      // instead of feeling zoomed in on a small screen.
-      const mobile = window.innerWidth <= 767 ? 1.15 : 1;
-      distScale.current = M.clamp(REF_WIDTH / window.innerWidth, 0.85, 2.3) * mobile;
+      // instead of feeling zoomed in on a small screen. Desktop takes a smaller nudge
+      // of its own, having sat a touch close to the words.
+      const widthFactor = window.innerWidth <= 767 ? 1.15 : DESKTOP_PULLBACK;
+      distScale.current = M.clamp(REF_WIDTH / window.innerWidth, 0.85, 2.3) * widthFactor;
     };
     computeScale();
     window.addEventListener('resize', computeScale);
