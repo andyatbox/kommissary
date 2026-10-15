@@ -67,10 +67,15 @@ Environment Variables) and in your local `.env.local`.
 **If the build fails with `Missing environment variable: NEXT_PUBLIC_SANITY_PROJECT_ID`,**
 the variables aren't reaching the build step: check they're saved on the app, then rebuild.
 
-### 1c. Let Sanity Studio work on the preview
+### 1c. Add the preview's address to Sanity's CORS list
 sanity.io/manage → project **Kommissary** (`9axriqng`) → **API → CORS origins → Add CORS
-origin**: `https://preview.kommissary.com`, **Allow credentials: ✅ on**. Without it,
-`/studio` on the preview can't sign in. (`http://localhost:3001` should already be listed.)
+origin**: the preview's address (e.g. `https://darkseagreen-porcupine-317758.hostingersite.com`),
+**Allow credentials: ✅ on**.
+
+Sanity refuses browser requests from any address not on this list, **including its image
+server**. The homepage's 3D scene loads Sanity images as textures, so without this entry
+the homepage crashes, and `/studio` can't sign in. Add every address 2.0 is served from.
+(`http://localhost:3001` and the Vercel address are already listed.)
 
 ### 1d. Load the page copy into Sanity
 The Nutrition Box, Educators and Community Leaders pages read their copy from Sanity and
@@ -126,18 +131,21 @@ Instagram ever needs re-connecting; the weekly refresh doesn't use it.)
 1. **Back up the server-only files.** A few things exist only on the server, not in
    `~/Documents/kommissary 1.0` (e.g. `.htaccess`, `box/`, `nyc-groceries/`). hPanel → File
    Manager → `domains/kommissary.com/public_html` → compress → download.
-2. **Point kommissary.com at the Node.js app.** Easiest: a second Node.js app on
+2. **Sanity CORS:** make sure `https://kommissary.com` and `https://www.kommissary.com` are
+   on the CORS list (§1c). ⚠️ Without them the live homepage crashes. They aren't
+   listed as of October 2026; adding them early is harmless (1.0 never contacts Sanity).
+3. **Point kommissary.com at the Node.js app.** Easiest: a second Node.js app on
    `kommissary.com` from the `main` branch with the **Live** variables above. ⚠️ No
    `STAGING_PASSWORD` on it.
-3. **Verify** within minutes:
+4. **Verify** within minutes:
    - `curl -sI https://kommissary.com | grep -i x-robots` prints **nothing**. If it prints
      `noindex`, the server isn't passing the real address through to the app; fix before
      search engines see it.
-   - No password prompt. `/bronx`, `/educator`, `/dycd` load.
+   - No password prompt. The homepage's 3D scene loads; `/bronx`, `/educator`, `/dycd` load.
    - Google Analytics → Realtime shows your visit.
    - One real test submission per form, then tell the care team to expect and ignore it.
-4. **Move the Instagram cron** (§4) to kommissary.com.
-5. **Retire:** the Vercel project (§5), and `kommissary-bronx` (its pages now live here).
+5. **Move the Instagram cron** (§4) to kommissary.com.
+6. **Retire:** the Vercel project (§5), and `kommissary-bronx` (its pages now live here).
 
 **Rolling back:** point kommissary.com back to the plain website in hPanel. As long as
 `public_html` was left in place (step 1), 1.0 returns as it was. `~/Documents/kommissary 1.0`
