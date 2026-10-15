@@ -121,5 +121,7 @@ for i in $(seq 1 12); do
 done
 check_preview
 
-remote "ls -1t versions | tail -n +$((KEEP + 1)) | grep -vx \"\$(basename \"\$(readlink current)\")\" | xargs -r -I{} rm -rf versions/{}"
+# Older versions beyond KEEP are removed (never the one serving). `|| true`: finding none
+# to remove isn't a failure.
+remote "ls -1t versions | tail -n +$((KEEP + 1)) | { grep -vx \"\$(basename \"\$(readlink current)\")\" || true; } | xargs -r -I{} rm -rf versions/{}"
 echo "==> Done. $URL is serving $COMMIT."

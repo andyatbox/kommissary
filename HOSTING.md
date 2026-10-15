@@ -48,14 +48,21 @@ It was created with hPanel → Websites → **Create website → Web app**, then
 - **Environment variables:** the Preview column below, entered before the first build (the
   Sanity ones are read at build time).
 
-**To update the preview** with new code, make a fresh zip of the branch and upload it in
-hPanel (the app → deployments → upload). Make the zip with:
+**To update the preview** (about a minute, no hPanel):
 
 ```
-git archive --format=zip -o ~/Desktop/kommissary-2.0-preview.zip v2-outreach-pages
+scripts/deploy-preview.sh             # build, upload, switch over, check
+scripts/deploy-preview.sh --rollback  # back to the previous version
 ```
 
-`git archive` packs only committed files: never `.env.local` (secrets), `node_modules` or `.next`.
+It deploys the latest commit (it refuses uncommitted work), uploads it as a new version
+next to the running one, switches over in one step, restarts, and checks that the new
+build is serving with the password and noindex in place. It can only ever target the
+preview: kommissary.com is refused outright. It doesn't disturb a running
+`npm run dev`, and uploads no secrets: the server keeps the variables set in hPanel.
+
+There's no need to upload zips or redeploy from hPanel any more. (If someone does,
+hPanel rebuilds from the same source the script last sent, so nothing reverts.)
 
 | Variable | Preview | Live (at launch) |
 |---|---|---|
