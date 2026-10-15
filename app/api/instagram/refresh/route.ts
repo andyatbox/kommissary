@@ -19,8 +19,9 @@ const REFRESH_UNDER_DAYS = 30;
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
-  // Vercel Cron sends this header automatically when CRON_SECRET is set.
-  const invoked = req.headers.get('authorization') === `Bearer ${secret}`;
+  // The cron job sends this header (Vercel Cron automatically when CRON_SECRET is set). With
+  // no secret configured nothing counts as the cron: otherwise "Bearer undefined" would.
+  const invoked = !!secret && req.headers.get('authorization') === `Bearer ${secret}`;
 
   const expiresAt = await getExpiry();
   const daysLeft = expiresAt
