@@ -19,6 +19,8 @@ const nextConfig = {
     return [
       { source: '/medicaid', destination: '/bronx', permanent: true },
       { source: '/screening', destination: '/bronx', permanent: true },
+      // The 2.0 page /bronx replaced (its Sanity Page is being deleted).
+      { source: '/medicaid-nutrition-box', destination: '/bronx', permanent: true },
     ];
   },
 };
