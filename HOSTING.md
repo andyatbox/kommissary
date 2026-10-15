@@ -139,8 +139,8 @@ Instagram ever needs re-connecting; the weekly refresh doesn't use it.)
    `~/Documents/kommissary 1.0` (e.g. `.htaccess`, `box/`, `nyc-groceries/`). hPanel → File
    Manager → `domains/kommissary.com/public_html` → compress → download.
 2. **Sanity CORS:** make sure `https://kommissary.com` and `https://www.kommissary.com` are
-   on the CORS list (§1c). ⚠️ Without them the live homepage crashes. They aren't
-   listed as of October 2026; adding them early is harmless (1.0 never contacts Sanity).
+   on the CORS list (§1c). ⚠️ Without them the live homepage crashes. Both were added
+   in October 2026; just confirm they're still there.
 3. **Point kommissary.com at the Node.js app.** Easiest: a second Node.js app on
    `kommissary.com` from the `main` branch with the **Live** variables above. ⚠️ No
    `STAGING_PASSWORD` on it.
