@@ -6,6 +6,14 @@ const nextConfig = {
   // The 3D scenes (R3F) are happier without the double-mount too.
   reactStrictMode: false,
 
+  // A self-contained server bundle (.next/standalone/server.js), but only when asked for:
+  // scripts/deploy-preview.sh builds with NEXT_OUTPUT=standalone, the same bundle
+  // Hostinger's own Node.js builds produce. Left off otherwise so `npm start` still works.
+  ...(process.env.NEXT_OUTPUT === 'standalone' ? { output: 'standalone' } : {}),
+  // The deploy builds into its own folder, so it never disturbs a running `npm run dev`
+  // (which owns .next).
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
+
   // Served as-is, not resized per request. Only the Nutrition Box, Educators and
   // Community Leaders pages use next/image, for small pre-sized PNGs; on-the-fly
   // optimization would spend shared hosting's CPU on every image request.

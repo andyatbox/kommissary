@@ -13,3 +13,6 @@ next-env.d.ts
 /dist
 sanity/.sanity/
 .sanity/
+
+# Build folder for scripts/deploy-preview.sh
+/.next-deploy/
