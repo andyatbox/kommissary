@@ -38,16 +38,22 @@ SSH=(ssh -p "$PORT" -i "$SSH_KEY" -o BatchMode=yes -o ConnectTimeout=20 "$USER@$
 remote() { "${SSH[@]}" "set -euo pipefail; cd ~/$APP; $1"; }
 
 # The preview answers with a password prompt and stays out of search engines. Checked
-# after every deploy and rollback.
+# after every deploy and rollback, from one response at a time (status and header together),
+# with a few retries: just after a restart the server can briefly answer something else.
 check_preview() {
-  local code robots
-  code=$(curl -s -o /dev/null -m 30 -w '%{http_code}' "$URL/")
-  robots=$(curl -s -o /dev/null -m 30 -D - "$URL/" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-robots-tag"{print $2}')
-  if [[ "$code" != "401" || "$robots" != "noindex, nofollow" ]]; then
-    echo "!! Unexpected: $URL/ answered $code with x-robots-tag '$robots' (expected 401, noindex)." >&2
-    return 1
-  fi
-  echo "    Password prompt and noindex: in place."
+  local headers code robots
+  for i in $(seq 1 6); do
+    headers=$(curl -s -o /dev/null -m 30 -D - "$URL/" | tr -d '\r')
+    code=$(awk 'NR==1{print $2}' <<<"$headers")
+    robots=$(awk -F': ' 'tolower($1)=="x-robots-tag"{print $2}' <<<"$headers")
+    if [[ "$code" == "401" && "$robots" == "noindex, nofollow" ]]; then
+      echo "    Password prompt and noindex: in place."
+      return 0
+    fi
+    sleep 5
+  done
+  echo "!! Unexpected: $URL/ answered $code with x-robots-tag '$robots' (expected 401, noindex)." >&2
+  return 1
 }
 
 if [[ "${1:-}" == "--rollback" ]]; then
