@@ -182,14 +182,12 @@ body {
      of the period eyebrow's first line. The ring and the model are both centred on
      this, so they can't drift apart when the eyebrow's type scale changes. */
   --dot-y: 0.625rem;
-  /* Height of a section's "media" — its 3D model box, and, when open, its Gallery
-     slider — so switching between the two causes no jump. Driven by ORIENTATION, not
-     viewport width (see the landscape override below). */
+  /* Height of a section's 3D model box. Driven by ORIENTATION, not viewport width
+     (see the landscape override below). */
   --media-h: 40vh;
   /* Distance from the window's left edge to the model column's content. */
-  --gallery-inset: calc(var(--line-x) + var(--line-gap));
-  /* tl-col's own right padding — kept as a variable so the Gallery trigger's
-     off-screen slide distance (in TimelineSection.tsx) can match it exactly. */
+  --media-inset: calc(var(--line-x) + var(--line-gap));
+  /* tl-col's own right padding. */
   --tl-pr: 1.5rem;
 }
 
@@ -198,7 +196,7 @@ body {
     --line-x: 30%;
     --line-gap: 3rem;
     --dot-y: 0.75rem;
-    --gallery-inset: 5vw;
+    --media-inset: 5vw;
     --tl-pr: 8vw;
   }
 }
@@ -209,8 +207,19 @@ body {
   }
 }
 
-/* The gallery slider scrolls natively but shows no bar — the bullets and < > controls
-   are the affordance. */
+/* Desktops and laptops (a mouse or trackpad, and room to spare), not tablets, which can
+   be just as wide in landscape. A model is fitted to the smaller side of its box, and at
+   30% the column's WIDTH was what held the models back. Widening it lets them grow, while
+   a shorter box keeps the moments closer together. */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  :root {
+    --line-x: 40%;
+    --media-h: 52vh;
+  }
+}
+
+/* Image sliders (components/sections/GallerySlider.tsx) scroll natively but show no
+   bar — the bullets and < > controls are the affordance. */
 .hide-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -237,7 +246,7 @@ body {
   will-change: transform;
   /* Being position:fixed, this box's own overflow isn't reliably contained by
      body/html's overflow-x — a descendant that slides in/out via translate-x past
-     the viewport edge (e.g. the Our Story gallery CTA) can otherwise still enable
+     the viewport edge (e.g. a button sliding in from off-screen) can otherwise still enable
      horizontal page scroll. Clip it directly at the source. (Height stays exactly
      the content's height here — only top is set, not bottom — so this can't clip
      anything vertically.) */

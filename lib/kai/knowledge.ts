@@ -1,4 +1,5 @@
 import { client } from '@/sanity/lib/client';
+import { WEEKLY_ENABLED } from '@/lib/features';
 
 /**
  * Kai's knowledge base: the whole site flattened to text, plus a sitemap of every
@@ -100,7 +101,8 @@ logistics leader serving the communities of New York City.`;
 
 function build(data: KnowledgeData): string {
   const lines: string[] = [];
-  const pages = data.pages ?? [];
+  // A paused section (lib/features.ts) mustn't be recommended: its address is a 404.
+  const pages = (data.pages ?? []).filter((p) => WEEKLY_ENABLED || p.slug !== 'weekly');
 
   // --- Sitemap: every internal URL Kai may recommend. ---
   lines.push('SITEMAP (the ONLY URLs you may link to):');

@@ -1,3 +1,5 @@
+import { WEEKLY_ENABLED } from './features';
+
 /**
  * Header navigation config. The three dropdowns and their column-1 headings are
  * fixed here; the links inside each are built from Page documents whose `navGroup`
@@ -61,6 +63,8 @@ export function buildNav(pages: NavPage[]): NavMenu[] {
   return NAV_GROUPS.map((g) => {
     const pageLinks: NavLink[] = pages
       .filter((p) => p.navGroup === g.id && p.href)
+      // Weekly is paused (lib/features.ts): its Page stays in Sanity but leaves the nav.
+      .filter((p) => WEEKLY_ENABLED || !/^\/?weekly(\/|$)/.test(p.href!))
       .map((p, i) => ({
         text: p.label,
         href: p.href!.startsWith('/') ? p.href! : `/${p.href}`,

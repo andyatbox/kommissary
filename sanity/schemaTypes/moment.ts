@@ -61,11 +61,13 @@ export const moment = defineType({
       hidden: true,
       readOnly: true,
     }),
+    // Retired: Our Story no longer has photo galleries. Kept (hidden) only so the photos
+    // already uploaded to a few moments don't show up in Studio as an "unknown field".
     defineField({
       name: 'gallery',
       title: 'Gallery',
       type: 'array',
-      description: 'Photos shown behind this moment’s Gallery button. Leave empty to hide the gallery.',
+      hidden: true,
       of: [
         defineArrayMember({
           type: 'image',

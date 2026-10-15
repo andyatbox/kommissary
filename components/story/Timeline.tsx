@@ -28,7 +28,7 @@ export default function Timeline({
           style={{ maskImage: RULE_FADE, WebkitMaskImage: RULE_FADE }}
         />
 
-        <div className="space-y-[14vh] pb-[22vh] md:space-y-[18vh]">
+        <div className="space-y-[8vh] pb-[22vh] md:space-y-[4vh]">
           {moments.map((moment) => (
             <TimelineSection key={moment.id} moment={moment} />
           ))}

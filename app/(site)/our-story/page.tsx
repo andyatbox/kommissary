@@ -26,20 +26,13 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION },
 };
 
-// Moments in the drag-orderable list order; gallery image URLs resolved server-side.
-// Models are hard-set in lib/story/timeline.ts (not read from Sanity).
+// Moments in the drag-orderable list order. Models are hard-set in lib/story/timeline.ts
+// (not read from Sanity).
 const MOMENTS_QUERY = `*[_type == "moment"]|order(orderRank){
   "id": _id,
   period,
   title,
-  body,
-  "gallery": gallery[]{
-    asset,
-    hotspot,
-    crop,
-    alt,
-    "lqip": asset->metadata.lqip
-  }
+  body
 }`;
 
 const PAGE_QUERY = `*[_type == "ourStoryPage"][0]{

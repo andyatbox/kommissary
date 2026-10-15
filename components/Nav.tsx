@@ -162,7 +162,7 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                     // The stroke tracks the label's colour rather than staying red, so an
                     // open or hovered trigger reads as one piece instead of yellow text in
                     // a red box.
-                    className={`pointer-events-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 transition-colors duration-200 hover:border-[#ffcf33] hover:text-[#ffcf33] focus-visible:border-[#ffcf33] focus-visible:text-[#ffcf33] ${
+                    className={`pointer-events-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-1.5 transition-colors duration-200 hover:border-[#ffcf33] hover:text-[#ffcf33] focus-visible:border-[#ffcf33] focus-visible:text-[#ffcf33] ${
                       // Tinted rather than solid, matching the panel's own treatment. Goes
                       // fully transparent once a menu is open, since the whole header is
                       // already tinted and blurred behind them by then — stacking a second
@@ -214,7 +214,9 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                           key={j}
                           href={it.href}
                           aria-current={isActive(it.href) ? 'page' : undefined}
-                          className={`font-spirit text-lg transition-colors duration-200 hover:text-[#ffcf33] ${
+                          // Larger on desktops; tablets keep the smaller size, where the three
+                          // columns are narrow enough that bigger links would wrap.
+                          className={`font-spirit text-lg transition-colors duration-200 hover:text-[#ffcf33] desktop:text-2xl ${
                             isActive(it.href) ? 'text-[#ffcf33]' : 'text-[#ff6666]'
                           }`}
                         >

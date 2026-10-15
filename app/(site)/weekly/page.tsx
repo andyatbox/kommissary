@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { client } from '@/sanity/lib/client';
 import { galleryImageFromSanity, type SanityGalleryImage } from '@/lib/galleryImage';
 import Reveal from '@/components/Reveal';
 import WeeklyGrid, { type TeaserPost } from '@/components/weekly/WeeklyGrid';
+import { WEEKLY_ENABLED } from '@/lib/features';
 
 export const revalidate = 60;
 
@@ -45,6 +47,7 @@ export default async function WeeklyIndexPage({
 }: {
   searchParams: { page?: string };
 }) {
+  if (!WEEKLY_ENABLED) notFound();
   const current = Math.max(1, parseInt(searchParams.page ?? '1', 10) || 1);
   const start = (current - 1) * PER_PAGE;
 

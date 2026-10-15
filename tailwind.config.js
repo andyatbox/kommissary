@@ -9,6 +9,9 @@ module.exports = {
       // desktop, where the design has genuine slack to spend on bigger type.
       screens: {
         wide: '1441px',
+        // Desktops and laptops (a mouse or trackpad), but not tablets, which can be just
+        // as wide in landscape. Matches the Our Story rule in globals.css.
+        desktop: { raw: '(min-width: 1024px) and (hover: hover) and (pointer: fine)' },
       },
       colors: {
         navy: '#000666',

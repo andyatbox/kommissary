@@ -8,6 +8,7 @@ import { DEFAULT_CONTENT } from '@/lib/defaultContent';
 import type { HomeContent, TeamImages, TeamSlot } from '@/lib/store';
 import type { TeaserPost } from '@/components/weekly/WeeklyGrid';
 import HomeClient from '@/components/HomeClient';
+import { WEEKLY_ENABLED } from '@/lib/features';
 
 // Re-fetch periodically so published content changes show without a redeploy.
 export const revalidate = 60;
@@ -101,7 +102,8 @@ export default async function Page() {
         phoneReels,
       };
     }
-    latestWeekly = buildTeasers(data?.latestWeekly);
+    // An empty list hides the strip (HomeWeekly renders nothing without posts).
+    if (WEEKLY_ENABLED) latestWeekly = buildTeasers(data?.latestWeekly);
   } catch {
     // Keep the default fallback if Sanity is unreachable.
   }

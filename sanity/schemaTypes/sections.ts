@@ -42,7 +42,7 @@ export const videoEmbed = defineType({
   },
 });
 
-/** A full-bleed image slider (same slider as the Our Story galleries). */
+/** A full-bleed image slider. */
 export const imageSlider = defineType({
   name: 'imageSlider',
   title: 'Image Slider',

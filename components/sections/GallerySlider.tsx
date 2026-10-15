@@ -16,13 +16,13 @@ export default function GallerySlider({
   /** False until the section is near enough to bother fetching the imagery. */
   armed,
   labelledBy,
-  /** Height utility for each slide. Defaults to the Our Story media box. */
-  slideClassName = 'h-[var(--media-h)]',
+  /** Height utility for each slide. */
+  slideClassName = 'h-[60vh]',
   /** Extra classes for the controls row — e.g. padding to inset it from a full-bleed
    *  track so the bullets/arrows don't run to the screen edges. */
   controlsClassName = '',
   /**
-   * 'cover' (default) fills the slide box and crops (the Our Story media box).
+   * 'cover' (default) fills the slide box and crops.
    * 'contain' shows the whole image: full height, natural (auto) width, centred — and
    * on mobile goes full width with padding (see `slidePadClassName`).
    */

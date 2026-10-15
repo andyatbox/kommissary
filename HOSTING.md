@@ -71,7 +71,7 @@ hPanel rebuilds from the same source the script last sent, so nothing reverts.)
 | `NEXT_PUBLIC_SANITY_API_VERSION` = `2024-10-01` | ✅ | ✅ |
 | `STAGING_PASSWORD` (pick one) | ✅ | ❌ never |
 | `INSTAGRAM_TOKEN_KEY` (same value as today's) | ✅ for reels on the phones | ✅ |
-| `GEMINI_API_KEY` | optional (Kai) | ✅ |
+| `GEMINI_API_KEY` | ✅ for Ask Kai (without it Kai says he "isn't quite awake yet") | ✅ |
 | `SANITY_WRITE_TOKEN`, `CRON_SECRET` | only if the preview runs the Instagram cron (§4) | ✅ |
 | `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_REDIRECT_URI`, `INSTAGRAM_ACCESS_TOKEN` | ❌ | ✅ |
 
@@ -111,8 +111,8 @@ pages then appear in Studio under **Nutrition Box (/bronx)**, **Educators (/educ
 - `/bronx`, `/educator`, `/dycd`, `/privacy` load; the EN/ES switch works; a form ends at its thank-you (and nothing arrives at careservices@).
 
 ### Updating the preview
-Push to the branch hPanel watches; Hostinger rebuilds. Copy edits in Sanity show within a
-minute with no rebuild.
+`scripts/deploy-preview.sh` (above). Copy edits in Sanity show within a minute with no
+deploy.
 
 ---
 
