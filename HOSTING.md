@@ -30,25 +30,32 @@ On kommissary.com all of the above is reversed automatically: there's no flag to
 
 ## 1. Set up the preview (one time)
 
-### 1a. Move the code to a Kommissary-owned GitHub account
-The repo is currently `github.com/andyatbox/kommissary` (personal). Hostinger builds the
-site from GitHub, so first give Kommissary ownership:
-GitHub → the repo → **Settings → General → Transfer ownership** → a Kommissary
-organization. History, branches and issues move with it; GitHub redirects the old address.
+### 1a–b. The preview app (done, October 2026)
 
-### 1b. Create the Node.js app in hPanel
-Menu names below are approximate; hPanel's wording shifts between versions.
+The preview runs as a **Node.js web app** on Kommissary's **Business Web Hosting** plan
+(account owner edward@kommissary.com), at a temporary Hostinger address:
 
-1. hPanel → **Websites → Add website → Node.js app** (requires a Business or Cloud plan;
-   if it isn't offered, the plan needs upgrading).
-2. **Domain:** a new subdomain, `preview.kommissary.com`. ⚠️ Never choose
-   `kommissary.com` itself here: that would replace the live site.
-3. **Source:** the GitHub repo from 1a, branch **`v2-outreach-pages`** (or whichever branch
-   is being previewed).
-4. **Node.js version:** 22 (20 also works).
-5. **Build command:** `npm run build`  **Start command:** `npm start`
-6. **Environment variables:** see the table below. Must be in place *before* the first
-   build (the Sanity ones are read at build time).
+**https://darkseagreen-porcupine-317758.hostingersite.com**
+
+It was created with hPanel → Websites → **Create website → Web app**, then:
+- **Domain:** *Use temporary domain*. ⚠️ Never put `kommissary.com` in that box: it would
+  replace the live site.
+- **Code:** *Upload your files*, with a zip of this repo. hPanel's *Connect with GitHub* is
+  disabled when you're signed in with admin access to someone else's account ("managing
+  clients"). If Edward connects GitHub from his own login, Hostinger can instead redeploy
+  automatically on every push.
+- **Framework preset:** Next.js. **Node version:** 22.x. **Build and output settings:** default.
+- **Environment variables:** the Preview column below, entered before the first build (the
+  Sanity ones are read at build time).
+
+**To update the preview** with new code, make a fresh zip of the branch and upload it in
+hPanel (the app → deployments → upload). Make the zip with:
+
+```
+git archive --format=zip -o ~/Desktop/kommissary-2.0-preview.zip v2-outreach-pages
+```
+
+`git archive` packs only committed files: never `.env.local` (secrets), `node_modules` or `.next`.
 
 | Variable | Preview | Live (at launch) |
 |---|---|---|
