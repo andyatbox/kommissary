@@ -98,10 +98,10 @@ BUILD_ID=$(cat "$DIST/BUILD_ID")
 
 echo "==> Uploading as version $VERSION"
 CUR=$(remote 'basename "$(readlink current)"')
+remote "mkdir -p versions/$VERSION/nodejs versions/$VERSION/public_html"
 # Files unchanged since the running version are hard-linked rather than re-sent.
 rsync -az --delete --link-dest="../../$CUR/nodejs/" -e "ssh -p $PORT -i $SSH_KEY" \
   "$B/" "$USER@$HOST:$APP/versions/$VERSION/nodejs/"
-remote "mkdir -p versions/$VERSION/public_html"
 
 # Keep Hostinger's own copy of the source current too, so a rebuild started from hPanel
 # builds this same code instead of reverting to an older upload.
