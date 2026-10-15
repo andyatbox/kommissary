@@ -6,16 +6,21 @@ const nextConfig = {
   // The 3D scenes (R3F) are happier without the double-mount too.
   reactStrictMode: false,
 
-  // Self-contained server bundle (.next/standalone/server.js) for hosting on Hostinger's
-  // Node.js apps: it carries only the node_modules the app actually uses, so the server
-  // needs no `npm install`. See scripts/deploy-staging.sh. Vercel ignores this setting.
-  output: 'standalone',
-
   // Served as-is, not resized per request. Only the Nutrition Box, Educators and
   // Community Leaders pages use next/image, for small pre-sized PNGs; on-the-fly
-  // optimization would need the native `sharp` package built for the server's platform
-  // and would spend shared hosting's CPU on every image request.
+  // optimization would spend shared hosting's CPU on every image request.
   images: { unoptimized: true },
+
+  // 1.0 addresses that still get visits. /medicaid and /screening are the retired
+  // Nutrition Box pages, which 1.0 already sends to /bronx; kept so old links and printed
+  // flyers keep working once 2.0 serves kommissary.com. See HOSTING.md for the rest of the
+  // 1.0 addresses, which need a decision before launch.
+  async redirects() {
+    return [
+      { source: '/medicaid', destination: '/bronx', permanent: true },
+      { source: '/screening', destination: '/bronx', permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

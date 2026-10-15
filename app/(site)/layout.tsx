@@ -5,6 +5,7 @@ import { buildNav, type NavMenu, type NavPage } from '@/lib/nav';
 import Nav from '@/components/Nav';
 import KaiWidget from '@/components/kai/KaiWidget';
 import GradientBackground from '@/components/GradientBackground';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 import './globals.css';
 
 // Re-fetch nav periodically so page/order changes surface without a redeploy.
@@ -28,6 +29,8 @@ const DESCRIPTION =
   'Kommissary is a progressive, minority-run purveyor of chef-crafted meals and a logistics leader serving the communities of New York City.';
 
 export const metadata: Metadata = {
+  // Canonical and share links always point at the public site, including from staging.
+  metadataBase: new URL('https://kommissary.com'),
   title: 'Kommissary',
   description: DESCRIPTION,
   applicationName: 'Kommissary',
@@ -87,6 +90,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {children}
         {/* Ask Kai — floating chatbot, on every page. */}
         <KaiWidget />
+        <GoogleAnalytics />
       </body>
     </html>
   );

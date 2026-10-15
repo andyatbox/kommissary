@@ -1,15 +1,15 @@
 // Analytics events: Google Analytics, plus the Meta pixel's Lead event when a form is
-// submitted. Off the live site (localhost, staging) they're logged to the console instead
+// submitted. Off kommissary.com (localhost, staging) they're logged to the console instead
 // of sent, so testing doesn't add data to the real reports. See lib/siteEnv.ts.
 
-import { IS_LIVE_SITE } from '@/lib/siteEnv';
+import { isLiveSite } from '@/lib/siteEnv';
 
 type Gtag = (command: 'event', name: string, params: Record<string, string>) => void;
 type Fbq = (command: 'track', name: string, params?: Record<string, string>) => void;
 
 /** True on localhost and staging: anything that would report or send is skipped. */
 export function isTestSite(): boolean {
-  return !IS_LIVE_SITE;
+  return !isLiveSite();
 }
 
 export function sendEvent(name: string, params: Record<string, string>) {
