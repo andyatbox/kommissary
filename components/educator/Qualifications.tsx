@@ -1,13 +1,13 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { OPENS_NEW_WINDOW, SOMOS_URL } from './content';
-import { type Lang, useCopy } from './i18n';
+import { type Lang, useLang } from './i18n';
+import { useSectionCopy } from '@/lib/cmsCopy';
+import { QUALIFICATIONS } from './copy';
 import { SECTION_TITLE } from './styles';
 
 // Each point is a big word or number with a line of explanation. The first two (the
 // stats) take wider tiles on desktop: a 6-column grid, 3 + 3 then 2 + 2 + 2.
-type Point = { big: string; copy: ReactNode; wide?: boolean; somos?: boolean };
 
 const somosLink = (lang: Lang) => (
   <a
@@ -21,51 +21,17 @@ const somosLink = (lang: Lang) => (
   </a>
 );
 
-const COPY: Record<Lang, { heading: string; points: Point[] }> = {
-  en: {
-    heading: 'The Kommissary Impact',
-    points: [
-      { big: '30,000+', copy: 'meals created every day in our kitchens.', wide: true },
-      { big: 'Millions', copy: 'fed through schools, senior care facilities, and shelters across NYC.', wide: true },
-      { big: 'USDA', copy: 'Meals are prepared in our USDA facility.' },
-      { big: 'Dietitian', copy: 'approved menus, planned for each recipient’s health.' },
-      {
-        big: 'SOMOS',
-        somos: true,
-        copy: <>We&rsquo;re a provider in the {somosLink('en')}, connecting Bronx Medicaid members with healthy food.</>,
-      },
-    ],
-  },
-  es: {
-    heading: 'El impacto de Kommissary',
-    points: [
-      { big: '30,000+', copy: 'comidas preparadas cada día en nuestras cocinas.', wide: true },
-      {
-        big: 'Millones',
-        copy: 'de personas alimentadas en escuelas, centros para personas mayores y albergues de toda la ciudad de Nueva York.',
-        wide: true,
-      },
-      { big: 'USDA', copy: 'Las comidas se preparan en nuestras instalaciones USDA.' },
-      { big: 'Dietistas', copy: 'aprueban nuestros menús, planificados para la salud de cada beneficiario.' },
-      {
-        big: 'SOMOS',
-        somos: true,
-        copy: <>Somos proveedor de la red {somosLink('es')}, que conecta a los miembros de Medicaid del Bronx con comida saludable.</>,
-      },
-    ],
-  },
-};
-
 export default function Qualifications() {
-  const { heading, points } = useCopy(COPY);
+  const lang = useLang();
+  const { heading, points } = useSectionCopy('qualifications', QUALIFICATIONS, lang, { somos: somosLink(lang) });
   return (
     <section data-section="qualifications" className="px-4 pb-16 md:pb-24">
       <div className="mx-auto max-w-6xl border-0 border-t-2 border-solid border-white/15 pt-16 md:pt-24">
         <h2 className={`${SECTION_TITLE} text-coral`}>{heading}</h2>
         <ul className="m-0 grid list-none gap-5 p-0 sm:grid-cols-2 lg:grid-cols-6">
-          {points.map(({ big, copy, wide, somos }) => (
+          {points.map(({ big, copy, wide, somos }, i) => (
             <li
-              key={big}
+              key={i}
               className={`rounded-xtra border-2 border-solid border-white/15 p-6 md:p-8 ${
                 wide ? 'lg:col-span-3' : 'lg:col-span-2'
               } ${somos ? 'sm:col-span-2 lg:col-span-2' : ''}`}

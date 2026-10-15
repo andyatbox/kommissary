@@ -38,4 +38,19 @@ export const structure: StructureResolver = (S, context) =>
         .id('ourStoryPage')
         .child(S.document().schemaType('ourStoryPage').documentId('ourStoryPage')),
       orderableDocumentListDeskItem({ type: 'moment', title: 'Timeline Moments', S, context }),
+      S.divider(),
+      // The Medicaid Nutrition Box lead pages: copy only, in English and Spanish. Their
+      // forms live in code (each is tied to a Google Form). Fixed ids, read by the pages.
+      S.listItem()
+        .title('Nutrition Box (/bronx)')
+        .id('nutritionBoxPage')
+        .child(S.document().schemaType('nutritionBoxPage').documentId('nutritionBoxPage')),
+      S.listItem()
+        .title('Educators (/educator)')
+        .id('educatorPage')
+        .child(S.document().schemaType('partnerOutreachPage').documentId('educatorPage')),
+      S.listItem()
+        .title('Community Leaders (/dycd)')
+        .id('dycdPage')
+        .child(S.document().schemaType('partnerOutreachPage').documentId('dycdPage')),
     ]);

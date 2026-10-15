@@ -5,7 +5,9 @@
 import Faq from './Faq';
 import Features from './Features';
 import EligibilityForm from './EligibilityForm';
-import { LangProvider, useCopy, useLang } from './i18n';
+import { LangProvider, useLang } from './i18n';
+import { CmsCopyProvider, useSectionCopy } from '@/lib/cmsCopy';
+import { HERO } from './copy';
 import ClickTracking from './ClickTracking';
 import MetaPixel from './MetaPixel';
 import LangToggle from './LangToggle';
@@ -32,31 +34,20 @@ const HEADLINE_SIZE = 'clamp(2.75rem, 7.2vw, 8.5rem)';
 // red-floor.svg is 612 x 222.2783.
 const FLOOR_RATIO = 222.2783 / 612;
 
-const HERO = {
-  en: {
-    // Two parts: the line always breaks between them.
-    headline: ['Free, nutritious food, delivered', 'to your door.'],
-    intro:
-      'Zero cost to qualified Medicaid recipients living in the Bronx. Get medically tailored meals and groceries delivered to your door. Fill out the form below to see if you qualify.',
-  },
-  es: {
-    headline: ['Comida nutritiva y gratis, directo', 'a su puerta.'],
-    intro:
-      'Sin costo para quienes califiquen, reciban Medicaid y vivan en el Bronx. Reciba comestibles y comidas adaptadas a sus necesidades médicas, entregados a su puerta. Llene el formulario a continuación para ver si califica.',
-  },
-};
-
-export default function NutritionBox() {
+/** `cms` is the page's Sanity document; null when it has none (built-in copy throughout). */
+export default function NutritionBox({ cms = null }: { cms?: Record<string, unknown> | null }) {
   return (
     <LangProvider>
-      <Page />
+      <CmsCopyProvider doc={cms}>
+        <Page />
+      </CmsCopyProvider>
     </LangProvider>
   );
 }
 
 function Page() {
-  const copy = useCopy(HERO);
   const lang = useLang();
+  const copy = useSectionCopy('hero', HERO, lang);
   return (
     <main id="nutrition-box" className={`${specials.variable} bg-[#000066] text-white pt-[var(--nav-h)] [--nav-h:120px] md:[--nav-h:168px]`}>
       {/* Hero: fills the first screen. It spans the full window width so the floor does too, and clips the

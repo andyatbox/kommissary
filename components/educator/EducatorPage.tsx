@@ -9,7 +9,9 @@ import CallbackForm from './CallbackForm';
 import ClickTracking from './ClickTracking';
 import MetaPixel from './MetaPixel';
 import Features from './Features';
-import { LangProvider, useCopy, useLang } from './i18n';
+import { LangProvider, useLang } from './i18n';
+import { CmsCopyProvider, useSectionCopy } from '@/lib/cmsCopy';
+import { HERO } from './copy';
 import LangToggle from './LangToggle';
 import LetsConnect from './LetsConnect';
 import Illustration from './Illustration';
@@ -35,31 +37,20 @@ const HEADLINE_SIZE = 'clamp(2.25rem, 4.4vw, 5.5rem)';
 // red-floor.svg is 612 x 222.2783 (this page's version peaks on the right).
 const FLOOR_RATIO = 222.2783 / 612;
 
-const HERO = {
-  en: {
-    headline: 'Educators—connect Bronx students and families on Medicaid with free, nutritious food, delivered.',
-    intro:
-      '“It takes a village,” as they say. Help your community from food insecurity with free boxes of medically tailored food and groceries, delivered straight to their homes. Fill out the form below to connect and help feed the village.',
-  },
-  es: {
-    headline:
-      'Educadores: conecten a los estudiantes y familias del Bronx que tienen Medicaid con comida nutritiva y gratis, entregada a domicilio.',
-    intro:
-      '“Hace falta todo un pueblo”, como dicen. Ayude a su comunidad a enfrentar la inseguridad alimentaria con cajas gratis de comida y comestibles adaptados a sus necesidades médicas, entregadas directo a sus hogares. Llene el formulario a continuación para conectarse y ayudar a alimentar al pueblo.',
-  },
-};
-
-export default function EducatorPage() {
+/** `cms` is the page's Sanity document; null when it has none (built-in copy throughout). */
+export default function EducatorPage({ cms = null }: { cms?: Record<string, unknown> | null }) {
   return (
     <LangProvider>
-      <Page />
+      <CmsCopyProvider doc={cms}>
+        <Page />
+      </CmsCopyProvider>
     </LangProvider>
   );
 }
 
 function Page() {
-  const copy = useCopy(HERO);
   const lang = useLang();
+  const copy = useSectionCopy('hero', HERO, lang);
   const heroRef = useRef<HTMLElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const illoRef = useRef<HTMLDivElement>(null);

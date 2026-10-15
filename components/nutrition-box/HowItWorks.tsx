@@ -3,7 +3,9 @@
 import type { ReactNode } from 'react';
 import GoToFormButton from './GoToFormButton';
 import { EMAIL, GET_STARTED, PHONE, PHONE_HREF } from './content';
-import { type Lang, useCopy } from './i18n';
+import { useLang } from './i18n';
+import { useSectionCopy } from '@/lib/cmsCopy';
+import { HOW_IT_WORKS } from './copy';
 import { SECTION_TITLE } from './styles';
 
 // Simple line icons, drawn on a 48x48 grid in the current text color.
@@ -74,47 +76,17 @@ const Email = () => (
   </a>
 );
 
-const COPY: Record<Lang, { heading: string; step: string; steps: ReactNode[]; help: ReactNode }> = {
-  en: {
-    heading: 'How It Works',
-    step: 'Step',
-    steps: [
-      <>
-        Confirm that you receive Medicaid and your home address is in the Bronx. Then click{' '}
-        <GoToFormButton className={CTA} track="get-started-how-it-works">&ldquo;{GET_STARTED.en}&rdquo;</GoToFormButton> and fill
-        out the form so we can connect.
-      </>,
-      'Fill out the form, providing a phone number to reach you at.',
-      'We’ll give you a call or text, whichever you prefer, and see if you qualify for free food and groceries, delivered to you right away!',
-    ],
-    help: (
-      <>
-        Need help right away? Call us at <Phone /> or drop an email to <Email />.
-      </>
-    ),
-  },
-  es: {
-    heading: 'Cómo funciona',
-    step: 'Paso',
-    steps: [
-      <>
-        Confirme que recibe Medicaid y que su domicilio está en el Bronx. Luego haga clic en{' '}
-        <GoToFormButton className={CTA} track="get-started-how-it-works">&ldquo;{GET_STARTED.es}&rdquo;</GoToFormButton> y llene
-        el formulario para que podamos comunicarnos.
-      </>,
-      'Llene el formulario e incluya un número de teléfono donde podamos comunicarnos con usted.',
-      'Le llamaremos o le enviaremos un mensaje de texto, como usted prefiera, para ver si califica para recibir comida y comestibles gratis, ¡entregados de inmediato!',
-    ],
-    help: (
-      <>
-        ¿Necesita ayuda ahora mismo? Llámenos al <Phone /> o escríbanos a <Email />.
-      </>
-    ),
-  },
-};
-
 export default function HowItWorks() {
-  const { heading, step, steps, help } = useCopy(COPY);
+  const lang = useLang();
+  const { heading, step, steps, help } = useSectionCopy('howItWorks', HOW_IT_WORKS, lang, {
+    getStarted: (
+      <GoToFormButton className={CTA} track="get-started-how-it-works">
+        &ldquo;{GET_STARTED[lang]}&rdquo;
+      </GoToFormButton>
+    ),
+    phone: <Phone />,
+    email: <Email />,
+  });
   return (
     <section data-section="how-it-works" className="px-4 py-16 md:py-24">
       <div className="mx-auto max-w-6xl">

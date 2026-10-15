@@ -1,9 +1,10 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import GoToFormButton from './GoToFormButton';
 import { CALLBACK, EMAIL, PHONE, PHONE_HREF } from './content';
-import { type Lang, useCopy } from './i18n';
+import { useLang } from './i18n';
+import { useSectionCopy } from '@/lib/cmsCopy';
+import { LETS_CONNECT } from './copy';
 import { SECTION_TITLE } from './styles';
 
 // Line icons on a 48x48 grid, in the current text color.
@@ -38,40 +39,6 @@ function MailIcon() {
 const LINK = 'font-bold text-coral underline decoration-2 underline-offset-4 hover:no-underline';
 const CTA = `border-0 bg-transparent p-0 ${LINK}`;
 
-const COPY: Record<Lang, { heading: string; intro: ReactNode; help: ReactNode; call: string; email: string }> = {
-  en: {
-    heading: 'Let’s Connect',
-    intro: (
-      <>
-        Click{' '}
-        <GoToFormButton className={CTA} track="callback-lets-connect">
-          &ldquo;{CALLBACK.en}&rdquo;
-        </GoToFormButton>{' '}
-        and fill out the form to get a call or text from us to discuss our program.
-      </>
-    ),
-    help: 'Need to get in touch sooner? Contact info below:',
-    call: 'Call us',
-    email: 'Email us',
-  },
-  es: {
-    heading: 'Conectemos',
-    intro: (
-      <>
-        Haga clic en{' '}
-        <GoToFormButton className={CTA} track="callback-lets-connect">
-          &ldquo;{CALLBACK.es}&rdquo;
-        </GoToFormButton>{' '}
-        y llene el formulario para que lo llamemos o le enviemos un mensaje de texto y hablemos de nuestro
-        programa.
-      </>
-    ),
-    help: '¿Necesita comunicarse antes? Información de contacto a continuación:',
-    call: 'Llámenos',
-    email: 'Escríbanos',
-  },
-};
-
 // A big tappable contact card: icon, small label, then the number or address large.
 const CARD =
   'group flex items-center gap-4 rounded-xtra border-2 border-solid border-coral/60 bg-white/5 px-5 py-5 text-left text-white no-underline transition-colors hover:border-coral hover:bg-coral hover:text-[#000066] hover:no-underline md:gap-5 md:px-7 md:py-6';
@@ -80,7 +47,14 @@ const BADGE =
 const LABEL = 'block text-base font-normal uppercase tracking-widest text-coral group-hover:text-[#000066]';
 
 export default function LetsConnect() {
-  const { heading, intro, help, call, email } = useCopy(COPY);
+  const lang = useLang();
+  const { heading, intro, help, call, email } = useSectionCopy('letsConnect', LETS_CONNECT, lang, {
+    callback: (
+      <GoToFormButton className={CTA} track="callback-lets-connect">
+        &ldquo;{CALLBACK[lang]}&rdquo;
+      </GoToFormButton>
+    ),
+  });
   return (
     <section data-section="lets-connect" className="px-4 py-16 md:py-24">
       <div className="mx-auto max-w-4xl">
