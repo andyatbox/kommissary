@@ -18,14 +18,14 @@ const END_LINK =
 /**
  * Bottom edge of the band that sits between the nav links and the arched logo — used by
  * both the landing tagline and the end-state call to action. The logo is centred and its
- * SVG is 0.2523 as tall as it is wide, so its top edge is half that height above the
- * midline; the extra 20px keeps copy off the arch's peak, which is its highest point and
- * sits dead centre.
+ * SVG is 0.246522 as tall as it is wide (500 x 123.261), so its top edge is half that
+ * height above the midline; the extra 20px keeps copy off the arch's peak, which is its
+ * highest point and sits dead centre.
  *
  * The width comes from --arched-logo-w (globals.css) rather than a literal, so the band
  * follows the logo automatically when large displays enlarge it.
  */
-const BAND_BOTTOM = 'calc(50% + var(--arched-logo-w) * 0.126155 + 20px)';
+const BAND_BOTTOM = 'calc(50% + var(--arched-logo-w) * 0.123261 + 20px)';
 
 /**
  * Renders the Sanity end-screen copy INSIDE the heading, so a paragraph block emits its
