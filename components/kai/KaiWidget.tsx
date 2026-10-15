@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 /**
  * Ask Kai — floating site chatbot. A fixed kai.svg launcher in the bottom-right
@@ -46,7 +47,20 @@ function renderMessage(text: string): ReactNode[] {
   return out;
 }
 
+/**
+ * Pages without Kai: the Nutrition Box, Educators and Community Leaders lead pages keep
+ * their own floating call to action ("Get Started" / "Request a Callback") in this same
+ * bottom-right corner, and are built to keep a visitor on the one form.
+ */
+const NO_KAI_PATHS = ['/bronx', '/educator', '/dycd'];
+
 export default function KaiWidget() {
+  const pathname = usePathname();
+  if (NO_KAI_PATHS.includes(pathname)) return null;
+  return <KaiPanel />;
+}
+
+function KaiPanel() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');

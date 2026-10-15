@@ -1,0 +1,32 @@
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Hover: bob up and down while tilting slightly, around the item's own center.
+   Per-layer values come in as custom properties from Illustration.tsx. The bob is a
+   percentage of the layer's height, so it scales with the illustration. */
+.float {
+  transform-origin: var(--ox) var(--oy);
+  animation: hover var(--dur) ease-in-out var(--delay) infinite alternate;
+  will-change: transform;
+}
+
+@keyframes hover {
+  from {
+    transform: translateY(calc(var(--amp) * -1)) rotate(calc(var(--rot) * -1));
+  }
+  to {
+    transform: translateY(var(--amp)) rotate(var(--rot));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float {
+    animation: none;
+  }
+}

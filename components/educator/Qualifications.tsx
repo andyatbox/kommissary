@@ -1,0 +1,87 @@
+'use client';
+
+import type { ReactNode } from 'react';
+import { OPENS_NEW_WINDOW, SOMOS_URL } from './content';
+import { type Lang, useCopy } from './i18n';
+import { SECTION_TITLE } from './styles';
+
+// Each point is a big word or number with a line of explanation. The first two (the
+// stats) take wider tiles on desktop: a 6-column grid, 3 + 3 then 2 + 2 + 2.
+type Point = { big: string; copy: ReactNode; wide?: boolean; somos?: boolean };
+
+const somosLink = (lang: Lang) => (
+  <a
+    className="text-coral underline decoration-2 underline-offset-4 hover:no-underline"
+    href={SOMOS_URL}
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    SOMOS Social Care Network
+    <span className="sr-only">{OPENS_NEW_WINDOW[lang]}</span>
+  </a>
+);
+
+const COPY: Record<Lang, { heading: string; points: Point[] }> = {
+  en: {
+    heading: 'The Kommissary Impact',
+    points: [
+      { big: '30,000+', copy: 'meals created every day in our kitchens.', wide: true },
+      { big: 'Millions', copy: 'fed through schools, senior care facilities, and shelters across NYC.', wide: true },
+      { big: 'USDA', copy: 'Meals are prepared in our USDA facility.' },
+      { big: 'Dietitian', copy: 'approved menus, planned for each recipient’s health.' },
+      {
+        big: 'SOMOS',
+        somos: true,
+        copy: <>We&rsquo;re a provider in the {somosLink('en')}, connecting Bronx Medicaid members with healthy food.</>,
+      },
+    ],
+  },
+  es: {
+    heading: 'El impacto de Kommissary',
+    points: [
+      { big: '30,000+', copy: 'comidas preparadas cada día en nuestras cocinas.', wide: true },
+      {
+        big: 'Millones',
+        copy: 'de personas alimentadas en escuelas, centros para personas mayores y albergues de toda la ciudad de Nueva York.',
+        wide: true,
+      },
+      { big: 'USDA', copy: 'Las comidas se preparan en nuestras instalaciones USDA.' },
+      { big: 'Dietistas', copy: 'aprueban nuestros menús, planificados para la salud de cada beneficiario.' },
+      {
+        big: 'SOMOS',
+        somos: true,
+        copy: <>Somos proveedor de la red {somosLink('es')}, que conecta a los miembros de Medicaid del Bronx con comida saludable.</>,
+      },
+    ],
+  },
+};
+
+export default function Qualifications() {
+  const { heading, points } = useCopy(COPY);
+  return (
+    <section data-section="qualifications" className="px-4 pb-16 md:pb-24">
+      <div className="mx-auto max-w-6xl border-0 border-t-2 border-solid border-white/15 pt-16 md:pt-24">
+        <h2 className={`${SECTION_TITLE} text-coral`}>{heading}</h2>
+        <ul className="m-0 grid list-none gap-5 p-0 sm:grid-cols-2 lg:grid-cols-6">
+          {points.map(({ big, copy, wide, somos }) => (
+            <li
+              key={big}
+              className={`rounded-xtra border-2 border-solid border-white/15 p-6 md:p-8 ${
+                wide ? 'lg:col-span-3' : 'lg:col-span-2'
+              } ${somos ? 'sm:col-span-2 lg:col-span-2' : ''}`}
+            >
+              <p
+                className={`m-0 font-specials leading-[0.9] text-coral ${
+                  wide ? 'text-[clamp(3.5rem,7vw,6rem)]' : 'text-[clamp(2.75rem,4.5vw,4rem)]'
+                }`}
+              >
+                {big}
+              </p>
+              <p className="m-0 mt-3 text-xl leading-snug">{copy}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}

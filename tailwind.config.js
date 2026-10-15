@@ -16,6 +16,17 @@ module.exports = {
         gold: '#ffcf33',
         salmon: '#f78a76',
         brick: '#c2402f',
+        // From the 1.0 palette, used by the Nutrition Box, Educators and Community
+        // Leaders pages (components/nutrition-box, educator, dycd).
+        cream: '#FFE9CC',
+        canary: '#f7e54f',
+      },
+      fontFamily: {
+        // New Spirit Condensed Specials, loaded by components/nutrition-box/fonts.ts.
+        specials: ['var(--font-specials)', 'serif'],
+      },
+      borderRadius: {
+        xtra: '30px',
       },
     },
   },
