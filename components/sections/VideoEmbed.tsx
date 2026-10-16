@@ -214,7 +214,7 @@ export default function VideoEmbed({
 
 /**
  * A video file from Sanity's CDN in a plain <video>. Full browser width, sized by the
- * video itself (16:9 until its metadata arrives) and capped at 85vh, so tall or portrait
+ * video itself (16:9 until its metadata arrives) and capped at 75vh, so tall or portrait
  * clips shrink and centre instead of being cropped. The four Playback checkboxes:
  *
  * - Autoplay: plays while on screen, pauses off it. Falls back to the play button when
@@ -296,8 +296,8 @@ function UploadedVideo({
   return (
     <figure className="w-full">
       <div
-        className="relative mx-auto overflow-hidden bg-black"
-        style={{ aspectRatio: ratio, width: `min(100%, calc(85vh * ${ratio}))` }}
+        className="relative mx-auto overflow-hidden rounded-xl bg-black"
+        style={{ aspectRatio: ratio, width: `min(100%, calc(75vh * ${ratio}))` }}
       >
         <video
           ref={ref}
