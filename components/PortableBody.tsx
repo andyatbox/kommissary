@@ -108,8 +108,16 @@ function makeComponents(tone: Tone): PortableTextComponents {
         if (!value?.asset) return null;
         const url = urlFor(value).width(1400).fit('max').auto('format').url();
         return (
+          // Capped at 75vh so a tall photo never runs past the screen. Width follows from
+          // the height (w-auto) rather than being forced full-width, which would stretch a
+          // capped image out of proportion; landscape photos still fill the column.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt={value.alt ?? ''} className="mt-8 w-full rounded-xl" loading="lazy" />
+          <img
+            src={url}
+            alt={value.alt ?? ''}
+            className="mt-8 block h-auto max-h-[75vh] w-auto max-w-full rounded-xl"
+            loading="lazy"
+          />
         );
       },
     },
