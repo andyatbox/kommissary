@@ -85,7 +85,7 @@ export default async function SlugPage({ params }: { params: { slug: string } })
     <main className="min-h-dvh pb-28 pt-[120px] md:pt-[168px]">
       <Reveal>
         <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
-          <h1 className="font-spirit text-4xl font-medium text-[#ff6666] sm:text-5xl md:text-center">
+          <h1 className="text-balance text-center font-spirit text-5xl font-medium leading-[1.05] text-gold sm:text-6xl lg:text-7xl">
             {page.title}
           </h1>
         </div>
