@@ -78,6 +78,7 @@ export const page = defineType({
       description:
         'Build the page by adding sections in any order. Drag to reorder; add as many as you like.',
       of: [
+        defineArrayMember({ type: 'titleSection' }),
         defineArrayMember({ type: 'bodyCopy' }),
         defineArrayMember({ type: 'videoEmbed' }),
         defineArrayMember({ type: 'imageSlider' }),

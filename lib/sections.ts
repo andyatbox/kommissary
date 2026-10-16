@@ -9,6 +9,7 @@ import { getReels, getReelsByCode } from '@/lib/instagram/api';
 export const SECTIONS_PROJECTION = `sections[]{
   _key,
   _type,
+  _type == "titleSection" => { text },
   _type == "bodyCopy" => { content },
   _type == "videoEmbed" => {
     url,

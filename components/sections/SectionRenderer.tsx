@@ -10,6 +10,7 @@ import ReelsWaterfall from '@/components/instagram/ReelsWaterfall';
 import type { Reel } from '@/lib/instagram/api';
 
 export type PageSection =
+  | { _type: 'titleSection'; _key: string; text?: string }
   | { _type: 'bodyCopy'; _key: string; content?: PortableTextBlock[] }
   | {
       _type: 'videoEmbed';
@@ -47,6 +48,15 @@ export type PageSection =
  *  video centres itself; the slider and grid go full browser width. */
 export default function SectionRenderer({ section }: { section: PageSection }) {
   switch (section._type) {
+    case 'titleSection':
+      // Same look as the page title, but always centred.
+      return section.text ? (
+        <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
+          <h1 className="text-balance text-center font-spirit text-4xl font-medium text-[#ff6666] sm:text-5xl">
+            {section.text}
+          </h1>
+        </div>
+      ) : null;
     case 'bodyCopy':
       return (
         <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">

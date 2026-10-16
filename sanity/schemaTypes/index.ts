@@ -6,7 +6,7 @@ import { post } from './post';
 import { moment } from './moment';
 import { ourStoryPage } from './ourStoryPage';
 import { blockContent, link, anchor } from './blockContent';
-import { bodyCopy, videoEmbed, imageSlider, gridCopy, htmlEmbed, contactForm, instagramReels } from './sections';
+import { titleSection, bodyCopy, videoEmbed, imageSlider, gridCopy, htmlEmbed, contactForm, instagramReels } from './sections';
 import {
   localeString,
   localeText,
@@ -42,6 +42,7 @@ export const schemaTypes = [
   pill,
   ctaButton,
   // Page-builder sections
+  titleSection,
   bodyCopy,
   videoEmbed,
   imageSlider,

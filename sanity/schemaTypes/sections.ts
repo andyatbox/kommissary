@@ -6,6 +6,25 @@ import { defineArrayMember, defineField, defineType } from 'sanity';
  * see components/sections/SectionRenderer.tsx.
  */
 
+/** One line of text as a centred page heading — no card behind it, unlike Body Copy. */
+export const titleSection = defineType({
+  name: 'titleSection',
+  title: 'Title',
+  type: 'object',
+  fields: [
+    defineField({
+      name: 'text',
+      title: 'Text',
+      type: 'string',
+      validation: (r) => r.required(),
+    }),
+  ],
+  preview: {
+    select: { text: 'text' },
+    prepare: ({ text }) => ({ title: 'Title', subtitle: text }),
+  },
+});
+
 /** Rich text at the normal page column width. */
 export const bodyCopy = defineType({
   name: 'bodyCopy',

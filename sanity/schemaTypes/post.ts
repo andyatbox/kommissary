@@ -65,6 +65,7 @@ export const post = defineType({
       description:
         'Build the post by adding sections in any order — same options as Pages. Drag to reorder.',
       of: [
+        defineArrayMember({ type: 'titleSection' }),
         defineArrayMember({ type: 'bodyCopy' }),
         defineArrayMember({ type: 'videoEmbed' }),
         defineArrayMember({ type: 'imageSlider' }),

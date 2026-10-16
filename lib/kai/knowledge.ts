@@ -31,6 +31,7 @@ type PageSectionDoc = {
   column2?: Block[];
   column3?: Block[];
   caption?: string;
+  text?: string;
 };
 
 type PageDoc = {
@@ -69,6 +70,7 @@ const QUERY = `{
     navGroup,
     sections[]{
       _type,
+      _type == "titleSection" => { text },
       _type == "bodyCopy" => { content },
       _type == "gridCopy" => { column1, column2, column3 },
       _type == "videoEmbed" => { caption }
@@ -78,6 +80,8 @@ const QUERY = `{
 
 function sectionText(s: PageSectionDoc): string {
   switch (s._type) {
+    case 'titleSection':
+      return s.text ?? '';
     case 'bodyCopy':
       return plain(s.content);
     case 'gridCopy':
