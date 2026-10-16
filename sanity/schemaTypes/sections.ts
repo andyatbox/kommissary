@@ -21,24 +21,98 @@ export const bodyCopy = defineType({
   },
 });
 
-/** An embedded video (YouTube, Vimeo, Gumlet, Instagram) at the normal page width. */
+/** Above this an uploaded video gets a warning: it's slow to start on a phone. */
+const VIDEO_WARN_BYTES = 80 * 1024 * 1024;
+
+/** Checkboxes for uploaded videos, all off by default. See UploadedVideo for how they combine. */
+const PLAYBACK_OPTIONS = [
+  { name: 'autoplay', title: 'Autoplay', description: 'Plays when scrolled into view. Browsers only allow this when Muted is also checked.' },
+  { name: 'muted', title: 'Muted', description: 'No sound until a visitor turns it on (needs Controls).' },
+  { name: 'controls', title: 'Controls', description: 'Shows the play bar, volume and full screen.' },
+  { name: 'loop', title: 'Loop', description: 'Starts again when it ends.' },
+] as const;
+
+/**
+ * A video at the normal page width: either a link (YouTube, Vimeo, Gumlet, Instagram)
+ * or a file uploaded here, which Sanity's CDN serves to our own player. Named
+ * `videoEmbed` from when it only took links; renaming it would orphan existing sections.
+ */
 export const videoEmbed = defineType({
   name: 'videoEmbed',
-  title: 'Video Embed',
+  title: 'Video',
   type: 'object',
+  fieldsets: [
+    {
+      name: 'playback',
+      title: 'Playback',
+      options: { columns: 2 },
+      // A fieldset's callback isn't handed the same `parent` as a field's, so check the
+      // object's own value too.
+      hidden: ({ parent, value }) => !(value?.file?.asset || parent?.file?.asset),
+    },
+  ],
   fields: [
     defineField({
       name: 'url',
       title: 'Video URL',
       type: 'url',
-      description: 'Paste a YouTube, Vimeo, Gumlet, or Instagram link.',
-      validation: (r) => r.required().uri({ scheme: ['http', 'https'] }),
+      description: 'Paste a YouTube, Vimeo, Gumlet, or Instagram link, or upload a video below.',
+      hidden: ({ parent }) => Boolean(parent?.file?.asset) && !parent?.url,
+      validation: (r) =>
+        r.uri({ scheme: ['http', 'https'] }).custom((url, ctx) => {
+          const parent = ctx.parent as { file?: { asset?: unknown } } | undefined;
+          return url || parent?.file?.asset ? true : 'Add a video link or upload a video.';
+        }),
+    }),
+    defineField({
+      name: 'file',
+      title: 'Upload a video',
+      type: 'file',
+      options: { accept: 'video/mp4,video/webm' },
+      description:
+        'MP4 (H.264), ideally 1080p and under 80 MB. iPhone videos (.mov) need exporting as MP4 first.',
+      hidden: ({ parent }) => Boolean(parent?.url) && !parent?.file?.asset,
+      validation: (r) =>
+        r
+          .custom(async (value, ctx) => {
+            const ref = (value as { asset?: { _ref?: string } } | undefined)?.asset?._ref;
+            if (!ref) return true;
+            const size: number | null = await ctx
+              .getClient({ apiVersion: '2024-10-01' })
+              .fetch('*[_id == $id][0].size', { id: ref });
+            return size && size > VIDEO_WARN_BYTES
+              ? `This video is ${Math.round(size / 1024 / 1024)} MB, so it will be slow to start on phones. Try exporting it smaller.`
+              : true;
+          })
+          .warning(),
+    }),
+    ...PLAYBACK_OPTIONS.map(({ name, title, description }) =>
+      defineField({
+        name,
+        title,
+        description,
+        type: 'boolean',
+        fieldset: 'playback',
+        options: { layout: 'checkbox' },
+        initialValue: false,
+      })
+    ),
+    defineField({
+      name: 'poster',
+      title: 'Cover image',
+      type: 'image',
+      description:
+        'Shown before the video plays. Optional: without one, uploads show their first frame and links use the provider’s thumbnail.',
     }),
     defineField({ name: 'caption', title: 'Caption', type: 'string' }),
   ],
   preview: {
-    select: { url: 'url', caption: 'caption' },
-    prepare: ({ url, caption }) => ({ title: 'Video Embed', subtitle: caption || url }),
+    select: { url: 'url', caption: 'caption', fileName: 'file.asset.originalFilename', media: 'poster' },
+    prepare: ({ url, caption, fileName, media }) => ({
+      title: 'Video',
+      subtitle: caption || fileName || url,
+      media,
+    }),
   },
 });
 

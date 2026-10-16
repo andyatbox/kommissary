@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReelCard from '@/components/instagram/ReelCard';
 import type { Reel } from '@/lib/instagram/api';
 
@@ -88,18 +88,47 @@ function PlayButton() {
 
 export default function VideoEmbed({
   url,
+  /** A video uploaded in Studio. Played by our own player, and wins over `url`. */
+  file,
+  /** Uploads only: the Playback checkboxes. */
+  autoplay,
+  muted,
+  controls,
+  loop,
   caption,
-  /** Poster fetched server-side (e.g. Vimeo). Falls back to the provider thumbnail. */
+  /** Cover image from Studio, or fetched server-side (Vimeo). Falls back to the provider thumbnail. */
   poster,
   /** Present when the URL is one of @kommissary's own reels (see enrichSections). */
   reel,
 }: {
-  url: string;
+  url?: string;
+  file?: { url: string; mimeType?: string };
+  autoplay?: boolean;
+  muted?: boolean;
+  controls?: boolean;
+  loop?: boolean;
   caption?: string;
   poster?: string;
   reel?: Reel;
 }) {
   const [playing, setPlaying] = useState(false);
+
+  if (file) {
+    return (
+      <UploadedVideo
+        src={file.url}
+        type={file.mimeType}
+        poster={poster}
+        caption={caption}
+        autoplay={Boolean(autoplay)}
+        muted={Boolean(muted)}
+        controls={Boolean(controls)}
+        loop={Boolean(loop)}
+      />
+    );
+  }
+  if (!url) return null;
+
   const video = parseVideo(url);
   const thumbnail = poster ?? (video.kind === 'iframe' ? video.thumbnail : undefined);
 
@@ -181,6 +210,141 @@ export default function VideoEmbed({
       {caption && <Caption>{caption}</Caption>}
     </figure>
   );
+}
+
+/**
+ * A video file from Sanity's CDN in a plain <video>. Full browser width, sized by the
+ * video itself (16:9 until its metadata arrives) and capped at 85vh, so tall or portrait
+ * clips shrink and centre instead of being cropped. The four Playback checkboxes:
+ *
+ * - Autoplay: plays while on screen, pauses off it. Falls back to the play button when
+ *   the browser refuses (it will unless Muted is on too) or the visitor asks for reduced
+ *   motion.
+ * - Muted, Loop: as on any <video>.
+ * - Controls: native controls once it's playing. Without them, clicking the video
+ *   pauses it and brings the play button back.
+ *
+ * Otherwise it waits behind the same coral play button as the link embeds, which comes
+ * back when the video ends, and only the metadata loads until then.
+ */
+function UploadedVideo({
+  src,
+  type,
+  poster,
+  caption,
+  autoplay,
+  muted,
+  controls,
+  loop,
+}: {
+  src: string;
+  type?: string;
+  poster?: string;
+  caption?: string;
+  autoplay: boolean;
+  muted: boolean;
+  controls: boolean;
+  loop: boolean;
+}) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [showButton, setShowButton] = useState(!autoplay);
+  const [ratio, setRatio] = useState(16 / 9);
+  const reducedMotion = usePrefersReducedMotion();
+  const autoplays = autoplay && !reducedMotion;
+
+  const fit = (el: HTMLVideoElement) => {
+    if (el.videoWidth && el.videoHeight) setRatio(el.videoWidth / el.videoHeight);
+  };
+  // The metadata can arrive before hydration, when onLoadedMetadata isn't attached yet.
+  useEffect(() => {
+    if (ref.current && ref.current.readyState >= 1) fit(ref.current);
+  }, []);
+
+  // React doesn't put `muted` in the server HTML, so set it on the element itself.
+  useEffect(() => {
+    if (ref.current) ref.current.muted = muted;
+  }, [muted]);
+
+  useEffect(() => {
+    if (autoplay && reducedMotion) setShowButton(true);
+  }, [autoplay, reducedMotion]);
+
+  // Autoplay from here rather than the autoplay attribute, so it only runs on screen. It
+  // resumes only what it paused itself, never a video the visitor paused.
+  useEffect(() => {
+    const el = ref.current;
+    if (!autoplays || !el) return;
+    let pausedByUs = true;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        if (pausedByUs && el.paused && !el.ended) {
+          pausedByUs = false;
+          el.play().catch(() => setShowButton(true));
+        }
+      } else if (!el.paused) {
+        el.pause();
+        pausedByUs = true;
+      }
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [autoplays]);
+
+  // Called inside the click so iOS allows sound.
+  const play = () => ref.current?.play().catch(() => {});
+
+  return (
+    <figure className="w-full">
+      <div
+        className="relative mx-auto overflow-hidden bg-black"
+        style={{ aspectRatio: ratio, width: `min(100%, calc(85vh * ${ratio}))` }}
+      >
+        <video
+          ref={ref}
+          className={`absolute inset-0 h-full w-full object-contain${controls ? '' : ' cursor-pointer'}`}
+          poster={poster}
+          playsInline
+          loop={loop}
+          preload={autoplays ? 'auto' : 'metadata'}
+          controls={controls && !showButton}
+          aria-label={caption || 'Video'}
+          onLoadedMetadata={(e) => fit(e.currentTarget)}
+          onPlay={() => setShowButton(false)}
+          onEnded={() => setShowButton(true)}
+          // Without controls the play button is the only cue it's paused, so bring it back.
+          onPause={() => !controls && setShowButton(true)}
+          onClick={controls ? undefined : (e) => e.currentTarget.pause()}
+        >
+          {/* Without a cover image, the #t fragment makes iOS Safari paint the first frame. */}
+          <source src={poster ? src : `${src}#t=0.001`} type={type} />
+        </video>
+        {showButton && (
+          <button
+            type="button"
+            onClick={play}
+            aria-label={caption ? `Play: ${caption}` : 'Play video'}
+            className="group absolute inset-0 h-full w-full cursor-pointer"
+          >
+            <span className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/10" />
+            <PlayButton />
+          </button>
+        )}
+      </div>
+      {caption && <div className="px-6 sm:px-8"><Caption>{caption}</Caption></div>}
+    </figure>
+  );
+}
+
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return reduced;
 }
 
 function Caption({ children }: { children: React.ReactNode }) {

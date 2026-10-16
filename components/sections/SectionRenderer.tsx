@@ -14,8 +14,16 @@ export type PageSection =
   | {
       _type: 'videoEmbed';
       _key: string;
-      url: string;
+      url?: string;
+      /** A video uploaded in Studio, served from Sanity's CDN. Wins over `url`. */
+      file?: { url: string; mimeType?: string };
+      /** Uploads only: the Playback checkboxes. */
+      autoplay?: boolean;
+      muted?: boolean;
+      controls?: boolean;
+      loop?: boolean;
       caption?: string;
+      /** Cover image from Studio, or (Vimeo) fetched server-side — see enrichSections. */
       poster?: string;
       /** Set when the URL is one of our own reels — see enrichSections. */
       reel?: Reel;
@@ -54,6 +62,11 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
       return (
         <VideoEmbed
           url={section.url}
+          file={section.file}
+          autoplay={section.autoplay}
+          muted={section.muted}
+          controls={section.controls}
+          loop={section.loop}
           caption={section.caption}
           poster={section.poster}
           reel={section.reel}

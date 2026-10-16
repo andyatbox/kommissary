@@ -10,7 +10,16 @@ export const SECTIONS_PROJECTION = `sections[]{
   _key,
   _type,
   _type == "bodyCopy" => { content },
-  _type == "videoEmbed" => { url, caption },
+  _type == "videoEmbed" => {
+    url,
+    caption,
+    autoplay,
+    muted,
+    controls,
+    loop,
+    "file": file.asset->{ url, mimeType },
+    "poster": poster.asset->url + "?w=1920&fit=max&auto=format"
+  },
   _type == "imageSlider" => {
     "images": images[]{ asset, hotspot, crop, alt, "lqip": asset->metadata.lqip }
   },
@@ -51,7 +60,7 @@ function instagramCode(url: string): string | null {
 export async function enrichSections(sections: PageSection[]): Promise<PageSection[]> {
   // Only look up the reel index if a Video Embed actually points at Instagram.
   const needsIgIndex = sections.some(
-    (s) => s._type === 'videoEmbed' && instagramCode(s.url) !== null
+    (s) => s._type === 'videoEmbed' && !s.file && s.url && instagramCode(s.url) !== null
   );
   const byCode = needsIgIndex ? await getReelsByCode() : null;
 
@@ -60,8 +69,10 @@ export async function enrichSections(sections: PageSection[]): Promise<PageSecti
       if (s._type === 'instagramReels') {
         return { ...s, reels: await getReels(s.count ?? 12) };
       }
-      if (s._type === 'videoEmbed') {
-        if (s.url.includes('vimeo.com')) return { ...s, poster: await vimeoPoster(s.url) };
+      // Uploads need nothing from the server, and a cover image set in Studio wins.
+      if (s._type === 'videoEmbed' && !s.file && s.url) {
+        if (s.url.includes('vimeo.com'))
+          return s.poster ? s : { ...s, poster: await vimeoPoster(s.url) };
         const code = instagramCode(s.url);
         // Falls through to Instagram's iframe embed when the post isn't one of ours.
         if (code && byCode?.has(code)) return { ...s, reel: byCode.get(code) };
