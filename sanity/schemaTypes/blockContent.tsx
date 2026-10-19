@@ -36,8 +36,8 @@ const AnchorIcon = () => (
 );
 
 /**
- * The anchor annotation: marks a run of text as a jump target, so a menu (or any link)
- * can scroll to it via `#its-id`. Named + registered exactly like `link` below — an
+ * The anchor annotation: marks a run of text as a jump target, so a link can scroll to
+ * it via `#its-id`. Named + registered exactly like `link` below — an
  * inline annotation type re-resolves on every keystroke and closes the Studio popover.
  */
 export const anchor = defineType({
@@ -62,13 +62,9 @@ export const anchor = defineType({
             name: 'anchor ID (lowercase letters, numbers and hyphens, e.g. "our-process")',
           }),
     }),
-    defineField({
-      name: 'label',
-      title: 'Menu label',
-      type: 'string',
-      description:
-        'Optional. What the jump-to menu shows for this anchor — defaults to the highlighted text if left blank.',
-    }),
+    // Fed the jump-to menu, which is gone. Hidden rather than removed so labels already
+    // saved don't show up in Studio as unknown fields.
+    defineField({ name: 'label', title: 'Menu label', type: 'string', hidden: true }),
   ],
   preview: {
     select: { id: 'id', label: 'label' },

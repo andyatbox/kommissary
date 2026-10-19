@@ -4,9 +4,7 @@ import type { PortableTextBlock } from '@portabletext/types';
 import { client } from '@/sanity/lib/client';
 import Reveal from '@/components/Reveal';
 import SectionRenderer, { type PageSection } from '@/components/sections/SectionRenderer';
-import AnchorMenu from '@/components/AnchorMenu';
 import { SECTIONS_PROJECTION, enrichSections } from '@/lib/sections';
-import { collectAnchors } from '@/lib/anchors';
 
 // Re-fetch periodically so published content changes show without a redeploy.
 export const revalidate = 60;
@@ -75,8 +73,6 @@ export default async function SlugPage({ params }: { params: { slug: string } })
         : [];
 
   const sections = await enrichSections(rawSections);
-  // Built from whatever the editor has tagged; renders nothing when there's nothing.
-  const anchors = collectAnchors(sections);
 
   return (
     // Full-width main (no single max-width wrapper): each section owns its width, so
@@ -110,7 +106,6 @@ export default async function SlugPage({ params }: { params: { slug: string } })
         </div>
       )}
 
-      <AnchorMenu anchors={anchors} />
     </main>
   );
 }
