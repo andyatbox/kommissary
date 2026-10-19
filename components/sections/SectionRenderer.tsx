@@ -92,16 +92,13 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
       if (!img) return null;
       const ratio = imageRatio(section.image!);
       return (
-        // Full width, capped at 75vh: the box takes the image's proportions, so a tall
-        // photo narrows and centres instead of being cropped, and a small one still
-        // spans the page. Its size is known up front, so nothing shifts as it loads.
+        // Up to full width, capped at 50vh, always centred. The box takes the image's
+        // proportions, so a photo too tall for the cap narrows instead of being cropped,
+        // and a small one still spans the page. Its size is known up front, so nothing
+        // shifts as it loads.
         <div
           className="relative mx-auto overflow-hidden rounded-xl"
-          style={{
-            aspectRatio: ratio,
-            width: `min(100%, calc(75vh * ${ratio}))`,
-            ...(img.lqip ? { backgroundImage: `url(${img.lqip})`, backgroundSize: 'cover' } : {}),
-          }}
+          style={{ aspectRatio: ratio, width: `min(100%, calc(50vh * ${ratio}))` }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

@@ -24,7 +24,6 @@ export const SECTIONS_PROJECTION = `sections[]{
   _type == "singleImage" => {
     "image": image{
       asset, hotspot, crop, alt,
-      "lqip": asset->metadata.lqip,
       "width": asset->metadata.dimensions.width,
       "height": asset->metadata.dimensions.height
     }

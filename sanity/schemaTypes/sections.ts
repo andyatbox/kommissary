@@ -135,7 +135,7 @@ export const videoEmbed = defineType({
   },
 });
 
-/** One image, full browser width and capped at 75vh, shown whole (never cropped to fit). */
+/** One image: up to full browser width, capped at 50vh, centred, never cropped to fit. */
 export const singleImage = defineType({
   name: 'singleImage',
   title: 'Image',
