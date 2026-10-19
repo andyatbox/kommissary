@@ -3,6 +3,7 @@ import { Roboto_Condensed } from 'next/font/google';
 import { client } from '@/sanity/lib/client';
 import { buildNav, type NavMenu, type NavPage } from '@/lib/nav';
 import Nav from '@/components/Nav';
+import SiteFooter from '@/components/SiteFooter';
 import KaiWidget from '@/components/kai/KaiWidget';
 import GradientBackground from '@/components/GradientBackground';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
@@ -88,6 +89,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <GradientBackground />
         <Nav menus={nav} />
         {children}
+        <SiteFooter />
         {/* Ask Kai — floating chatbot, on every page. */}
         <KaiWidget />
         <GoogleAnalytics />
