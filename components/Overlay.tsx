@@ -85,8 +85,8 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
 
   return (
     <>
-      {/* Splash logo: center-contained, slides off to the left on first scroll. The
-          scroll hint is nested directly under the logo, tucked up into the arch. */}
+      {/* Splash logo: centred, slides off to the left on first scroll, taking the scroll
+          hint with it. */}
       <div
         className={`pointer-events-none fixed inset-0 z-20 flex flex-col items-center justify-center p-8 transition-all duration-[900ms] ease-[cubic-bezier(0.7,0,0.2,1)] ${
           started
@@ -100,11 +100,12 @@ export default function Overlay({ latestWeekly }: { latestWeekly: TeaserPost[] }
           alt="Kommissary"
           className="h-auto w-[var(--arched-logo-w)] max-w-full object-contain"
         />
-        {/* Tucked into the arch, but far less on a phone, where the logo is small enough
-            that the desktop offset put the hint on top of the wordmark. Held back until
-            the scene is ready, so it never invites a scroll that does nothing. */}
+        {/* Centred on the point halfway between the logo's centre (the viewport's
+            midline) and the bottom edge. Out of the flex flow, so the logo alone is
+            centred, which is where BAND_BOTTOM assumes it is. Held back until the scene
+            is ready, so it never invites a scroll that does nothing. */}
         <div
-          className={`-mt-4 text-center transition-opacity duration-500 sm:-mt-12 md:-mt-16 ${
+          className={`absolute inset-x-0 top-3/4 -translate-y-1/2 text-center transition-opacity duration-500 ${
             ready ? 'opacity-100' : 'opacity-0'
           }`}
         >
