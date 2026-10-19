@@ -140,7 +140,26 @@ export const blockContent = defineType({
     defineArrayMember({
       type: 'image',
       options: { hotspot: true },
-      fields: [defineField({ name: 'alt', type: 'string', title: 'Alt text' })],
+      fields: [
+        defineField({ name: 'alt', type: 'string', title: 'Alt text' }),
+        // The Center button only marks text, and an image isn't text, so it can't take
+        // it. Left unset, the image follows the text around it (see PortableBody).
+        defineField({
+          name: 'align',
+          title: 'Alignment',
+          type: 'string',
+          description: 'Leave on "Match the text" to follow the alignment of the text around it.',
+          options: {
+            list: [
+              { title: 'Match the text', value: '' },
+              { title: 'Left', value: 'left' },
+              { title: 'Center', value: 'center' },
+            ],
+            layout: 'radio',
+            direction: 'horizontal',
+          },
+        }),
+      ],
     }),
   ],
 });

@@ -19,6 +19,36 @@ function isCentered(value: unknown): boolean {
   return Array.isArray(children) && children.some((c) => c.marks?.includes('center'));
 }
 
+type ImageBlock = { _type: 'image'; align?: string; centered?: boolean };
+
+/**
+ * Settles each image's alignment before rendering, since an image block can't carry the
+ * text-only Center mark. An explicit Left/Center on the image wins; otherwise it takes
+ * the alignment of the nearest text block above it, or below it if it opens the field,
+ * so centring the text around an image centres the image too.
+ */
+function alignImages(blocks: PortableTextBlock[]): PortableTextBlock[] {
+  const textCentered = (i: number) => blocks[i]?._type === 'block' && isCentered(blocks[i]);
+  const nearestText = (from: number, step: 1 | -1) => {
+    for (let i = from; i >= 0 && i < blocks.length; i += step) {
+      if (blocks[i]._type === 'block') return i;
+    }
+    return -1;
+  };
+  return blocks.map((b, i) => {
+    if (b._type !== 'image') return b;
+    const img = b as unknown as ImageBlock;
+    let centered: boolean;
+    if (img.align === 'center') centered = true;
+    else if (img.align === 'left') centered = false;
+    else {
+      const above = nearestText(i - 1, -1);
+      centered = textCentered(above >= 0 ? above : nearestText(i + 1, 1));
+    }
+    return { ...b, centered } as PortableTextBlock;
+  });
+}
+
 function makeComponents(tone: Tone): PortableTextComponents {
   const light = tone === 'light';
   const body = light ? 'text-black' : 'text-white/85';
@@ -115,7 +145,9 @@ function makeComponents(tone: Tone): PortableTextComponents {
           <img
             src={url}
             alt={value.alt ?? ''}
-            className="mt-8 block h-auto max-h-[75vh] w-auto max-w-full rounded-xl"
+            className={`mt-8 block h-auto max-h-[75vh] w-auto max-w-full rounded-xl ${
+              (value as ImageBlock).centered ? 'mx-auto' : ''
+            }`}
             loading="lazy"
           />
         );
@@ -136,5 +168,5 @@ export default function PortableBody({
   value: PortableTextBlock[];
   tone?: Tone;
 }) {
-  return <PortableText value={value} components={componentsByTone[tone]} />;
+  return <PortableText value={alignImages(value)} components={componentsByTone[tone]} />;
 }
