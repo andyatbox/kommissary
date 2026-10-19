@@ -6,7 +6,7 @@ import { post } from './post';
 import { moment } from './moment';
 import { ourStoryPage } from './ourStoryPage';
 import { blockContent, link, anchor } from './blockContent';
-import { titleSection, bodyCopy, videoEmbed, imageSlider, gridCopy, htmlEmbed, contactForm, instagramReels } from './sections';
+import { titleSection, bodyCopy, videoEmbed, singleImage, imageSlider, gridCopy, htmlEmbed, contactForm, instagramReels } from './sections';
 import {
   localeString,
   localeText,
@@ -45,6 +45,7 @@ export const schemaTypes = [
   titleSection,
   bodyCopy,
   videoEmbed,
+  singleImage,
   imageSlider,
   gridCopy,
   htmlEmbed,

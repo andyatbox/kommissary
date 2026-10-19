@@ -21,6 +21,14 @@ export const SECTIONS_PROJECTION = `sections[]{
     "file": file.asset->{ url, mimeType },
     "poster": poster.asset->url + "?w=1920&fit=max&auto=format"
   },
+  _type == "singleImage" => {
+    "image": image{
+      asset, hotspot, crop, alt,
+      "lqip": asset->metadata.lqip,
+      "width": asset->metadata.dimensions.width,
+      "height": asset->metadata.dimensions.height
+    }
+  },
   _type == "imageSlider" => {
     "images": images[]{ asset, hotspot, crop, alt, "lqip": asset->metadata.lqip }
   },

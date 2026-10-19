@@ -1,6 +1,6 @@
 import type { PortableTextBlock } from '@portabletext/types';
 import PortableBody from '@/components/PortableBody';
-import { galleryImagesFromSanity, type SanityGalleryImage } from '@/lib/galleryImage';
+import { galleryImageFromSanity, galleryImagesFromSanity, type SanityGalleryImage } from '@/lib/galleryImage';
 import VideoEmbed from './VideoEmbed';
 import ImageSlider from './ImageSlider';
 import GridCopy from './GridCopy';
@@ -28,6 +28,11 @@ export type PageSection =
       poster?: string;
       /** Set when the URL is one of our own reels — see enrichSections. */
       reel?: Reel;
+    }
+  | {
+      _type: 'singleImage';
+      _key: string;
+      image?: SanityGalleryImage & { width?: number; height?: number };
     }
   | { _type: 'imageSlider'; _key: string; images?: SanityGalleryImage[] }
   | {
@@ -82,6 +87,35 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
           reel={section.reel}
         />
       );
+    case 'singleImage': {
+      const img = section.image && galleryImageFromSanity(section.image, '100vw');
+      if (!img) return null;
+      const ratio = imageRatio(section.image!);
+      return (
+        // Full width, capped at 75vh: the box takes the image's proportions, so a tall
+        // photo narrows and centres instead of being cropped, and a small one still
+        // spans the page. Its size is known up front, so nothing shifts as it loads.
+        <div
+          className="relative mx-auto overflow-hidden rounded-xl"
+          style={{
+            aspectRatio: ratio,
+            width: `min(100%, calc(75vh * ${ratio}))`,
+            ...(img.lqip ? { backgroundImage: `url(${img.lqip})`, backgroundSize: 'cover' } : {}),
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={img.src}
+            srcSet={img.srcSet}
+            sizes={img.sizes}
+            alt={img.alt}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </div>
+      );
+    }
     case 'imageSlider':
       return <ImageSlider images={galleryImagesFromSanity(section.images, '100vw')} />;
     case 'gridCopy':
@@ -108,4 +142,16 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
     default:
       return null;
   }
+}
+
+type Crop = { top?: number; bottom?: number; left?: number; right?: number };
+
+/** Width ÷ height of the image as served: its stored dimensions, less any Studio crop. */
+function imageRatio(image: { width?: number; height?: number; crop?: unknown }): number {
+  const { width, height } = image;
+  if (!width || !height) return 16 / 9;
+  const c = (image.crop ?? {}) as Crop;
+  const w = width * (1 - (c.left ?? 0) - (c.right ?? 0));
+  const h = height * (1 - (c.top ?? 0) - (c.bottom ?? 0));
+  return w > 0 && h > 0 ? w / h : width / height;
 }

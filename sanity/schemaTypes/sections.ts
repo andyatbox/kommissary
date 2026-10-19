@@ -135,6 +135,27 @@ export const videoEmbed = defineType({
   },
 });
 
+/** One image, full browser width and capped at 75vh, shown whole (never cropped to fit). */
+export const singleImage = defineType({
+  name: 'singleImage',
+  title: 'Image',
+  type: 'object',
+  fields: [
+    defineField({
+      name: 'image',
+      title: 'Image',
+      type: 'image',
+      options: { hotspot: true },
+      validation: (r) => r.required(),
+      fields: [defineField({ name: 'alt', type: 'string', title: 'Alt text' })],
+    }),
+  ],
+  preview: {
+    select: { media: 'image', alt: 'image.alt' },
+    prepare: ({ media, alt }) => ({ title: 'Image', subtitle: alt, media }),
+  },
+});
+
 /** A full-bleed image slider. */
 export const imageSlider = defineType({
   name: 'imageSlider',

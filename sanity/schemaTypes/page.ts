@@ -81,6 +81,7 @@ export const page = defineType({
         defineArrayMember({ type: 'titleSection' }),
         defineArrayMember({ type: 'bodyCopy' }),
         defineArrayMember({ type: 'videoEmbed' }),
+        defineArrayMember({ type: 'singleImage' }),
         defineArrayMember({ type: 'imageSlider' }),
         defineArrayMember({ type: 'gridCopy' }),
         defineArrayMember({ type: 'htmlEmbed' }),
