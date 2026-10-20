@@ -60,7 +60,17 @@ export default function CameraRig() {
   const camera = useThree((s) => s.camera);
   const scene = useThree((s) => s.scene);
 
-  const scroll = useRef({ current: 0, vel: 0, touching: false, lastY: 0 });
+  const scroll = useRef({
+    current: 0,
+    vel: 0,
+    touching: false,
+    lastY: 0,
+    lastX: 0,
+    startX: 0,
+    startY: 0,
+    /** Which way the current swipe runs, once it's moved enough to tell. */
+    axis: null as 'x' | 'y' | null,
+  });
   // Nav-chevron ease: a timed ease-in-out tween from `navFrom` to the store's navTarget.
   const nav = useRef({ from: 0, elapsed: 0, target: null as number | null });
   const blend = useRef(0);
@@ -132,12 +142,29 @@ export default function CameraRig() {
       s.touching = true;
       s.vel = 0;
       s.lastY = e.touches[0].clientY;
+      s.lastX = e.touches[0].clientX;
+      s.startX = s.lastX;
+      s.startY = s.lastY;
+      s.axis = null;
     };
 
     const onTouchMove = (e: TouchEvent) => {
       if (!s.touching || useUX.getState().modalOpen || !useUX.getState().ready) return;
+      // Either direction drives it (swipe up or left to go forward), whichever the
+      // gesture starts along: decided after a few px, then held for the whole swipe.
+      const x = e.touches[0].clientX;
       const y = e.touches[0].clientY;
-      const dy = s.lastY - y;
+      if (!s.axis) {
+        const mx = Math.abs(x - s.startX);
+        const my = Math.abs(y - s.startY);
+        if (Math.max(mx, my) < 8) return;
+        s.axis = mx > my ? 'x' : 'y';
+        s.lastX = x;
+        s.lastY = y;
+        return;
+      }
+      const dy = s.axis === 'x' ? s.lastX - x : s.lastY - y;
+      s.lastX = x;
       s.lastY = y;
       // Finger drives position directly (immediate), and sets the fling velocity for release.
       s.current = M.clamp(s.current + dy * TOUCH_DRAG, 0, 1);

@@ -225,6 +225,9 @@ export default function ImpactSlider({ title, slides }: { title: string; slides:
     let drag: Drag | null = null;
     let suppressClick = false;
     const onPointerDown = (e: PointerEvent) => {
+      // A drag's release often produces no click to swallow, which used to leave this set
+      // and eat the next real tap (on "Read more", say). Every new press starts clean.
+      suppressClick = false;
       if (!canMove || locked() || e.button !== 0) return;
       if (e.target instanceof Element && e.target.closest('a, button, input, textarea')) return;
       const box = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-scroll-y]') : null;
