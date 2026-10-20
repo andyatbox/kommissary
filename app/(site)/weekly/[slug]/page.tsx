@@ -7,6 +7,7 @@ import { SECTIONS_PROJECTION, enrichSections } from '@/lib/sections';
 import Reveal from '@/components/Reveal';
 import SectionRenderer, { type PageSection } from '@/components/sections/SectionRenderer';
 import ShareButtons from '@/components/weekly/ShareButtons';
+import { WEEKLY_ENABLED } from '@/lib/features';
 
 export const revalidate = 60;
 
@@ -40,6 +41,7 @@ function formatDate(iso?: string): string {
 }
 
 export async function generateStaticParams() {
+  if (!WEEKLY_ENABLED) return [];
   try {
     const slugs = await client.fetch<string[] | null>(SLUGS_QUERY);
     return (slugs ?? []).map((slug) => ({ slug }));
@@ -53,6 +55,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
+  if (!WEEKLY_ENABLED) return {};
   const post = await client.fetch<PostDoc | null>(POST_QUERY, { slug: params.slug });
   if (!post) return {};
   const title = `${post.title} · Kommissary Weekly`;
@@ -70,6 +73,7 @@ export async function generateMetadata({
 }
 
 export default async function PostPage({ params }: { params: { slug: string } }) {
+  if (!WEEKLY_ENABLED) notFound();
   const post = await client.fetch<PostDoc | null>(POST_QUERY, { slug: params.slug });
   if (!post) notFound();
 

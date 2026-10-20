@@ -1,6 +1,6 @@
 import type { PortableTextBlock } from '@portabletext/types';
 import PortableBody from '@/components/PortableBody';
-import { galleryImagesFromSanity, type SanityGalleryImage } from '@/lib/galleryImage';
+import { galleryImageFromSanity, galleryImagesFromSanity, type SanityGalleryImage } from '@/lib/galleryImage';
 import VideoEmbed from './VideoEmbed';
 import ImageSlider from './ImageSlider';
 import GridCopy from './GridCopy';
@@ -10,15 +10,29 @@ import ReelsWaterfall from '@/components/instagram/ReelsWaterfall';
 import type { Reel } from '@/lib/instagram/api';
 
 export type PageSection =
+  | { _type: 'titleSection'; _key: string; text?: string }
   | { _type: 'bodyCopy'; _key: string; content?: PortableTextBlock[] }
   | {
       _type: 'videoEmbed';
       _key: string;
-      url: string;
+      url?: string;
+      /** A video uploaded in Studio, served from Sanity's CDN. Wins over `url`. */
+      file?: { url: string; mimeType?: string };
+      /** Uploads only: the Playback checkboxes. */
+      autoplay?: boolean;
+      muted?: boolean;
+      controls?: boolean;
+      loop?: boolean;
       caption?: string;
+      /** Cover image from Studio, or (Vimeo) fetched server-side — see enrichSections. */
       poster?: string;
       /** Set when the URL is one of our own reels — see enrichSections. */
       reel?: Reel;
+    }
+  | {
+      _type: 'singleImage';
+      _key: string;
+      image?: SanityGalleryImage & { width?: number; height?: number };
     }
   | { _type: 'imageSlider'; _key: string; images?: SanityGalleryImage[] }
   | {
@@ -39,6 +53,16 @@ export type PageSection =
  *  video centres itself; the slider and grid go full browser width. */
 export default function SectionRenderer({ section }: { section: PageSection }) {
   switch (section._type) {
+    case 'titleSection':
+      // Looks like a page title, always centred. An h2, not an h1: the page title is the
+      // page's one h1, which is the clearest outline for search engines.
+      return section.text ? (
+        <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
+          <h2 className="text-balance text-center font-spirit text-4xl font-medium text-[#ff6666] sm:text-5xl">
+            {section.text}
+          </h2>
+        </div>
+      ) : null;
     case 'bodyCopy':
       return (
         <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
@@ -54,11 +78,42 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
       return (
         <VideoEmbed
           url={section.url}
+          file={section.file}
+          autoplay={section.autoplay}
+          muted={section.muted}
+          controls={section.controls}
+          loop={section.loop}
           caption={section.caption}
           poster={section.poster}
           reel={section.reel}
         />
       );
+    case 'singleImage': {
+      const img = section.image && galleryImageFromSanity(section.image, '100vw');
+      if (!img) return null;
+      const ratio = imageRatio(section.image!);
+      return (
+        // Up to full width, capped at 50vh, always centred. The box takes the image's
+        // proportions, so a photo too tall for the cap narrows instead of being cropped,
+        // and a small one still spans the page. Its size is known up front, so nothing
+        // shifts as it loads.
+        <div
+          className="relative mx-auto overflow-hidden rounded-xl"
+          style={{ aspectRatio: ratio, width: `min(100%, calc(50vh * ${ratio}))` }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={img.src}
+            srcSet={img.srcSet}
+            sizes={img.sizes}
+            alt={img.alt}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </div>
+      );
+    }
     case 'imageSlider':
       return <ImageSlider images={galleryImagesFromSanity(section.images, '100vw')} />;
     case 'gridCopy':
@@ -85,4 +140,16 @@ export default function SectionRenderer({ section }: { section: PageSection }) {
     default:
       return null;
   }
+}
+
+type Crop = { top?: number; bottom?: number; left?: number; right?: number };
+
+/** Width ÷ height of the image as served: its stored dimensions, less any Studio crop. */
+function imageRatio(image: { width?: number; height?: number; crop?: unknown }): number {
+  const { width, height } = image;
+  if (!width || !height) return 16 / 9;
+  const c = (image.crop ?? {}) as Crop;
+  const w = width * (1 - (c.left ?? 0) - (c.right ?? 0));
+  const h = height * (1 - (c.top ?? 0) - (c.bottom ?? 0));
+  return w > 0 && h > 0 ? w / h : width / height;
 }

@@ -13,16 +13,6 @@
  */
 
 import { restingRotation } from './modelRotations';
-import {
-  galleryImagesFromSanity,
-  type GalleryImage,
-  type SanityGalleryImage,
-} from '@/lib/galleryImage';
-
-export type { GalleryImage } from '@/lib/galleryImage';
-
-/** Gallery sizes hint for Our Story: the copy column (~two-thirds) at md+. */
-const OUR_STORY_GALLERY_SIZES = '(min-width: 768px) 65vw, 100vw';
 
 export type Moment = {
   /** Stable key — the Sanity document `_id`, or the fallback id below. */
@@ -32,8 +22,6 @@ export type Moment = {
   title: string;
   body: string;
   model: ModelSpec;
-  /** Photos behind the section's Gallery button. Empty array = no gallery offered. */
-  gallery: GalleryImage[];
 };
 
 export type ModelSpec = {
@@ -106,7 +94,6 @@ export type SanityMoment = {
   period: string;
   title: string;
   body: string;
-  gallery?: SanityGalleryImage[] | null;
 };
 
 /** Maps a fetched Sanity moment into the `Moment` shape the components render. */
@@ -118,19 +105,7 @@ export function momentFromSanity(m: SanityMoment): Moment {
     title: m.title,
     body: m.body,
     model: modelSpec(model.key, model.scale),
-    gallery: galleryImagesFromSanity(m.gallery, OUR_STORY_GALLERY_SIZES),
   };
-}
-
-/**
- * PLACEHOLDER imagery for the local fallback only — generated SVGs under
- * /public/images/gallery. Sanity moments carry real uploaded photos instead.
- */
-function placeholderGallery(id: string, subject: string, count = 3): GalleryImage[] {
-  return Array.from({ length: count }, (_, i) => ({
-    src: `/images/gallery/${id}-${i + 1}.svg`,
-    alt: `${subject} — placeholder image ${i + 1} of ${count}`,
-  }));
 }
 
 /** A moment as authored locally — the model is given as a key + optional scale. */
@@ -143,7 +118,6 @@ const AUTHORED: AuthoredMoment[] = [
     title: 'Origin Story',
     body: 'When Eddie’s parents immigrated to New York City in 1984, they arrived with little more than hope, a few hundred dollars, and the kindness of friends who offered them a place to stay. His father found work where he could and eventually opened a small fish store in Astoria. It was neighbors—offering help, sharing meals, creating community—who made that path possible.',
     modelKey: 'fish-market',
-    gallery: placeholderGallery('fish-market', 'The original Astoria fish store'),
   },
   {
     id: 'korilla',
@@ -151,7 +125,6 @@ const AUTHORED: AuthoredMoment[] = [
     title: 'Korilla BBQ',
     body: 'Years later, Eddie started a Korean taco truck. No big plan—just good food. But the more he cooked, the more he saw how food could bring people together. Not just around flavors, but around stories, identities, and community. That little truck turned into a few restaurants, and then something bigger—a kitchen space for other food makers like us.',
     modelKey: 'korilla',
-    gallery: placeholderGallery('korilla', 'The Korilla BBQ food truck'),
   },
   {
     id: 'cutting-board',
@@ -159,7 +132,6 @@ const AUTHORED: AuthoredMoment[] = [
     title: 'Communal Commissary',
     body: 'By 2019, we’d opened a shared commissary. A place for local entrepreneurs, immigrant cooks, and cultural communities to find space, support, and opportunity.',
     modelKey: 'cutting-board',
-    gallery: placeholderGallery('cutting-board', 'The shared commissary kitchen'),
   },
   {
     id: 'kommy-truck',
@@ -167,7 +139,6 @@ const AUTHORED: AuthoredMoment[] = [
     title: 'The Pandemic',
     body: 'Then the pandemic hit... And everything changed. We went from feeding customers to feeding the city. What started as a community kitchen became a frontline response. Thousands of meals turned into millions.',
     modelKey: 'mask',
-    gallery: placeholderGallery('kommy-truck', 'Emergency meal distribution during the pandemic'),
   },
   {
     id: 'chicken',
@@ -175,7 +146,6 @@ const AUTHORED: AuthoredMoment[] = [
     title: 'Post-pandemic',
     body: 'As the pandemic began to wind down in 2022, we strengthened our position as the City’s problem solver. We expanded upon our stringent Quality Assurance procedures, formalized a Culinary Team, and established our headquarters in a 30,000-square-foot facility. NYC Health + Hospitals took notice, sparking our ongoing collaboration that began with 750,000 quarantine meals and testing kits.',
     modelKey: 'chicken',
-    gallery: placeholderGallery('chicken', 'Chef-crafted meals from the Culinary Team'),
   },
   {
     id: 'bananas-apple',
@@ -183,7 +153,6 @@ const AUTHORED: AuthoredMoment[] = [
     title: 'Asylum Seeker Crisis',
     body: 'Our partnership with NYC Health + Hospitals expanded in 2023 with the onset of the asylum seeker crisis. We helped build the Humanitarian Emergency Relief and Rescue Center (HERRC) program from scratch, and today, we manage operations at 11 sites where we provide food services to nearly 50,000 asylum seekers daily.',
     modelKey: 'shelter',
-    gallery: placeholderGallery('bananas-apple', 'Food services for asylum seekers'),
   },
   {
     id: 'brownstones',
@@ -191,7 +160,6 @@ const AUTHORED: AuthoredMoment[] = [
     title: 'After-school Meals for DYCD',
     body: 'After winning a contract with the Department of Youth & Community Development, we began to provide meals for school children enrolled in after-school programs through the Department of Youth & Community Development. Through word of mouth, many other NYC schools heard about our services – and soon, this program expanded to encompass meal preparation, warehousing, and delivery to 280 NYC public schools and community centers.',
     modelKey: 'desk',
-    gallery: placeholderGallery('brownstones', 'Meals delivered to NYC public schools'),
   },
   {
     id: 'statue-of-liberty',
@@ -199,7 +167,6 @@ const AUTHORED: AuthoredMoment[] = [
     title: 'Evolving As NYC Evolves',
     body: 'Since then, our work has grown, but we’re still neighbors helping neighbors—showing up, cooking with love, and believing that caring for one another is one of the most powerful tools we have. Nothing falls outside what is “normal” for us: whether addressing immigration challenges, public health emergencies, or other community needs, we remain steadfast stewards of public trust. As we formalize our commitment to sustainable food practices—including sourcing from New York State farms and donating to local food pantries—we are also preparing to roll out a completely green fleet of vehicles and biodegradable packaging and utensils within the next year. Our reach extends far beyond the meals we serve, and we invite you to join us as we continue nourishing communities, empowering change, and shaping a future where access to nutritious food is a universal right for all. We look forward to serving you.',
     modelKey: 'statue-of-liberty',
-    gallery: placeholderGallery('statue-of-liberty', 'Kommissary serving New York City'),
   },
 ];
 

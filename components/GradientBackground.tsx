@@ -2,6 +2,7 @@
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import * as THREE from 'three';
 
 /**
@@ -158,10 +159,16 @@ function GradientPlane({ onReady }: { onReady: () => void }) {
   );
 }
 
+/** Pages that cover the whole screen with pictures of their own, where the gradient
+ *  would only draw unseen: the Our Impact slider. */
+const NO_GRADIENT = new Set(['/our-impact']);
+
 export default function GradientBackground() {
   // Fade the canvas up once the first frame has drawn, so it eases out of the flat
   // #000666 (on <html>) instead of popping in.
   const [ready, setReady] = useState(false);
+  const pathname = usePathname();
+  if (NO_GRADIENT.has(pathname)) return null;
   return (
     <div
       aria-hidden

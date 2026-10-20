@@ -1,0 +1,43 @@
+/* Fixed in the bottom-right corner, clear of the iPhone home indicator. Hidden (slid
+   down and faded) until .shown is added. */
+.sticky {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(24px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease,
+    visibility 0.3s,
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.shown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+}
+
+@media (min-width: 768px) {
+  .sticky {
+    right: 32px;
+    bottom: calc(32px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticky {
+    transform: none;
+  }
+}
+
+/* Hidden while the 1.0 site's mobile menu is open, so it doesn't sit on top of it. */
+:global(body.menu) .sticky {
+  display: none;
+}

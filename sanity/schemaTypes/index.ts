@@ -6,7 +6,16 @@ import { post } from './post';
 import { moment } from './moment';
 import { ourStoryPage } from './ourStoryPage';
 import { blockContent, link, anchor } from './blockContent';
-import { bodyCopy, videoEmbed, imageSlider, gridCopy, htmlEmbed, contactForm, instagramReels } from './sections';
+import { titleSection, bodyCopy, videoEmbed, singleImage, imageSlider, gridCopy, htmlEmbed, contactForm, instagramReels } from './sections';
+import {
+  localeString,
+  localeText,
+  outreachFeature,
+  outreachPoint,
+  faqItem,
+  nutritionBoxPage,
+  partnerOutreachPage,
+} from './outreachPages';
 
 export const schemaTypes = [
   // Shared rich text — must come before any type that references it (e.g. `pill`'s body
@@ -14,6 +23,12 @@ export const schemaTypes = [
   link,
   anchor,
   blockContent,
+  // English / Spanish pairs and the pieces the Nutrition Box pages share
+  localeString,
+  localeText,
+  outreachFeature,
+  outreachPoint,
+  faqItem,
   // Documents
   siteSettings,
   homepage,
@@ -21,12 +36,16 @@ export const schemaTypes = [
   post,
   ourStoryPage,
   moment,
+  nutritionBoxPage,
+  partnerOutreachPage,
   // Objects
   pill,
   ctaButton,
   // Page-builder sections
+  titleSection,
   bodyCopy,
   videoEmbed,
+  singleImage,
   imageSlider,
   gridCopy,
   htmlEmbed,

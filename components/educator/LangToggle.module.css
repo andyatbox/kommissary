@@ -1,0 +1,70 @@
+/* A yellow tab hanging from the top edge, in 2.0's top bar (components/Nav.tsx) just left
+   of the certifications badge, at the same height as the bar. */
+.toggle {
+  /* The top bar's height, and the badge's inset from the right edge, as Nav.tsx sets
+     them: h-[25px] wide:h-[38px]; right-6 sm:right-8. */
+  --bar-h: 25px;
+  --certs-right: 24px;
+  position: fixed;
+  top: 0;
+  /* The badge is as wide as the bar is tall times its aspect ratio (certs.svg is
+     217.19 x 50), so the tab follows it at every breakpoint. */
+  right: calc(var(--certs-right) + var(--bar-h) * 4.3439 + 10px);
+  z-index: 100;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 0 0 12px 12px;
+  background: #f7e54f;
+  font-family: 'New Spirit', ui-serif, Georgia, serif;
+}
+
+.option {
+  min-width: 34px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 0 0 9px 9px;
+  background: transparent;
+  color: #000066;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: calc(var(--bar-h) - 6px);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.option:hover {
+  background: rgb(0 0 102 / 0.12);
+}
+
+.active,
+.active:hover {
+  background: #000066;
+  color: #f7e54f;
+  cursor: default;
+}
+
+.option:focus-visible {
+  outline: 2px solid #000066;
+  outline-offset: 2px;
+}
+
+@media (min-width: 640px) {
+  .toggle {
+    --certs-right: 32px;
+  }
+}
+
+/* Large displays: the bar grows to 38px (the `wide` breakpoint), and the tab with it. */
+@media (min-width: 1441px) {
+  .toggle {
+    --bar-h: 38px;
+  }
+
+  .option {
+    min-width: 44px;
+    font-size: 18px;
+  }
+}

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { REASONS } from '@/lib/contact';
+import { isLiveRequest } from '@/lib/siteEnv';
 
 /**
  * Contact form → Google Forms.
@@ -112,6 +113,14 @@ export async function POST(req: Request) {
     [ENTRY.reason]: reason,
     [ENTRY.message]: message,
   });
+
+  // Off kommissary.com (localhost, the staging site), answer "sent" without sending: a
+  // real submission lands in the live form. Sent for real anyway when the page it came
+  // from has ?livesubmit=1, as with the Nutrition Box forms (lib/siteEnv.ts).
+  if (!isLiveRequest(req) && !/[?&]livesubmit=1\b/.test(req.headers.get('referer') ?? '')) {
+    console.info('[contact] test site, not sent:', Object.fromEntries(params));
+    return NextResponse.json({ ok: true });
+  }
 
   try {
     const res = await fetch(FORM_URL, {

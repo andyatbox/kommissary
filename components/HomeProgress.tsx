@@ -118,13 +118,15 @@ export default function HomeProgress({ visible }: { visible: boolean }) {
       }`}
     >
       <div ref={track} className="relative w-full">
-        {/* Under 992px: the plain rule. */}
-        <div className="h-px w-full bg-[#ff6666]/40 min-[992px]:hidden">
+        {/* Under 992px: the plain rule. The breakpoint is an arbitrary media variant, not
+            `min-[992px]:`: Tailwind drops min-[…] variants once any screen is a raw query
+            (tailwind.config.js `desktop`), and that silently hid the sentence everywhere. */}
+        <div className="h-px w-full bg-[#ff6666]/40 [@media(min-width:992px)]:hidden">
           <div ref={bar} className="h-full w-full origin-left scale-x-0 bg-[#ffcf33]" />
         </div>
 
         {/* 992px and up: the sentence, filling in as you scroll. */}
-        <div className="hidden h-[30px] min-[992px]:block">
+        <div className="hidden h-[30px] [@media(min-width:992px)]:block">
           {/* w-max so the box is the sentence's TRUE width — an auto-width inline-block
               is capped at the space available, which would make it measure as though it
               already fit and never scale. Centred by transform rather than text-align,

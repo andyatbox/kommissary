@@ -1,11 +1,10 @@
 'use client';
 
-import GallerySlider from '@/components/story/GallerySlider';
+import GallerySlider from './GallerySlider';
 import type { GalleryImage } from '@/lib/galleryImage';
 
 /**
- * Full-browser-width image slider — the same slider/controls as the Our Story
- * galleries. The track is edge-to-edge (slides swipe off the page edges); the controls
+ * Full-browser-width image slider. The track is edge-to-edge (slides swipe off the page edges); the controls
  * are inset. Images show whole (contain): full height / auto width / centred on desktop
  * capped at 60vh, and full width with edge padding on mobile.
  */

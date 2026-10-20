@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 /**
  * Ask Kai — floating site chatbot. A fixed kai.svg launcher in the bottom-right
@@ -46,7 +47,20 @@ function renderMessage(text: string): ReactNode[] {
   return out;
 }
 
+/**
+ * Pages without Kai: the Nutrition Box, Educators and Community Leaders lead pages keep
+ * their own floating call to action ("Get Started" / "Request a Callback") in this same
+ * bottom-right corner, and are built to keep a visitor on the one form.
+ */
+const NO_KAI_PATHS = ['/bronx', '/educator', '/dycd'];
+
 export default function KaiWidget() {
+  const pathname = usePathname();
+  if (NO_KAI_PATHS.includes(pathname)) return null;
+  return <KaiPanel />;
+}
+
+function KaiPanel() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
@@ -147,9 +161,11 @@ export default function KaiWidget() {
         aria-label="Ask Kai"
         aria-hidden={!open}
         className={`fixed bottom-4 right-4 z-[65] flex w-[calc(100vw-2rem)] max-w-[440px] flex-col overflow-hidden rounded-2xl border border-[#ff6666]/30 bg-[#000666]/80 shadow-[0_24px_80px_rgba(0,0,0,0.55)] backdrop-blur-xl transition-all duration-300 sm:bottom-6 sm:right-6 sm:max-w-[500px] lg:max-w-[560px] h-[min(640px,calc(100dvh_-_5rem))] sm:h-[min(720px,calc(100dvh_-_6rem))] lg:h-[min(800px,calc(100dvh_-_6rem))] ${
+          // `invisible` when closed, not only faded: otherwise its input and buttons stay in
+          // the tab order, and keyboard focus lands inside a chat no one can see.
           open
-            ? 'pointer-events-auto translate-y-0 opacity-100'
-            : 'pointer-events-none translate-y-4 opacity-0'
+            ? 'pointer-events-auto visible translate-y-0 opacity-100'
+            : 'pointer-events-none invisible translate-y-4 opacity-0'
         }`}
       >
         {/* Header */}

@@ -36,9 +36,9 @@ export default function MillionsServed({
       ref={section}
       className="border-t border-white/10 px-6 py-[14vh] text-center md:px-[8vw]"
     >
-      <h1 className="text-4xl font-medium leading-[1.05] text-white sm:text-5xl md:text-6xl">
+      <h2 className="text-4xl font-medium leading-[1.05] text-white sm:text-5xl md:text-6xl">
         {heading}
-      </h1>
+      </h2>
 
       <div className="mx-auto mt-[9vh] flex max-w-4xl flex-wrap justify-center gap-x-10 gap-y-12 md:gap-x-16">
         {stats.map((stat, i) => (

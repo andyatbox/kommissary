@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { client } from '@/sanity/lib/client';
 import { galleryImageFromSanity, type SanityGalleryImage } from '@/lib/galleryImage';
 import Reveal from '@/components/Reveal';
 import WeeklyGrid, { type TeaserPost } from '@/components/weekly/WeeklyGrid';
+import { WEEKLY_ENABLED } from '@/lib/features';
 
 export const revalidate = 60;
 
@@ -45,6 +47,7 @@ export default async function WeeklyIndexPage({
 }: {
   searchParams: { page?: string };
 }) {
+  if (!WEEKLY_ENABLED) notFound();
   const current = Math.max(1, parseInt(searchParams.page ?? '1', 10) || 1);
   const start = (current - 1) * PER_PAGE;
 
@@ -72,7 +75,7 @@ export default async function WeeklyIndexPage({
     <main className="min-h-dvh px-6 pb-28 pt-[120px] sm:px-8 md:pt-[168px]">
       <div className="mx-auto w-full max-w-6xl">
         <Reveal>
-          <h1 className="font-spirit text-4xl font-medium text-[#ff6666] sm:text-5xl md:text-center">
+          <h1 className="text-balance text-center font-spirit text-5xl font-medium leading-[1.05] text-gold sm:text-6xl lg:text-7xl">
             Kommissary Weekly
           </h1>
         </Reveal>

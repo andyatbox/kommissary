@@ -29,7 +29,8 @@ export const page = defineType({
       title: 'Slug (URL path)',
       type: 'slug',
       options: { source: 'title', maxLength: 96 },
-      description: 'The path after the domain, e.g. "our-story" → /our-story',
+      description:
+        'The path after the domain, e.g. "our-story" → /our-story. Some paths are built-in pages: our-story, weekly, bronx, educator, dycd, privacy. A Page with one of those only adds the nav link; the content below isn\'t shown there. Edit those pages\' copy under Our Story Page / Nutrition Box / Educators / Community Leaders. our-impact is different: it shows this Page\'s Body Copy sections as a full-screen slider, one slide each (its first Heading, Subheading, paragraphs and first image).',
       validation: (r) => r.required(),
     }),
     // --- Navigation placement (kept right after the slug) ---
@@ -77,8 +78,10 @@ export const page = defineType({
       description:
         'Build the page by adding sections in any order. Drag to reorder; add as many as you like.',
       of: [
+        defineArrayMember({ type: 'titleSection' }),
         defineArrayMember({ type: 'bodyCopy' }),
         defineArrayMember({ type: 'videoEmbed' }),
+        defineArrayMember({ type: 'singleImage' }),
         defineArrayMember({ type: 'imageSlider' }),
         defineArrayMember({ type: 'gridCopy' }),
         defineArrayMember({ type: 'htmlEmbed' }),

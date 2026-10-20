@@ -5,13 +5,13 @@ import { useEffect, useState, type RefObject } from 'react';
 /**
  * Fires once — the first time an element's box arrives within reach of the viewport —
  * and never again. Meant for triggering a run-once entrance animation (see
- * useCountUp.ts), not a toggling "is this visible" state; see useInBand.ts for that.
+ * useCountUp.ts), not a toggling "is this visible" state.
  *
- * Built on the same rAF + getBoundingClientRect() approach as useInBand.ts, and for
- * the same reason: the page is scrolled by a transform on a fixed layer (see
- * SmoothScroll), and IntersectionObserver's behaviour under a purely
- * transform-driven ancestor isn't dependable across browsers, where reading the real
- * rect each frame is guaranteed to track it.
+ * Built on an rAF + getBoundingClientRect() loop rather than IntersectionObserver: the
+ * page is scrolled by a transform on a fixed layer (see SmoothScroll), and
+ * IntersectionObserver's behaviour under a purely transform-driven ancestor isn't
+ * dependable across browsers, where reading the real rect each frame is guaranteed to
+ * track it.
  */
 
 /** Trigger once the element's top is within this much of the viewport height from the
@@ -39,8 +39,8 @@ function tick() {
     }
   });
 
-  // Unlike useInBand's loop, entries here are removed by the tick itself (once fired,
-  // never again) rather than only on unmount — so the loop must also check here,
+  // Entries are removed by the tick itself (once fired, never again) rather than only
+  // on unmount — so the loop must also check here,
   // or a page whose last watcher fires (rather than unmounts) never stops ticking.
   if (entries.size === 0) {
     cancelAnimationFrame(raf);

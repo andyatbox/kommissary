@@ -111,17 +111,18 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
           so moving from the trigger down into the panel doesn't dismiss it. */}
       {/* Top bar on its own fixed layer at the very top — above the mobile menu (z-40),
           so it doesn't add to the header's height and stays visible while the menu is open.
-          Holds the scroll-progress fill (behind) and the certifications image (right edge
-          matching the nav padding, so it sits under the Connect chevron). */}
+          Holds the certifications image (right edge matching the nav padding, so it sits
+          under the Connect chevron). */}
+      {/* Scroll progress: a rule along the very bottom of the screen, filled by
+          SmoothWheel / Our Story's SmoothScroll. (It used to run along the top bar,
+          through the logo.) The homepage has its own at the bottom (HomeProgress), where
+          it becomes the sentence filling in, so it's omitted there. */}
+      {pathname !== '/' && (
+        <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 z-50 h-[2px]">
+          <div id="scroll-progress" className="h-full w-full origin-left scale-x-0 bg-[#ff6666]" />
+        </div>
+      )}
       <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[25px] overflow-hidden wide:h-[38px]">
-        {/* The homepage shows its scroll progress at the BOTTOM instead (HomeProgress),
-            where it becomes the sentence filling in — so the top rule is omitted there. */}
-        {pathname !== '/' && (
-          <div
-            id="scroll-progress"
-            className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-0 bg-[#ff6666]"
-          />
-        )}
         {/* Not a link for now — it stays pointer-events-none with the bar so it can't
             swallow clicks meant for the scene behind it. */}
         <div className="absolute right-6 top-0 block h-full sm:right-8">
@@ -162,7 +163,7 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                     // The stroke tracks the label's colour rather than staying red, so an
                     // open or hovered trigger reads as one piece instead of yellow text in
                     // a red box.
-                    className={`pointer-events-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 transition-colors duration-200 hover:border-[#ffcf33] hover:text-[#ffcf33] focus-visible:border-[#ffcf33] focus-visible:text-[#ffcf33] ${
+                    className={`pointer-events-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-1.5 transition-colors duration-200 hover:border-[#ffcf33] hover:text-[#ffcf33] focus-visible:border-[#ffcf33] focus-visible:text-[#ffcf33] ${
                       // Tinted rather than solid, matching the panel's own treatment. Goes
                       // fully transparent once a menu is open, since the whole header is
                       // already tinted and blurred behind them by then — stacking a second
@@ -214,7 +215,9 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
                           key={j}
                           href={it.href}
                           aria-current={isActive(it.href) ? 'page' : undefined}
-                          className={`font-spirit text-lg transition-colors duration-200 hover:text-[#ffcf33] ${
+                          // Larger on desktops; tablets keep the smaller size, where the three
+                          // columns are narrow enough that bigger links would wrap.
+                          className={`font-spirit text-lg transition-colors duration-200 hover:text-[#ffcf33] desktop:text-2xl ${
                             isActive(it.href) ? 'text-[#ffcf33]' : 'text-[#ff6666]'
                           }`}
                         >

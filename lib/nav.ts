@@ -1,3 +1,5 @@
+import { WEEKLY_ENABLED } from './features';
+
 /**
  * Header navigation config. The three dropdowns and their column-1 headings are
  * fixed here; the links inside each are built from Page documents whose `navGroup`
@@ -43,14 +45,29 @@ export type NavItem =
 /** A dropdown: column 1 is the fixed heading, columns 2 & 3 hold links. */
 export type NavMenu = { id: NavGroupId; label: string; columns: NavItem[][] };
 
+/** Nav-enabled pages, in the Pages list's drag order (which sets link order per column). */
+export const NAV_QUERY = `*[_type == "page" && defined(navGroup)]|order(orderRank){
+  navGroup,
+  navColumn,
+  title,
+  "label": coalesce(navLabel, title),
+  "href": slug.current
+}`;
+
 /** A Page as fetched (already ordered by the drag-orderable list) for nav building. */
 export type NavPage = {
   navGroup: NavGroupId | null;
   navColumn: number | null;
+  title?: string;
   label: string;
   /** Slug's `current`, no leading slash. */
   href: string | null;
 };
+
+/** Pages that appear in the nav: Weekly is paused (lib/features.ts), so its Page stays in
+ *  Sanity but leaves the nav. */
+const listed = (p: NavPage) => !!p.href && (WEEKLY_ENABLED || !/^\/?weekly(\/|$)/.test(p.href));
+const toHref = (href: string) => (href.startsWith('/') ? href : `/${href}`);
 
 /**
  * Build the three header dropdowns from Page documents. Pages arrive in list order
@@ -60,10 +77,10 @@ export type NavPage = {
 export function buildNav(pages: NavPage[]): NavMenu[] {
   return NAV_GROUPS.map((g) => {
     const pageLinks: NavLink[] = pages
-      .filter((p) => p.navGroup === g.id && p.href)
+      .filter((p) => p.navGroup === g.id && listed(p))
       .map((p, i) => ({
         text: p.label,
-        href: p.href!.startsWith('/') ? p.href! : `/${p.href}`,
+        href: toHref(p.href!),
         column: p.navColumn === 3 ? 3 : 2,
         order: i,
       }));
@@ -80,4 +97,29 @@ export function buildNav(pages: NavPage[]): NavMenu[] {
       columns: [[{ kind: 'h2', text: g.heading }], colItems(2), colItems(3)],
     };
   });
+}
+
+/**
+ * The nav's pages in reading order: dropdown by dropdown, column 2 then column 3, each in
+ * the Pages list's order. (Home, a hardcoded extra, isn't a page to continue on to.)
+ */
+export function navSequence(pages: NavPage[]): { title: string; href: string }[] {
+  const out: { title: string; href: string }[] = [];
+  for (const g of NAV_GROUPS) {
+    for (const col of [2, 3]) {
+      for (const p of pages) {
+        if (p.navGroup !== g.id || !listed(p) || (p.navColumn === 3 ? 3 : 2) !== col) continue;
+        out.push({ title: p.title ?? p.label, href: toHref(p.href!) });
+      }
+    }
+  }
+  return out;
+}
+
+/** The page after `href` in the nav, wrapping from the last back to the first; null for
+ *  a page that isn't in the nav. */
+export function nextInNav(pages: NavPage[], href: string) {
+  const seq = navSequence(pages);
+  const i = seq.findIndex((s) => s.href === href);
+  return i < 0 || seq.length < 2 ? null : seq[(i + 1) % seq.length];
 }

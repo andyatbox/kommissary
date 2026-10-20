@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useUX, view, type WordAnchor } from '@/lib/store';
 import type { PhonePlacement } from '@/lib/phones';
+import { useQueuedAsset } from '@/lib/modelQueue';
 
 const M = THREE.MathUtils;
 
@@ -14,7 +15,7 @@ const M = THREE.MathUtils;
  * models in Models.tsx: X = reading direction (screen-right), Y = up, Z = toward
  * the viewer. So "behind and above" is +Y, −Z.
  */
-const MODEL_URL = '/models/iphone/scene.gltf';
+export const PHONE_MODEL_URL = '/models/iphone/scene.gltf';
 
 
 /** How far in front of the camera the phone sits once tapped. */
@@ -45,9 +46,31 @@ const SCREEN_FLIP_Y = true;
 const SCREEN_MIRROR = false;
 const SCREEN_ROTATION = 0;
 
+/**
+ * Orientation shared by the poster still and the video. They take turns on the same
+ * screen, so anything that flips or turns one has to do the same to the other — set in
+ * one place here rather than twice, where the two could drift apart.
+ */
+function configureScreenTexture<T extends THREE.Texture>(tex: T): T {
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.flipY = SCREEN_FLIP_Y;
+  if (SCREEN_ROTATION) {
+    // Rotate about the middle of the screen, not its corner.
+    tex.center.set(0.5, 0.5);
+    tex.rotation = SCREEN_ROTATION;
+  }
+  if (SCREEN_MIRROR) {
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.repeat.x = -1;
+  }
+  return tex;
+}
+
 /** How far either side of the word, in curve-u, the phone is revealed. Matches MARGIN_U
  *  in Models.tsx so it appears alongside that zone's models. */
 const MARGIN_U = 0.04;
+/** The same, for the load queue (Models.tsx), which fetches the phone for this window. */
+export const PHONE_MARGIN_U = MARGIN_U;
 
 /** Scroll distance, in curve-u, that releases a focused phone. Small enough that any
  *  deliberate scroll sends it back, large enough to ride out the camera settling. */
@@ -58,7 +81,6 @@ const SCROLL_RELEASE_U = 0.002;
  *  never scrolls that far never downloads it. */
 const PRELOAD_U = 0.16;
 
-useGLTF.preload(MODEL_URL);
 
 
 /**
@@ -86,8 +108,11 @@ export default function PhoneModel({
     () => anchors.find((a) => a.word === placement.anchorWord),
     [anchors, placement.anchorWord]
   );
-  if (!anchor || !reel) return null;
-  return <Phone anchor={anchor} reel={reel} allowVideo={allowVideo} placement={placement} />;
+  // Queued with the other models (first in line: it's at the start of the sentence).
+  // Nothing renders until it has loaded, so the scene never waits on it.
+  const gltf = useQueuedAsset<GLTF>(reel ? PHONE_MODEL_URL : undefined, 'gltf');
+  if (!anchor || !reel || !gltf) return null;
+  return <Phone anchor={anchor} reel={reel} allowVideo={allowVideo} placement={placement} scene={gltf.scene} />;
 }
 
 function Phone({
@@ -95,13 +120,14 @@ function Phone({
   reel,
   allowVideo,
   placement,
+  scene,
 }: {
   anchor: WordAnchor;
   reel: { id: string; poster: string; videoUrl?: string };
   allowVideo: boolean;
   placement: PhonePlacement;
+  scene: THREE.Group;
 }) {
-  const { scene } = useGLTF(MODEL_URL);
   const camera = useThree((s) => s.camera);
   const group = useRef<THREE.Group>(null!);
   /**
@@ -123,11 +149,23 @@ function Phone({
     // Only the genuinely incapable get a still instead — a software rasteriser, or a
     // machine reporting almost no memory or cores. Phones play the reel like everything
     // else; one muted clip is minor next to the 3D scene they're already running.
+    /**
+     * The reel's own still, and what the screen shows FIRST in every case.
+     *
+     * On weak hardware it is the whole story. Everywhere else it holds the screen while
+     * the clip is still arriving: a VideoTexture has no image at all until the video
+     * decodes its first frame, so putting one straight onto the material left the screens
+     * empty on a cold load and only looked fixed on reload, where the video came back
+     * from cache fast enough to hide the gap.
+     */
+    const poster = configureScreenTexture(new THREE.TextureLoader().load(reel.poster));
+
     if (!allowVideo) {
-      const texture = new THREE.TextureLoader().load(reel.poster);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.flipY = SCREEN_FLIP_Y;
-      return { el: null as HTMLVideoElement | null, texture };
+      return {
+        el: null as HTMLVideoElement | null,
+        texture: poster,
+        videoTexture: null as THREE.VideoTexture | null,
+      };
     }
 
     const el = document.createElement('video');
@@ -167,19 +205,10 @@ function Phone({
     el.style.cssText =
       'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0.001;pointer-events:none;z-index:-1';
     document.body.appendChild(el);
-    const texture = new THREE.VideoTexture(el);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.flipY = SCREEN_FLIP_Y;
-    if (SCREEN_ROTATION) {
-      // Rotate about the middle of the screen, not its corner.
-      texture.center.set(0.5, 0.5);
-      texture.rotation = SCREEN_ROTATION;
-    }
-    if (SCREEN_MIRROR) {
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.repeat.x = -1;
-    }
-    return { el: el as HTMLVideoElement | null, texture };
+    const videoTexture = configureScreenTexture(new THREE.VideoTexture(el));
+    // `texture` is what goes on the material now; the video takes over once it actually
+    // has a frame to show (see the swap effect below).
+    return { el: el as HTMLVideoElement | null, texture: poster, videoTexture };
   }, [reel.id, reel.poster, reel.videoUrl, allowVideo]);
 
   // Clone the model, fit it to TARGET_SIZE, and put the video on the screen.
@@ -187,6 +216,8 @@ function Phone({
     const object = scene.clone(true);
     /** Width ÷ height of the screen face, measured off the mesh below. */
     let screenAspect = 0;
+    /** The cloned screen material, kept so the poster can hand over to the video. */
+    let screenMat: THREE.MeshStandardMaterial | null = null;
     object.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
@@ -210,6 +241,7 @@ function Phone({
         screen.emissiveIntensity = 1;
         screen.toneMapped = false;
         mesh.material = screen;
+        screenMat = screen;
       }
     });
 
@@ -220,6 +252,7 @@ function Phone({
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
     return {
       object,
+      screenMat: screenMat as THREE.MeshStandardMaterial | null,
       screenAspect,
       baseScale: placement.targetSize / maxDim,
       /** Height at scale 1, so the focused size can be solved from the camera frustum. */
@@ -239,43 +272,82 @@ function Phone({
    */
   useEffect(() => {
     if (!media || !data.screenAspect) return;
-    const { el, texture } = media;
+    const { el, texture, videoTexture } = media;
 
-    const fit = () => {
-      // Source dimensions come from the video, or from the still on phones.
-      const img = texture.image as { width?: number; height?: number } | undefined;
-      const srcW = el ? el.videoWidth : (img?.width ?? 0);
-      const srcH = el ? el.videoHeight : (img?.height ?? 0);
+    // Each texture is fitted from ITS OWN source dimensions: the poster and the clip are
+    // usually the same shape, but nothing guarantees it, and a mismatch would show as the
+    // image jumping at the moment the video takes over.
+    const fit = (tex: THREE.Texture, srcW: number, srcH: number) => {
       if (!srcW || !srcH) return;
-
       const srcAspect = srcW / srcH;
       if (srcAspect > data.screenAspect) {
         const r = data.screenAspect / srcAspect; // too wide — trim the sides
-        texture.repeat.set(r, 1);
-        texture.offset.set((1 - r) / 2, 0);
+        tex.repeat.set(r, 1);
+        tex.offset.set((1 - r) / 2, 0);
       } else {
         const r = srcAspect / data.screenAspect; // too tall — trim top and bottom
-        texture.repeat.set(1, r);
-        texture.offset.set(0, (1 - r) / 2);
+        tex.repeat.set(1, r);
+        tex.offset.set(0, (1 - r) / 2);
       }
-      texture.needsUpdate = true;
+      tex.needsUpdate = true;
     };
 
-    fit(); // in case it's already loaded
-    if (!el) {
-      // A still has no metadata event to wait on, so check briefly until it decodes.
+    // The still has no metadata event to wait on, so check briefly until it decodes.
+    const fitPoster = () => {
+      const img = texture.image as { width?: number; height?: number } | undefined;
+      if (!img?.width || !img.height) return false;
+      fit(texture, img.width, img.height);
+      return true;
+    };
+    let posterTimer = 0;
+    if (!fitPoster()) {
       let tries = 0;
-      const id = window.setInterval(() => {
-        const img = texture.image as { width?: number } | undefined;
-        if ((img?.width ?? 0) > 0 || ++tries > 40) {
-          fit();
-          window.clearInterval(id);
-        }
+      posterTimer = window.setInterval(() => {
+        if (fitPoster() || ++tries > 40) window.clearInterval(posterTimer);
       }, 100);
-      return () => window.clearInterval(id);
     }
-    el.addEventListener('loadedmetadata', fit);
-    return () => el.removeEventListener('loadedmetadata', fit);
+
+    const fitVideo = () => {
+      if (el && videoTexture) fit(videoTexture, el.videoWidth, el.videoHeight);
+    };
+    fitVideo(); // in case the metadata is already in
+    el?.addEventListener('loadedmetadata', fitVideo);
+
+    return () => {
+      if (posterTimer) window.clearInterval(posterTimer);
+      el?.removeEventListener('loadedmetadata', fitVideo);
+    };
+  }, [media, data]);
+
+  /**
+   * Hand the screen over from the poster to the video, but only once the video genuinely
+   * has a frame (readyState >= HAVE_CURRENT_DATA). Swapping any earlier puts an empty
+   * texture on the screen, which is the blank-phone bug this pair of textures exists to
+   * avoid. `playing` covers the ordinary case; `loadeddata` covers a clip that buffered
+   * without being played yet.
+   */
+  useEffect(() => {
+    const el = media?.el;
+    const videoTexture = media?.videoTexture;
+    const mat = data.screenMat;
+    if (!el || !videoTexture || !mat) return;
+
+    let swapped = false;
+    const swap = () => {
+      if (swapped || el.readyState < 2 /* HAVE_CURRENT_DATA */) return;
+      swapped = true;
+      mat.map = videoTexture;
+      mat.emissiveMap = videoTexture;
+      mat.needsUpdate = true;
+    };
+
+    swap(); // already buffered (a reload serving it from cache lands here)
+    el.addEventListener('loadeddata', swap);
+    el.addEventListener('playing', swap);
+    return () => {
+      el.removeEventListener('loadeddata', swap);
+      el.removeEventListener('playing', swap);
+    };
   }, [media, data]);
 
   // Free the clone's screen material and the video when this unmounts.
@@ -289,6 +361,7 @@ function Phone({
           media.el.remove();
         }
         media.texture.dispose();
+        media.videoTexture?.dispose();
       }
       data.object.traverse((o) => {
         const mesh = o as THREE.Mesh;
