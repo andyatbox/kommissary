@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useUX, view, type WordAnchor } from '@/lib/store';
 import type { PhonePlacement } from '@/lib/phones';
+import { useQueuedAsset } from '@/lib/modelQueue';
 
 const M = THREE.MathUtils;
 
@@ -14,7 +15,7 @@ const M = THREE.MathUtils;
  * models in Models.tsx: X = reading direction (screen-right), Y = up, Z = toward
  * the viewer. So "behind and above" is +Y, −Z.
  */
-const MODEL_URL = '/models/iphone/scene.gltf';
+export const PHONE_MODEL_URL = '/models/iphone/scene.gltf';
 
 
 /** How far in front of the camera the phone sits once tapped. */
@@ -68,6 +69,8 @@ function configureScreenTexture<T extends THREE.Texture>(tex: T): T {
 /** How far either side of the word, in curve-u, the phone is revealed. Matches MARGIN_U
  *  in Models.tsx so it appears alongside that zone's models. */
 const MARGIN_U = 0.04;
+/** The same, for the load queue (Models.tsx), which fetches the phone for this window. */
+export const PHONE_MARGIN_U = MARGIN_U;
 
 /** Scroll distance, in curve-u, that releases a focused phone. Small enough that any
  *  deliberate scroll sends it back, large enough to ride out the camera settling. */
@@ -78,7 +81,6 @@ const SCROLL_RELEASE_U = 0.002;
  *  never scrolls that far never downloads it. */
 const PRELOAD_U = 0.16;
 
-useGLTF.preload(MODEL_URL);
 
 
 /**
@@ -106,8 +108,11 @@ export default function PhoneModel({
     () => anchors.find((a) => a.word === placement.anchorWord),
     [anchors, placement.anchorWord]
   );
-  if (!anchor || !reel) return null;
-  return <Phone anchor={anchor} reel={reel} allowVideo={allowVideo} placement={placement} />;
+  // Queued with the other models (first in line: it's at the start of the sentence).
+  // Nothing renders until it has loaded, so the scene never waits on it.
+  const gltf = useQueuedAsset<GLTF>(reel ? PHONE_MODEL_URL : undefined, 'gltf');
+  if (!anchor || !reel || !gltf) return null;
+  return <Phone anchor={anchor} reel={reel} allowVideo={allowVideo} placement={placement} scene={gltf.scene} />;
 }
 
 function Phone({
@@ -115,13 +120,14 @@ function Phone({
   reel,
   allowVideo,
   placement,
+  scene,
 }: {
   anchor: WordAnchor;
   reel: { id: string; poster: string; videoUrl?: string };
   allowVideo: boolean;
   placement: PhonePlacement;
+  scene: THREE.Group;
 }) {
-  const { scene } = useGLTF(MODEL_URL);
   const camera = useThree((s) => s.camera);
   const group = useRef<THREE.Group>(null!);
   /**

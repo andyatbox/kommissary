@@ -1,15 +1,15 @@
 'use client';
 
-import { type RefObject, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useUX, view, type TeamSlot, type WordAnchor } from '@/lib/store';
+import { queueAssets, setQueuePosition, useQueuedAsset } from '@/lib/modelQueue';
+import { PHONES } from '@/lib/phones';
+import { PHONE_MARGIN_U, PHONE_MODEL_URL } from './PhoneModel';
 
 const M = THREE.MathUtils;
-
-/** Self-hosted Draco decoder (the GLBs are Draco-compressed); avoids any external CDN. */
-const DRACO_PATH = '/draco/';
 
 /**
  * A model hung off a word. `offset` is in the word's own frame — X = reading
@@ -279,8 +279,6 @@ const MARGIN_U = 0.04;
  * ahead of the reveal — so springing them in never stalls the frame.
  */
 const PREPARE_U = 0.06;
-/** Preload a zone's GLBs into cache once the camera is within this much u of its center. */
-const LOOKAHEAD_U = 0.16;
 
 type ZoneRange = { def: ZoneDef; uStart: number; uEnd: number; centerU: number };
 
@@ -331,30 +329,44 @@ export default function Models() {
     });
   }, [anchors, byWord, zones]);
 
+  // Fetch everything in the order the camera meets it, starting now: each model over
+  // the stretch where its zone is mounted (the prepare window, which is when it's first
+  // wanted), the phones over theirs (only if they'll have a reel to play). See
+  // lib/modelQueue.ts.
+  const phoneReels = useUX((s) => s.content?.phoneReels);
+  useEffect(() => {
+    if (!anchors.length) return;
+    const items = ranges.flatMap((r) =>
+      r.def.models.flatMap((m) =>
+        m.url
+          ? [{
+              url: m.url,
+              kind: m.kind === 'image' ? ('image' as const) : ('gltf' as const),
+              u: r.uStart - PREPARE_U,
+              until: r.uEnd + PREPARE_U,
+            }]
+          : []
+      )
+    );
+    PHONES.forEach((p, i) => {
+      const u = anchors.find((a) => a.word === p.anchorWord)?.u;
+      if (u != null && phoneReels?.[i]) {
+        items.push({ url: PHONE_MODEL_URL, kind: 'gltf', u: u - PHONE_MARGIN_U, until: u + PHONE_MARGIN_U });
+      }
+    });
+    queueAssets(items);
+  }, [anchors, ranges, phoneReels]);
+
   // Zones currently in the tree (mounted early, revealed later) and which are revealing.
   const [mounted, setMounted] = useState<string[]>([]);
   const [activeIds, setActiveIds] = useState<string[]>([]);
   const mountedKey = useRef('');
   const activeKey = useRef('');
-  const preloaded = useRef<Set<string>>(new Set());
 
   useFrame(() => {
     const u = view.u;
     const overview = useUX.getState().overviewActive;
-
-    // Preload zones we're approaching — and everything as we near the end, since
-    // the overview reveals every zone at once.
-    const preloadAll = overview || view.p > 0.85;
-    for (const r of ranges) {
-      if (preloadAll || Math.abs(u - r.centerU) < LOOKAHEAD_U) {
-        for (const m of r.def.models) {
-          if (!m.url || preloaded.current.has(m.url)) continue;
-          preloaded.current.add(m.url);
-          if (m.kind === 'image') useTexture.preload(m.url);
-          else useGLTF.preload(m.url, DRACO_PATH);
-        }
-      }
-    }
+    setQueuePosition(u);
 
     // Overview: mount and reveal every zone. Otherwise mount whatever is inside the
     // (wider) prepare window and reveal only the zone being read.
@@ -391,14 +403,13 @@ export default function Models() {
         // Cascade the zones when the overview brings them all in together.
         const zoneDelay = activeIds.length > 1 ? i * ZONE_STAGGER : 0;
         return (
-          <Suspense key={id} fallback={null}>
-            <ModelZone
-              zone={range.def}
-              anchors={byWord}
-              active={activeIds.includes(id)}
-              delayOffset={zoneDelay}
-            />
-          </Suspense>
+          <ModelZone
+            key={id}
+            zone={range.def}
+            anchors={byWord}
+            active={activeIds.includes(id)}
+            delayOffset={zoneDelay}
+          />
         );
       })}
     </>
@@ -528,8 +539,14 @@ function useReveal(
 
 type ModelProps = { spec: ModelSpec; anchor: WordAnchor; active: boolean; delay: number };
 
-function GltfModel({ spec, anchor, active, delay }: ModelProps) {
-  const { scene } = useGLTF(spec.url!, DRACO_PATH);
+/** A GLB, once loaded (nothing until then): each model arrives on its own, and its reveal
+ *  only brings it in while its zone is the one on screen. */
+function GltfModel(props: ModelProps) {
+  const gltf = useQueuedAsset<GLTF>(props.spec.url, 'gltf');
+  return gltf ? <LoadedGltf {...props} scene={gltf.scene} /> : null;
+}
+
+function LoadedGltf({ spec, anchor, active, delay, scene }: ModelProps & { scene: THREE.Group }) {
   const group = useRef<THREE.Group>(null!);
 
   // Per-instance clone: geometry is shared (cheap), materials are cloned so opacity
@@ -566,7 +583,7 @@ function GltfModel({ spec, anchor, active, delay }: ModelProps) {
   }, [scene, spec, anchor]);
 
   // Free the per-instance cloned materials when this zone unmounts. Geometry and
-  // textures are shared with the GLTF cache (cloned by reference), so they're left
+  // textures are shared with the loaded GLTF (cloned by reference), so they're left
   // alone; only the clones we made here are ours to dispose. Without this, every
   // scroll past a zone leaks a material program on the GPU — the slow buildup that
   // eventually exhausts memory on weak devices.
@@ -585,8 +602,13 @@ function GltfModel({ spec, anchor, active, delay }: ModelProps) {
   );
 }
 
-function ImageModel({ spec, anchor, active, delay }: ModelProps) {
-  const texture = useTexture(spec.url!) as THREE.Texture;
+/** A team photo, once loaded (nothing until then), like GltfModel. */
+function ImageModel(props: ModelProps) {
+  const texture = useQueuedAsset<THREE.Texture>(props.spec.url, 'image');
+  return texture ? <LoadedImage {...props} texture={texture} /> : null;
+}
+
+function LoadedImage({ spec, anchor, active, delay, texture }: ModelProps & { texture: THREE.Texture }) {
   const group = useRef<THREE.Group>(null!);
 
   // A photo on a double-sided plane sized to its aspect ratio (target = width). It
@@ -622,8 +644,8 @@ function ImageModel({ spec, anchor, active, delay }: ModelProps) {
     };
   }, [texture, spec, anchor]);
 
-  // The plane geometry and material are built per instance here (the texture comes from
-  // the shared useTexture cache), so dispose those two on unmount to avoid leaking them.
+  // The plane geometry and material are built per instance here (the texture is the
+  // queue's shared one), so dispose those two on unmount to avoid leaking them.
   useEffect(
     () => () => {
       (data.object as THREE.Mesh).geometry.dispose();
