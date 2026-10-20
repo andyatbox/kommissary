@@ -91,11 +91,23 @@ NEXT_OUTPUT=standalone NEXT_DIST_DIR="$DIST" npx next build > "$STAGE/build.log"
 
 # The bundle Hostinger runs: the standalone server, plus the static assets and public/
 # folder, which Next deliberately leaves out of standalone.
+#
+# Copied as `src/.` into a made-sure folder, so it always MERGES. Standalone can already
+# hold a partial public/ (files a route reads from disk get traced in, e.g. the font and
+# logo app/og.png draws with), and `cp -R public dest` into an existing dest nests it as
+# dest/public instead: the site then loses every image, model and font (October 2026).
 B="$STAGE/nodejs"
 cp -R "$DIST/standalone" "$B"
-cp -R "$DIST/static" "$B/$DIST/static"
-cp -R public "$B/public"
+mkdir -p "$B/$DIST/static" "$B/public"
+cp -R "$DIST/static/." "$B/$DIST/static/"
+cp -R public/. "$B/public/"
 mkdir -p "$B/tmp"
+missing=$(comm -23 <(cd public && find . -type f | sort) <(cd "$B/public" && find . -type f | sort))
+if [[ -n "$missing" || -e "$B/public/public" ]]; then
+  echo "Refusing: the bundle's public/ doesn't match the repo's; nothing was deployed." >&2
+  [[ -n "$missing" ]] && echo "$missing" | head -10 >&2
+  exit 1
+fi
 if [[ -n "$(find "$B" -maxdepth 3 -name '.env*' -print -quit)" ]]; then
   echo "Refusing: an .env file ended up in the bundle; nothing was deployed." >&2
   exit 1
@@ -125,6 +137,10 @@ for i in $(seq 1 12); do
   fi
   [[ "$i" == 12 ]] && { echo "!! The new build isn't answering yet. Check $URL, or run --rollback." >&2; exit 1; }
 done
+# public/ is behind the password, so check the files on the server instead.
+remote "test -f current/nodejs/public/images/certs.svg && test -d current/nodejs/public/models" ||
+  { echo "!! The new build is missing its public/ files. Run --rollback." >&2; exit 1; }
+echo "    Public files (images, models, fonts): in place."
 check_preview
 
 # Older versions beyond KEEP are removed (never the one serving). `|| true`: finding none
