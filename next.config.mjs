@@ -29,6 +29,18 @@ const nextConfig = {
       { source: '/screening', destination: '/bronx', permanent: true },
       // The 2.0 page /bronx replaced (its Sanity Page is being deleted).
       { source: '/medicaid-nutrition-box', destination: '/bronx', permanent: true },
+      // The rest of 1.0's addresses, each to its nearest 2.0 page (decided at launch,
+      // October 2026; see HOSTING.md).
+      { source: '/about', destination: '/our-story', permanent: true },
+      { source: '/services', destination: '/bespoke-meals', permanent: true },
+      { source: '/jobs-fair', destination: '/careers', permanent: true },
+      { source: '/spotlight', destination: '/social', permanent: true },
+      { source: '/nyc-groceries-site', destination: '/', permanent: true },
+      { source: '/v2', destination: '/', permanent: true },
+      { source: '/kommissary1.0', destination: '/', permanent: true },
+      { source: '/home.html', destination: '/', permanent: true },
+      { source: '/Xhome.html', destination: '/', permanent: true },
+      { source: '/index.html', destination: '/', permanent: true },
     ];
   },
 };

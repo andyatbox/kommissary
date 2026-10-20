@@ -17,7 +17,10 @@ import { isLiveRequest } from '@/lib/siteEnv';
 export function middleware(req: NextRequest) {
   if (isLiveRequest(req)) {
     const host = (req.headers.get('host') ?? '').split(':')[0].toLowerCase();
-    if (host === 'www.kommissary.com') {
+    // Plain http, or www: both go to https://kommissary.com, as 1.0's .htaccess did.
+    // (Only when the proxy says it was http; with no header, nothing is assumed.)
+    const plainHttp = req.headers.get('x-forwarded-proto')?.split(',')[0].trim() === 'http';
+    if (host === 'www.kommissary.com' || plainHttp) {
       return NextResponse.redirect(`https://kommissary.com${req.nextUrl.pathname}${req.nextUrl.search}`, 301);
     }
     return NextResponse.next();
