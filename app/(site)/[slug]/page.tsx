@@ -4,6 +4,8 @@ import type { PortableTextBlock } from '@portabletext/types';
 import { client } from '@/sanity/lib/client';
 import Reveal from '@/components/Reveal';
 import ContinueOn from '@/components/ContinueOn';
+import JsonLd from '@/components/JsonLd';
+import { breadcrumbJsonLd, excerpt, pageMetadata, shareImage } from '@/lib/seo';
 import SectionRenderer, { type PageSection } from '@/components/sections/SectionRenderer';
 import { SECTIONS_PROJECTION, enrichSections } from '@/lib/sections';
 
@@ -62,11 +64,49 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const page = await client.fetch<PageDoc | null>(PAGE_QUERY, { slug: params.slug });
   if (!page) return {};
-  return {
+  const sections = page.sections ?? [];
+  const pic = firstImage(sections);
+  return pageMetadata({
     title: `${page.title} · Kommissary`,
-    description: page.description,
-    openGraph: { title: `${page.title} · Kommissary`, description: page.description },
-  };
+    // Studio's meta description, or the page's opening text if it has none.
+    description: page.description || excerpt(firstText(sections) ?? page.body) || undefined,
+    path: `/${params.slug}`,
+    image: pic ? shareImage(pic, pic.alt || page.title) : undefined,
+  });
+}
+
+type SharePic = { asset?: { _ref?: string } | null; alt?: string | null };
+type Block = { _type?: string; asset?: { _ref?: string } } & SharePic;
+
+/** The page's first picture, in reading order, for link previews. */
+function firstImage(sections: PageSection[]): SharePic | null {
+  const inBlocks = (blocks?: unknown[]) =>
+    ((blocks ?? []) as Block[]).find((b) => b._type === 'image' && b.asset?._ref) ?? null;
+  for (const s of sections) {
+    const found =
+      s._type === 'singleImage'
+        ? s.image?.asset?._ref
+          ? s.image
+          : null
+        : s._type === 'imageSlider'
+          ? (s.images ?? []).find((i) => i.asset?._ref) ?? null
+          : s._type === 'bodyCopy'
+            ? inBlocks(s.content)
+            : s._type === 'gridCopy'
+              ? inBlocks(s.column1) ?? inBlocks(s.column2) ?? inBlocks(s.column3)
+              : null;
+    if (found) return found;
+  }
+  return null;
+}
+
+/** The first section with running text, for a description fallback. */
+function firstText(sections: PageSection[]) {
+  for (const s of sections) {
+    if (s._type === 'bodyCopy' && s.content?.length) return s.content;
+    if (s._type === 'gridCopy' && s.column1?.length) return s.column1;
+  }
+  return null;
 }
 
 export default async function SlugPage({ params }: { params: { slug: string } }) {
@@ -89,6 +129,7 @@ export default async function SlugPage({ params }: { params: { slug: string } })
     // sliders/grids can go full-bleed while copy/video stay in a readable column.
     // Top padding clears the fixed header (25px bar + nav + logo).
     <main className="min-h-dvh pb-28 pt-[120px] md:pt-[168px]">
+      <JsonLd data={breadcrumbJsonLd(page.title, `/${params.slug}`)} />
       <Reveal>
         <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
           <h1 className="text-balance text-center font-spirit text-5xl font-medium leading-[1.05] text-gold sm:text-6xl lg:text-7xl">

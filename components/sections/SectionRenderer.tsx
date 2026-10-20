@@ -54,12 +54,13 @@ export type PageSection =
 export default function SectionRenderer({ section }: { section: PageSection }) {
   switch (section._type) {
     case 'titleSection':
-      // Same look as the page title, but always centred.
+      // Looks like a page title, always centred. An h2, not an h1: the page title is the
+      // page's one h1, which is the clearest outline for search engines.
       return section.text ? (
         <div className="mx-auto w-full max-w-3xl wide:max-w-4xl px-6 sm:px-8">
-          <h1 className="text-balance text-center font-spirit text-4xl font-medium text-[#ff6666] sm:text-5xl">
+          <h2 className="text-balance text-center font-spirit text-4xl font-medium text-[#ff6666] sm:text-5xl">
             {section.text}
-          </h1>
+          </h2>
         </div>
       ) : null;
     case 'bodyCopy':

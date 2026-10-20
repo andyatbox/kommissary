@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { client } from '@/sanity/lib/client';
 import Footer from '@/components/Footer';
 import ContinueOn from '@/components/ContinueOn';
+import JsonLd from '@/components/JsonLd';
+import { breadcrumbJsonLd, pageMetadata } from '@/lib/seo';
 import CanvasHost from '@/components/story/CanvasHost';
 import SmoothScroll from '@/components/story/SmoothScroll';
 import Timeline from '@/components/story/Timeline';
@@ -21,12 +23,7 @@ const TITLE = 'Our Story & Timeline · Kommissary';
 const DESCRIPTION =
   'From a single food truck to a citywide kitchen and logistics operation — the story of Kommissary, a progressive, minority-run purveyor of chef-crafted meals serving the communities of New York City.';
 
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
-  openGraph: { title: TITLE, description: DESCRIPTION },
-  twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION },
-};
+export const metadata: Metadata = pageMetadata({ title: TITLE, description: DESCRIPTION, path: '/our-story' });
 
 // Moments in the drag-orderable list order. Models are hard-set in lib/story/timeline.ts
 // (not read from Sanity).
@@ -71,6 +68,7 @@ export default async function OurStoryPage() {
 
   return (
     <>
+      <JsonLd data={breadcrumbJsonLd('Our Story', '/our-story')} />
       {/* Fixed WebGL backdrop; the DOM above owns every pointer interaction. */}
       <CanvasHost />
       <SmoothScroll>

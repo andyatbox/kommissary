@@ -10,9 +10,18 @@ import { isLiveRequest } from '@/lib/siteEnv';
  *
  * The weekly Instagram token refresh is let through: it carries its own secret (see
  * app/api/instagram/refresh), and a password prompt would block it.
+ *
+ * On the live site, www.kommissary.com is sent to kommissary.com, the one address search
+ * engines index (see lib/seo.ts), with a permanent redirect that keeps the path and query.
  */
 export function middleware(req: NextRequest) {
-  if (isLiveRequest(req)) return NextResponse.next();
+  if (isLiveRequest(req)) {
+    const host = (req.headers.get('host') ?? '').split(':')[0].toLowerCase();
+    if (host === 'www.kommissary.com') {
+      return NextResponse.redirect(`https://kommissary.com${req.nextUrl.pathname}${req.nextUrl.search}`, 301);
+    }
+    return NextResponse.next();
+  }
 
   const password = process.env.STAGING_PASSWORD;
   if (password && req.nextUrl.pathname !== '/api/instagram/refresh' && !hasPassword(req, password)) {

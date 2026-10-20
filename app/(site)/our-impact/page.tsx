@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { client } from '@/sanity/lib/client';
 import ImpactSlider from '@/components/impact/ImpactSlider';
 import { IMPACT_QUERY, slidesFromSections, type ImpactPageDoc } from '@/lib/impact';
+import JsonLd from '@/components/JsonLd';
+import { breadcrumbJsonLd, pageMetadata, shareImage } from '@/lib/seo';
 
 // Re-fetch periodically so published content changes show without a redeploy.
 export const revalidate = 60;
@@ -10,12 +12,14 @@ export const revalidate = 60;
 export async function generateMetadata(): Promise<Metadata> {
   const page = await client.fetch<ImpactPageDoc | null>(IMPACT_QUERY);
   if (!page) return {};
-  const title = `${page.title} · Kommissary`;
-  return {
-    title,
+  // Link previews show the first slide's picture.
+  const pic = page.sections?.flatMap((s) => s.content ?? []).find((b) => b._type === 'image' && b.asset?._ref);
+  return pageMetadata({
+    title: `${page.title} · Kommissary`,
     description: page.description,
-    openGraph: { title, description: page.description },
-  };
+    path: '/our-impact',
+    image: pic ? shareImage(pic, pic.alt || page.title) : undefined,
+  });
 }
 
 /**
@@ -26,5 +30,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function OurImpactPage() {
   const page = await client.fetch<ImpactPageDoc | null>(IMPACT_QUERY);
   if (!page) notFound();
-  return <ImpactSlider title={page.title} slides={slidesFromSections(page.sections)} />;
+  return (
+    <>
+      <JsonLd data={breadcrumbJsonLd(page.title, '/our-impact')} />
+      <ImpactSlider title={page.title} slides={slidesFromSections(page.sections)} />
+    </>
+  );
 }

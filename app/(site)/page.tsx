@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
 import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
@@ -9,6 +10,13 @@ import type { HomeContent, TeamImages, TeamSlot } from '@/lib/store';
 import type { TeaserPost } from '@/components/weekly/WeeklyGrid';
 import HomeClient from '@/components/HomeClient';
 import { WEEKLY_ENABLED } from '@/lib/features';
+import { excerpt, pageMetadata, SITE_DESCRIPTION } from '@/lib/seo';
+
+export const metadata: Metadata = pageMetadata({
+  title: 'Kommissary · Chef-crafted meals & food logistics for NYC',
+  description: SITE_DESCRIPTION,
+  path: '/',
+});
 
 // Re-fetch periodically so published content changes show without a redeploy.
 export const revalidate = 60;
@@ -108,5 +116,22 @@ export default async function Page() {
     // Keep the default fallback if Sanity is unreachable.
   }
 
-  return <HomeClient content={{ ...content, phoneReels }} latestWeekly={latestWeekly} />;
+  return (
+    <>
+      <HomeClient content={{ ...content, phoneReels }} latestWeekly={latestWeekly} />
+      {/* The 3D scene draws its words in WebGL, where search engines and screen readers
+          can't read them. The same words as text: the sentence, then each pill's title
+          and copy (what its modal shows). Visually hidden, not different content. */}
+      <div className="sr-only">
+        <h1>Kommissary</h1>
+        <p>{content.sentence}</p>
+        {content.pills.map((pill, i) => (
+          <section key={i}>
+            <h2>{pill.title || pill.label}</h2>
+            {pill.body?.length ? <p>{excerpt(pill.body, 2000)}</p> : null}
+          </section>
+        ))}
+      </div>
+    </>
+  );
 }

@@ -8,6 +8,8 @@ import SmoothWheel from '@/components/SmoothWheel';
 import KaiWidget from '@/components/kai/KaiWidget';
 import GradientBackground from '@/components/GradientBackground';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
+import JsonLd from '@/components/JsonLd';
+import { SITE_DESCRIPTION, siteJsonLd } from '@/lib/seo';
 import './globals.css';
 
 // Re-fetch nav periodically so page/order changes surface without a redeploy.
@@ -19,8 +21,7 @@ const robotoCondensed = Roboto_Condensed({
   variable: '--font-roboto-condensed',
 });
 
-const DESCRIPTION =
-  'Kommissary is a progressive, minority-run purveyor of chef-crafted meals and a logistics leader serving the communities of New York City.';
+const DESCRIPTION = SITE_DESCRIPTION;
 
 export const metadata: Metadata = {
   // Canonical and share links always point at the public site, including from staging.
@@ -47,18 +48,22 @@ export const metadata: Metadata = {
     ],
     apple: '/images/apple-touch-icon.png',
   },
+  // Defaults for any page without its own (each page sets these via pageMetadata).
   openGraph: {
     title: 'Kommissary',
     description: DESCRIPTION,
     siteName: 'Kommissary',
     locale: 'en_US',
     type: 'website',
+    images: [{ url: 'https://kommissary.com/og.png', width: 1200, height: 630, alt: 'Kommissary' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Kommissary',
     description: DESCRIPTION,
+    images: ['https://kommissary.com/og.png'],
   },
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export const viewport: Viewport = {
@@ -77,6 +82,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={robotoCondensed.variable}>
       <body className="antialiased">
+        {/* Who Kommissary is and the site itself, for search engines (lib/seo.ts). */}
+        <JsonLd data={siteJsonLd()} />
         {/* Animated organic gradient behind everything (the R3F scenes render transparent
             over it). Falls back to the body's solid #000666 if WebGL is unavailable. */}
         <GradientBackground />

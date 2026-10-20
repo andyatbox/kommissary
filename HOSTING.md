@@ -142,6 +142,10 @@ Instagram ever needs re-connecting; the weekly refresh doesn't use it.)
 
 ## 3. Launch (2.0 replaces 1.0)
 
+0. **Merge `v2-outreach-pages` into `main`** (a pull request on GitHub), since the live app
+   builds from `main`. Pushing `main` also redeploys the old Vercel copy, which is fine
+   (§5). Then make sure the preview runs that same commit (`scripts/deploy-preview.sh`)
+   and click through it one last time.
 1. **Back up the server-only files.** A few things exist only on the server, not in
    `~/Documents/kommissary 1.0` (e.g. `.htaccess`, `box/`, `nyc-groceries/`). hPanel → File
    Manager → `domains/kommissary.com/public_html` → compress → download.
@@ -150,16 +154,28 @@ Instagram ever needs re-connecting; the weekly refresh doesn't use it.)
    in October 2026; just confirm they're still there.
 3. **Point kommissary.com at the Node.js app.** Easiest: a second Node.js app on
    `kommissary.com` from the `main` branch with the **Live** variables above. ⚠️ No
-   `STAGING_PASSWORD` on it.
+   `STAGING_PASSWORD` on it. **Both `kommissary.com` and `www.kommissary.com` must reach
+   the app** (www as an alias / parked domain on the same app). The app itself sends www
+   to kommissary.com (`middleware.ts`), so ⚠️ don't add a hPanel redirect *towards* www:
+   the two would loop. Make sure HTTPS (the free SSL) covers both names.
 4. **Verify** within minutes:
    - `curl -sI https://kommissary.com | grep -i x-robots` prints **nothing**. If it prints
      `noindex`, the server isn't passing the real address through to the app; fix before
      search engines see it.
+   - `curl -sI https://www.kommissary.com/logistics` → `301` with `location:
+     https://kommissary.com/logistics`.
+   - `https://kommissary.com/robots.txt` says `Allow: /` and lists the sitemap (on the
+     preview it says `Disallow: /`, on purpose); `https://kommissary.com/sitemap.xml` lists
+     the pages; `https://kommissary.com/og.png` shows the share card.
    - No password prompt. The homepage's 3D scene loads; `/bronx`, `/educator`, `/dycd` load.
    - Google Analytics → Realtime shows your visit.
    - One real test submission per form, then tell the care team to expect and ignore it.
-5. **Move the Instagram cron** (§4) to kommissary.com.
-6. **Retire:** the Vercel project (§5), and `kommissary-bronx` (its pages now live here).
+   - The Meta pixels fire on `/bronx`, `/educator` and `/dycd` (Meta Pixel Helper browser
+     extension), and a test form's Lead shows in Events Manager. They're off on the preview
+     by design, so this is the first place they can be checked.
+5. **Search engines** (§6), the same day.
+6. **Move the Instagram cron** (§4) to kommissary.com.
+7. **Retire:** the Vercel project (§5), and `kommissary-bronx` (its pages now live here).
 
 **Rolling back:** point kommissary.com back to the plain website in hPanel. As long as
 `public_html` was left in place (step 1), 1.0 returns as it was. `~/Documents/kommissary 1.0`
@@ -189,3 +205,34 @@ Do this only after the cron runs somewhere else (§4), or the token lapses withi
 the reels disappear. Then: Vercel → project **kommissary** → Settings → **Delete Project**.
 Until then, pushing to `main` still deploys there; this branch adds noindex and turns
 forms and pixels off on that address too, so it's safe to leave running in the meantime.
+
+---
+
+## 6. Search engines
+
+What the site does by itself (lib/seo.ts): one public address (kommissary.com, www
+redirects to it), a canonical link and title/description on every page, a share image
+(the page's first picture, or the `/og.png` card), structured data saying who Kommissary
+is (Organization, WebSite, breadcrumbs), `robots.txt` and an hourly-rebuilt
+`sitemap.xml` with each page's last edit. Pages only become indexable on kommissary.com:
+everywhere else sends `noindex` and a closed `robots.txt`.
+
+At launch:
+1. **Google Search Console** (search.google.com/search-console): add a **Domain** property
+   for `kommissary.com`, verified with the TXT record it gives you in hPanel's DNS. A
+   domain property covers www and http too, and keeps the 1.0 site's search history.
+2. **Sitemaps** → submit `sitemap.xml`. **URL Inspection** → request indexing for the
+   homepage and the main pages.
+3. **Pages report**, over the next weeks: look for "Not found (404)" from old 1.0
+   addresses and add redirects for any that still get traffic (§2, Old 1.0 addresses).
+4. **Bing Webmaster Tools** (bing.com/webmasters): "Import from Google Search Console"
+   brings the site and sitemap over in one step (Bing also feeds DuckDuckGo and Yahoo).
+5. Optional: **Google Business Profile** for the kitchen's address and hours (the site
+   lists no address, so this is where local search gets it).
+
+Checks any time: Google's Rich Results Test (structured data), and a link pasted into a
+Slack or iMessage chat (the share card and title).
+
+In Studio, the biggest levers are each Page's **Meta description** (what shows under the
+title in results; every page has one now) and **Alt text** on images.
+
