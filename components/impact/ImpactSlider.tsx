@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { PortableText } from 'next-sanity';
 import type { PortableTextComponents } from '@portabletext/react';
 import type { ImpactSlide } from '@/lib/impact';
@@ -39,6 +40,10 @@ const HOVER_SPEED_GAIN = 0.4;
 const TEXT_SPEED = 1.12;
 /** Space between the page title and the slide's header, px. */
 const TITLE_GAP = 16;
+/** Below this width (phones) the paragraphs always go behind "Read more". */
+const COMPACT_WIDTH = 640;
+/** The reader overlay's fade in and out, ms. */
+const READER_MS = 350;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const mod = (a: number, n: number) => ((a % n) + n) % n;
@@ -115,6 +120,20 @@ export default function ImpactSlider({ title, slides }: { title: string; slides:
   const [introDone, setIntroDone] = useState(false);
   const [noGL, setNoGL] = useState(false);
   const [titleLift, setTitleLift] = useState(0);
+  /**
+   * "Read more" mode: on phones, or whenever any slide's paragraphs wouldn't fit (they'd
+   * scroll in their box, or the title above them would climb into the nav), every slide
+   * shows a "Read more" pill in place of its paragraphs, opening them in a full-screen
+   * reader. One rule for all slides, so they don't switch modes as you go.
+   */
+  const [compact, setCompact] = useState(false);
+  /** The slide open in the reader (null: closed), and whether it's faded in. */
+  const [reader, setReader] = useState<number | null>(null);
+  const [readerShown, setReaderShown] = useState(false);
+  const readerRef = useRef<number | null>(null);
+  readerRef.current = reader;
+  const readMoreRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const reducedMotion = usePrefersReducedMotion();
   const reducedRef = useRef(reducedMotion);
   reducedRef.current = reducedMotion;
@@ -173,8 +192,10 @@ export default function ImpactSlider({ title, slides }: { title: string; slides:
 
     // Wheel and trackpad. Either axis moves the slides. A paragraph box that can still
     // scroll the way the wheel is going keeps it.
+    // While the reader is open the slider stands still: input goes to the reader.
+    const locked = () => readerRef.current !== null;
     const onWheel = (e: WheelEvent) => {
-      if (!canMove || !(e.target instanceof Node) || !root.contains(e.target)) return;
+      if (!canMove || locked() || !(e.target instanceof Node) || !root.contains(e.target)) return;
       const box = e.target instanceof Element ? e.target.closest('[data-scroll-y]') : null;
       if (box && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         const down = e.deltaY > 0 && box.scrollTop + box.clientHeight < box.scrollHeight - 1;
@@ -204,7 +225,7 @@ export default function ImpactSlider({ title, slides }: { title: string; slides:
     let drag: Drag | null = null;
     let suppressClick = false;
     const onPointerDown = (e: PointerEvent) => {
-      if (!canMove || e.button !== 0) return;
+      if (!canMove || locked() || e.button !== 0) return;
       if (e.target instanceof Element && e.target.closest('a, button, input, textarea')) return;
       const box = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-scroll-y]') : null;
       drag = {
@@ -262,7 +283,7 @@ export default function ImpactSlider({ title, slides }: { title: string; slides:
     };
 
     const onKey = (e: KeyboardEvent) => {
-      if (!canMove || e.defaultPrevented) return;
+      if (!canMove || locked() || e.defaultPrevented) return;
       const t = e.target as HTMLElement | null;
       if (t?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
       // Space on a focused button or link is that control's own.
@@ -439,8 +460,26 @@ export default function ImpactSlider({ title, slides }: { title: string; slides:
   // paragraphs, so the two move as one.
   useLayoutEffect(() => {
     const measure = () => {
+      // Does every slide's copy fit? The paragraph boxes stay in the page (closed) in
+      // "Read more" mode too, so this measures the same thing either way.
+      const navBottom = document.querySelector('nav[aria-label="Main"]')?.getBoundingClientRect().bottom ?? 120;
+      const titleH = document.querySelector('main h1')?.getBoundingClientRect().height ?? 0;
+      const wrap = headRefs.current[0]?.parentElement;
+      const padBottom = wrap ? parseFloat(getComputedStyle(wrap).paddingBottom) || 0 : 0;
+      const tooTall = slides.some((_, i) => {
+        const box = bodyRefs.current[i];
+        const head = headRefs.current[i]?.offsetHeight ?? 0;
+        if (!box) return false;
+        const scrolls = box.scrollHeight > box.clientHeight + 1;
+        const top = window.innerHeight - padBottom - head - box.offsetHeight - TITLE_GAP - titleH;
+        return scrolls || top < navBottom;
+      });
+      const isCompact = window.innerWidth < COMPACT_WIDTH || tooTall;
+      setCompact(isCompact);
+
       const head = headRefs.current[active]?.offsetHeight ?? 0;
-      const body = open ? (bodyRefs.current[active]?.offsetHeight ?? 0) : 0;
+      const below = isCompact ? readMoreRefs.current[active]?.parentElement : bodyRefs.current[active];
+      const body = open ? (below?.offsetHeight ?? 0) : 0;
       setTitleLift(head + body);
       // A paragraph box with more text than fits lets a finger scroll it; one without
       // passes vertical swipes on to the slides (see the drag handling).
@@ -452,7 +491,34 @@ export default function ImpactSlider({ title, slides }: { title: string; slides:
     document.fonts?.ready.then(measure).catch(() => {});
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [active, open]);
+  }, [active, open, compact, slides]);
+
+  // The reader: fade in after mounting, focus its close button, Escape closes it; on
+  // close, fade out, then unmount and hand focus back to the slide's "Read more".
+  useEffect(() => {
+    if (reader === null) return;
+    const a = requestAnimationFrame(() => {
+      setReaderShown(true);
+      closeRef.current?.focus();
+    });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeReader();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      cancelAnimationFrame(a);
+      window.removeEventListener('keydown', onKey);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reader]);
+  const closeReader = () => {
+    const i = readerRef.current;
+    setReaderShown(false);
+    setTimeout(() => {
+      setReader(null);
+      if (i !== null) readMoreRefs.current[i]?.focus();
+    }, READER_MS);
+  };
 
   const motionMs = open ? OPEN_MS : CLOSE_MS;
   const fadeUp = (delay: number): React.CSSProperties => ({
@@ -537,9 +603,42 @@ export default function ImpactSlider({ title, slides }: { title: string; slides:
 
               {/* Opens from nothing to its height: grid rows 0fr → 1fr animate the height
                   of content whose size isn't known in CSS. */}
+              {/* "Read more" mode: the pill opens where the paragraphs would. */}
+              {compact && (
+                <div
+                  className="grid"
+                  style={{ gridTemplateRows: isOpen ? '1fr' : '0fr', transition: `grid-template-rows ${isOpen ? OPEN_MS : CLOSE_MS}ms ${EASE}` }}
+                >
+                  <div className="min-h-0 overflow-hidden">
+                    <div className="pt-4">
+                      <button
+                        ref={(el) => {
+                          readMoreRefs.current[i] = el;
+                        }}
+                        type="button"
+                        onClick={() => setReader(i)}
+                        tabIndex={isOpen ? 0 : -1}
+                        aria-haspopup="dialog"
+                        className="cursor-pointer rounded-full border-2 border-[#ff6666] px-5 py-2 font-spirit text-lg font-medium text-[#ff6666] transition-colors duration-300 hover:border-[#ffcf33] hover:text-[#ffcf33] focus-visible:border-[#ffcf33] focus-visible:text-[#ffcf33]"
+                        style={{
+                          opacity: isOpen ? 1 : 0,
+                          transition: isOpen ? `opacity ${OPEN_MS}ms ${EASE} 150ms, color 300ms, border-color 300ms` : `opacity ${CLOSE_MS * 0.6}ms ${EASE}`,
+                        }}
+                      >
+                        Read more
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div
                 className="grid"
-                style={{ gridTemplateRows: isOpen ? '1fr' : '0fr', transition: `grid-template-rows ${isOpen ? OPEN_MS : CLOSE_MS}ms ${EASE}` }}
+                aria-hidden={compact || undefined}
+                style={{
+                  gridTemplateRows: isOpen && !compact ? '1fr' : '0fr',
+                  transition: `grid-template-rows ${isOpen && !compact ? OPEN_MS : CLOSE_MS}ms ${EASE}`,
+                }}
               >
                 <div className="min-h-0 overflow-hidden">
                   <div
@@ -549,8 +648,8 @@ export default function ImpactSlider({ title, slides }: { title: string; slides:
                     data-scroll-y
                     className="max-h-[min(40vh,30rem)] max-w-xl overflow-y-auto overscroll-contain pr-2 pt-4 text-[15px] leading-relaxed text-white/85 sm:max-h-[min(42vh,30rem)] sm:text-base"
                     style={{
-                      opacity: isOpen ? 1 : 0,
-                      transform: isOpen || reducedMotion ? 'none' : 'translateY(16px)',
+                      opacity: isOpen && !compact ? 1 : 0,
+                      transform: (isOpen && !compact) || reducedMotion ? 'none' : 'translateY(16px)',
                       transition: isOpen
                         ? `opacity ${OPEN_MS}ms ${EASE} 150ms, transform ${OPEN_MS}ms ${EASE} 150ms`
                         : `opacity ${CLOSE_MS * 0.6}ms ${EASE}, transform ${CLOSE_MS}ms ${EASE}`,
@@ -626,6 +725,51 @@ export default function ImpactSlider({ title, slides }: { title: string; slides:
           <p className="text-lg text-white/60">Content coming soon.</p>
         </div>
       )}
+
+      {/* The reader: everything on one slide, full screen, over the nav and Kai too, so
+          it's rendered into <body> rather than inside the slider. */}
+      {reader !== null &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="impact-reader-title"
+            className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-[#000666]/95 backdrop-blur-xl"
+            style={{ opacity: readerShown ? 1 : 0, transition: `opacity ${READER_MS}ms ${EASE}` }}
+          >
+            <button
+              ref={closeRef}
+              type="button"
+              onClick={closeReader}
+              aria-label="Close"
+              className="fixed right-4 top-4 z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-2 border-[#ff6666] bg-[#000666]/80 text-[#ff6666] transition-colors hover:border-[#ffcf33] hover:text-[#ffcf33] sm:right-8 sm:top-8"
+            >
+              <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+            <div
+              className="mx-auto max-w-2xl px-6 pb-20 pt-24 sm:px-8 sm:pt-28"
+              style={{
+                transform: readerShown || reducedMotion ? 'none' : 'translateY(16px)',
+                transition: `transform ${READER_MS * 1.6}ms ${EASE}`,
+              }}
+            >
+              <h2 id="impact-reader-title" className="text-balance font-spirit text-3xl font-medium leading-[1.1] text-[#ff6666] sm:text-4xl">
+                {slides[reader].header}
+              </h2>
+              {slides[reader].subheader && (
+                <p className="mt-3 text-sm font-medium uppercase tracking-wide text-[#ff6666] sm:text-base">
+                  {slides[reader].subheader}
+                </p>
+              )}
+              <div className="mt-6 select-text text-base leading-relaxed text-white/85 sm:text-lg">
+                <PortableText value={slides[reader].paragraphs} components={PARAGRAPHS} />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </main>
   );
 }
