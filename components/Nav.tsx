@@ -111,17 +111,18 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
           so moving from the trigger down into the panel doesn't dismiss it. */}
       {/* Top bar on its own fixed layer at the very top — above the mobile menu (z-40),
           so it doesn't add to the header's height and stays visible while the menu is open.
-          Holds the scroll-progress fill (behind) and the certifications image (right edge
-          matching the nav padding, so it sits under the Connect chevron). */}
+          Holds the certifications image (right edge matching the nav padding, so it sits
+          under the Connect chevron). */}
+      {/* Scroll progress: a rule along the very bottom of the screen, filled by
+          SmoothWheel / Our Story's SmoothScroll. (It used to run along the top bar,
+          through the logo.) The homepage has its own at the bottom (HomeProgress), where
+          it becomes the sentence filling in, so it's omitted there. */}
+      {pathname !== '/' && (
+        <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 z-50 h-[2px]">
+          <div id="scroll-progress" className="h-full w-full origin-left scale-x-0 bg-[#ff6666]" />
+        </div>
+      )}
       <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[25px] overflow-hidden wide:h-[38px]">
-        {/* The homepage shows its scroll progress at the BOTTOM instead (HomeProgress),
-            where it becomes the sentence filling in — so the top rule is omitted there. */}
-        {pathname !== '/' && (
-          <div
-            id="scroll-progress"
-            className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-0 bg-[#ff6666]"
-          />
-        )}
         {/* Not a link for now — it stays pointer-events-none with the bar so it can't
             swallow clicks meant for the scene behind it. */}
         <div className="absolute right-6 top-0 block h-full sm:right-8">
