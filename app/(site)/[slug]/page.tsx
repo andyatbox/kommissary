@@ -30,10 +30,19 @@ const SLUGS_QUERY = `*[_type == "page" && defined(slug.current)].slug.current`;
 // Slugs with a dedicated route of their own (a bespoke experience rather than the
 // generic block template). The explicit route shadows [slug] anyway, but excluding
 // them here keeps this template from also prerendering them.
-// A Page document with one of these slugs only puts the page in the nav (its own copy is
-// edited elsewhere: Our Story Page, or the Nutrition Box / Educators / Community Leaders
-// documents for bronx, educator and dycd).
-const DEDICATED_ROUTES = new Set(['our-story', 'weekly', 'bronx', 'educator', 'dycd', 'privacy']);
+// For most of these, a Page document with the slug only puts the page in the nav (its copy
+// is edited elsewhere: Our Story Page, or the Nutrition Box / Educators / Community
+// Leaders documents for bronx, educator and dycd). our-impact is the exception: its route
+// reads the Page's own Body Copy sections as the slides of its slider.
+const DEDICATED_ROUTES = new Set([
+  'our-story',
+  'our-impact',
+  'weekly',
+  'bronx',
+  'educator',
+  'dycd',
+  'privacy',
+]);
 
 // Pre-render every page at build; new/edited pages still resolve on demand (revalidate).
 export async function generateStaticParams() {
