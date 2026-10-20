@@ -174,12 +174,13 @@ const ZONES: ZoneDef[] = [
         hoverAmp: 0.38,
         hoverFreq: 1.1,
       },
-      // Below, in front, toward the right of the word.
+      // The Kommissary food box: below the word and in front, in frame at the "Free
+      // Nutrition Boxes" stop (the old boxes.glb sat further right, off screen there).
       {
-        url: '/models/boxes.glb',
+        url: '/models/foodbox.glb',
         anchor: 'provisions',
-        offset: [8, -1, 4],
-        target: 2.5,
+        offset: [1, -1.6, 4],
+        target: 3.2,
         rotationY: 0,
         hoverAmp: 0.3,
         hoverFreq: 0.95,
@@ -379,7 +380,14 @@ export default function Models() {
       prepared = ranges
         .filter((r) => u >= r.uStart - PREPARE_U && u <= r.uEnd + PREPARE_U)
         .map((r) => r.def.id);
-      const hit = ranges.find((r) => u >= r.uStart && u <= r.uEnd);
+      // Neighbouring zones' windows overlap ("meals, provisions"), so where the camera is
+      // inside two, the one whose centre it's nearest wins: stopping at a pill shows that
+      // pill's own models, not the previous zone's.
+      let hit: ZoneRange | undefined;
+      for (const r of ranges) {
+        if (u < r.uStart || u > r.uEnd) continue;
+        if (!hit || Math.abs(u - r.centerU) < Math.abs(u - hit.centerU)) hit = r;
+      }
       actives = hit ? [hit.def.id] : [];
     }
 
