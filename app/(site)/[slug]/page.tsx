@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { PortableTextBlock } from '@portabletext/types';
 import { client } from '@/sanity/lib/client';
 import Reveal from '@/components/Reveal';
+import ContinueOn from '@/components/ContinueOn';
 import SectionRenderer, { type PageSection } from '@/components/sections/SectionRenderer';
 import { SECTIONS_PROJECTION, enrichSections } from '@/lib/sections';
 
@@ -115,6 +116,9 @@ export default async function SlugPage({ params }: { params: { slug: string } })
         </div>
       )}
 
+      <Reveal className="mt-24 md:mt-32">
+        <ContinueOn from={`/${params.slug}`} />
+      </Reveal>
     </main>
   );
 }

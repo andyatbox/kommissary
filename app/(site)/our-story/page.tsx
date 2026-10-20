@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { client } from '@/sanity/lib/client';
 import Footer from '@/components/Footer';
+import ContinueOn from '@/components/ContinueOn';
 import CanvasHost from '@/components/story/CanvasHost';
 import SmoothScroll from '@/components/story/SmoothScroll';
 import Timeline from '@/components/story/Timeline';
@@ -81,7 +82,10 @@ export default async function OurStoryPage() {
             unit={page?.statsUnit || undefined}
           />
         </main>
-        {/* Inside the scroll rig so it moves with the page (see SiteFooter). */}
+        {/* Inside the scroll rig so they move with the page (see SiteFooter). */}
+        <div className="pb-16 pt-8">
+          <ContinueOn from="/our-story" />
+        </div>
         <Footer />
       </SmoothScroll>
       {/* The shared header comes from app/(site)/layout.tsx — not rendered here. */}

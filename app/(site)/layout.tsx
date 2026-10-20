@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import { Roboto_Condensed } from 'next/font/google';
 import { client } from '@/sanity/lib/client';
-import { buildNav, type NavMenu, type NavPage } from '@/lib/nav';
+import { buildNav, NAV_QUERY, type NavMenu, type NavPage } from '@/lib/nav';
 import Nav from '@/components/Nav';
 import SiteFooter from '@/components/SiteFooter';
+import SmoothWheel from '@/components/SmoothWheel';
 import KaiWidget from '@/components/kai/KaiWidget';
 import GradientBackground from '@/components/GradientBackground';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
@@ -11,14 +12,6 @@ import './globals.css';
 
 // Re-fetch nav periodically so page/order changes surface without a redeploy.
 export const revalidate = 60;
-
-// Nav-enabled pages, in the Pages list's drag order (drives link order per column).
-const NAV_QUERY = `*[_type == "page" && defined(navGroup)]|order(orderRank){
-  navGroup,
-  navColumn,
-  "label": coalesce(navLabel, title),
-  "href": slug.current
-}`;
 
 const robotoCondensed = Roboto_Condensed({
   subsets: ['latin'],
@@ -90,6 +83,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Nav menus={nav} />
         {children}
         <SiteFooter />
+        {/* Our Story's scroll feel on the other scrolling pages (mouse and trackpad). */}
+        <SmoothWheel />
         {/* Ask Kai — floating chatbot, on every page. */}
         <KaiWidget />
         <GoogleAnalytics />
