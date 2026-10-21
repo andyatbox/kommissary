@@ -1,6 +1,7 @@
 'use client';
 
 import { formsSendForReal } from '@/lib/siteEnv';
+import { keepTrackInPlace, releaseFocusIn } from '@/lib/stepSlider';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { sendEvent } from './analytics';
 import { EMAIL, FOCUS_FORM_EVENT, PHONE, PHONE_HREF } from './content';
@@ -178,6 +179,10 @@ export default function CallbackForm({ className = '' }: { className?: string })
   const [highlight, setHighlight] = useState(false);
   const [trackHeight, setTrackHeight] = useState<number>();
   const slideRefs = useRef<(HTMLFieldSetElement | null)[]>([]);
+  const trackRef = useRef<HTMLDivElement>(null);
+  // Set once they've moved between steps, so going Back to the first step focuses it too
+  // (but the page doesn't grab focus on load).
+  const moved = useRef(false);
 
   const doneIndex = FIELDS.length;
   const field = FIELDS[index] as Field | undefined;
@@ -195,10 +200,17 @@ export default function CallbackForm({ className = '' }: { className?: string })
   }, []);
 
   useEffect(() => {
-    if (index === 0) return;
+    if (!moved.current) return;
     const timer = setTimeout(() => focusCurrent(index), 60);
     return () => clearTimeout(timer);
   }, [index, focusCurrent]);
+
+  /** Moves to step i (see lib/stepSlider.ts for why focus is dropped first). */
+  const go = (i: number) => {
+    releaseFocusIn(trackRef.current);
+    moved.current = true;
+    setIndex(i);
+  };
 
   // The card fits the current step (steps differ in height), easing between them.
   useEffect(() => {
@@ -250,7 +262,7 @@ export default function CallbackForm({ className = '' }: { className?: string })
     if (!formsSendForReal()) {
       console.info('[form] test site, not sent:', Object.fromEntries(body));
       sendEvent('generate_lead', { form_name: 'dycd_callback', page_language: lang });
-      setIndex(doneIndex);
+      go(doneIndex);
       return;
     }
 
@@ -264,7 +276,7 @@ export default function CallbackForm({ className = '' }: { className?: string })
       await fetch(FORM_RESPONSE_URL as string, { method: 'POST', mode: 'no-cors', body, signal: controller.signal });
       clearTimeout(timeout);
       sendEvent('generate_lead', { form_name: 'dycd_callback', page_language: lang });
-      setIndex(doneIndex);
+      go(doneIndex);
     } catch {
       setError(t.failed(<PhoneLink />));
     } finally {
@@ -281,12 +293,12 @@ export default function CallbackForm({ className = '' }: { className?: string })
       return;
     }
     if (isLast) void submit();
-    else setIndex(index + 1);
+    else go(index + 1);
   };
 
   const back = () => {
     setError(null);
-    setIndex(Math.max(0, index - 1));
+    go(Math.max(0, index - 1));
   };
 
   const errorId = `${id}-error`;
@@ -322,6 +334,8 @@ export default function CallbackForm({ className = '' }: { className?: string })
 
         {/* The slider: every step sits side by side; the track moves one width per step. */}
         <div
+          ref={trackRef}
+          onScroll={keepTrackInPlace}
           className="overflow-hidden transition-[height] duration-500 ease-out motion-reduce:transition-none"
           style={{ height: trackHeight }}
         >

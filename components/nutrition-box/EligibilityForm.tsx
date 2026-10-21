@@ -1,6 +1,7 @@
 'use client';
 
 import { formsSendForReal } from '@/lib/siteEnv';
+import { keepTrackInPlace, releaseFocusIn } from '@/lib/stepSlider';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { isTestSite, sendEvent } from './analytics';
 import { EMAIL, FOCUS_FORM_EVENT, PHONE, PHONE_HREF } from './content';
@@ -250,6 +251,10 @@ export default function EligibilityForm({ className = '' }: { className?: string
   const [highlight, setHighlight] = useState(false);
   const [trackHeight, setTrackHeight] = useState<number>();
   const slideRefs = useRef<(HTMLFieldSetElement | null)[]>([]);
+  const trackRef = useRef<HTMLDivElement>(null);
+  // Set once they've moved between steps, so going Back to the first step focuses it too
+  // (but the page doesn't grab focus on load).
+  const moved = useRef(false);
 
   const steps = inBronx ? STEPS_BRONX : STEPS_OUTSIDE;
   const step = steps[index];
@@ -276,10 +281,17 @@ export default function EligibilityForm({ className = '' }: { className?: string
   }, []);
 
   useEffect(() => {
-    if (index === 0) return;
+    if (!moved.current) return;
     const timer = setTimeout(() => focusCurrent(index), 60);
     return () => clearTimeout(timer);
   }, [index, inBronx, focusCurrent]);
+
+  /** Moves to step i (see lib/stepSlider.ts for why focus is dropped first). */
+  const go = (i: number) => {
+    releaseFocusIn(trackRef.current);
+    moved.current = true;
+    setIndex(i);
+  };
 
   // The card fits the current step (steps differ in height), easing between them.
   useEffect(() => {
@@ -334,7 +346,7 @@ export default function EligibilityForm({ className = '' }: { className?: string
       if (isTestSite()) {
         // Preview only: show the thank-you so the flow can be reviewed. Nothing is sent.
         console.info('[form] not connected; would send', Object.fromEntries(answers), inBronx ? dobString(values) : '', methods.map((m) => METHOD_VALUE[m]));
-        setIndex(steps.length - 1);
+        go(steps.length - 1);
       } else {
         setError(t.notConnected);
       }
@@ -359,7 +371,7 @@ export default function EligibilityForm({ className = '' }: { className?: string
     if (!formsSendForReal()) {
       console.info('[form] test site, not sent:', Object.fromEntries(body));
       sendEvent('generate_lead', { form_name: 'nutrition_box_callback', page_language: lang });
-      setIndex(steps.length - 1);
+      go(steps.length - 1);
       return;
     }
 
@@ -374,7 +386,7 @@ export default function EligibilityForm({ className = '' }: { className?: string
       clearTimeout(timeout);
       // Nothing from the form itself goes to analytics or Meta: only that a request was sent.
       sendEvent('generate_lead', { form_name: 'nutrition_box_callback', page_language: lang });
-      setIndex(steps.length - 1);
+      go(steps.length - 1);
     } catch {
       setError(t.failed(<PhoneLink />));
     } finally {
@@ -392,16 +404,16 @@ export default function EligibilityForm({ className = '' }: { className?: string
     if (step === 'zip') {
       const bronx = BRONX_ZIPS.has(values.zip.trim());
       setInBronx(bronx);
-      setIndex(1);
+      go(1);
       return;
     }
     if (steps[index + 1] === 'done') void submit();
-    else setIndex(index + 1);
+    else go(index + 1);
   };
 
   const back = () => {
     setError(null);
-    setIndex(Math.max(0, index - 1));
+    go(Math.max(0, index - 1));
   };
 
   const errorId = `${id}-error`;
@@ -439,6 +451,8 @@ export default function EligibilityForm({ className = '' }: { className?: string
 
         {/* The slider: every step sits side by side; the track moves one width per step. */}
         <div
+          ref={trackRef}
+          onScroll={keepTrackInPlace}
           className="overflow-hidden transition-[height] duration-500 ease-out motion-reduce:transition-none"
           style={{ height: trackHeight }}
         >
