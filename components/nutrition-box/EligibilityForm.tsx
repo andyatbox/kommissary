@@ -3,6 +3,7 @@
 import { formsSendForReal } from '@/lib/siteEnv';
 import { keepTrackInPlace, releaseFocusIn } from '@/lib/stepSlider';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { adSource, forgetAdSource, rememberAdSource } from './adSource';
 import { isTestSite, sendEvent } from './analytics';
 import { EMAIL, FOCUS_FORM_EVENT, PHONE, PHONE_HREF } from './content';
 import { type Lang, useLang } from './i18n';
@@ -14,9 +15,10 @@ import PrivacyConsent from './PrivacyConsent';
 // no Medicaid status and no health questions, so nothing in it is health information.
 // Eligibility is checked later, by phone, in the SOMOS network's own system.
 //
-// Steps: ZIP → (outside the Bronx: a notice, then continue) → name → language → how to
-// reach them → their phone and/or email, with the consent line by the submit button →
-// thank you.
+// Steps: ZIP → (outside the Bronx: a notice, then continue) → name → date of birth →
+// language → how to reach them → their phone and/or email, with the consent line by the
+// submit button → thank you. Which ad they came from (?src=) goes along unseen, as
+// "Source" (adSource.ts).
 //
 // Google Form "Bronx Medicaid Nutrition Box" (edit ID 1trLJjU-aAFmxvWOU0xdaFheCX2n5tII8DiTw4z2i3ww),
 // in the kommissary.com Workspace. All its questions are optional there on purpose: the
@@ -26,7 +28,7 @@ import PrivacyConsent from './PrivacyConsent';
 const FORM_RESPONSE_URL: string | null =
   'https://docs.google.com/forms/d/e/1FAIpQLSdZMb1ujzcMcVyMoqkRGr0sqsRMymrpbm0ZUygOGd2iF8RYNw/formResponse';
 
-const ENTRY: Record<'zip' | 'inBronx' | 'firstName' | 'lastName' | 'dob' | 'language' | 'contact' | 'phone' | 'email', string | null> = {
+const ENTRY: Record<'zip' | 'inBronx' | 'firstName' | 'lastName' | 'dob' | 'language' | 'contact' | 'phone' | 'email' | 'source', string | null> = {
   zip: 'entry.1571081632',
   inBronx: 'entry.1634185568',
   firstName: 'entry.1391909617',
@@ -37,6 +39,8 @@ const ENTRY: Record<'zip' | 'inBronx' | 'firstName' | 'lastName' | 'dob' | 'lang
   contact: 'entry.1429210405',
   phone: 'entry.390752080',
   email: 'entry.1994272451',
+  // Not asked: the ad's creative variant from the link (?src=c1A), filled in by the page.
+  source: 'entry.422505302',
 };
 
 // Bronx ZIP codes. The visitor only types a ZIP; whether it's in the Bronx is worked out
@@ -74,9 +78,9 @@ const LANGUAGES: { value: string; label: string }[] = [
 ];
 
 type StepId = 'zip' | 'outside' | 'name' | 'dob' | 'language' | 'contact' | 'details' | 'done';
-// Date of birth is asked only on the Bronx route, where it's needed for the application.
+// Date of birth is required on both routes (the client's request, October 2026).
 const STEPS_BRONX: StepId[] = ['zip', 'name', 'dob', 'language', 'contact', 'details', 'done'];
-const STEPS_OUTSIDE: StepId[] = ['zip', 'outside', 'name', 'language', 'contact', 'details', 'done'];
+const STEPS_OUTSIDE: StepId[] = ['zip', 'outside', 'name', 'dob', 'language', 'contact', 'details', 'done'];
 // The questions counted in "Step n of N" (not the notice or the thank-you).
 const QUESTION_STEPS: StepId[] = ['zip', 'name', 'dob', 'language', 'contact', 'details'];
 
@@ -293,6 +297,9 @@ export default function EligibilityForm({ className = '' }: { className?: string
     setIndex(i);
   };
 
+  // An ad link's creative variant (?src=c1A), kept until the form is sent.
+  useEffect(() => rememberAdSource(), []);
+
   // The card fits the current step (steps differ in height), easing between them.
   useEffect(() => {
     const slide = slideRefs.current[index];
@@ -331,6 +338,7 @@ export default function EligibilityForm({ className = '' }: { className?: string
 
   const submit = async () => {
     const methods = (['call', 'text', 'email'] as const).filter((m) => values.methods.includes(m));
+    const source = adSource();
     const answers: [keyof typeof ENTRY, string][] = [
       ['zip', values.zip.trim()],
       ['inBronx', inBronx ? 'Yes' : 'No'],
@@ -339,13 +347,17 @@ export default function EligibilityForm({ className = '' }: { className?: string
       ['language', language],
       ['phone', wantsPhone ? formatPhone(values.phone) : ''],
       ['email', wantsEmail ? values.email.trim() : ''],
+      ['source', source],
     ];
+    // Analytics and Meta get only that a request was sent, its language and which ad it came
+    // from: nothing anyone typed.
+    const lead = { form_name: 'nutrition_box_callback', page_language: lang, ...(source ? { source } : {}) };
 
     const connected = FORM_RESPONSE_URL && Object.values(ENTRY).every(Boolean);
     if (!connected) {
       if (isTestSite()) {
         // Preview only: show the thank-you so the flow can be reviewed. Nothing is sent.
-        console.info('[form] not connected; would send', Object.fromEntries(answers), inBronx ? dobString(values) : '', methods.map((m) => METHOD_VALUE[m]));
+        console.info('[form] not connected; would send', Object.fromEntries(answers), dobString(values), methods.map((m) => METHOD_VALUE[m]));
         go(steps.length - 1);
       } else {
         setError(t.notConnected);
@@ -355,8 +367,8 @@ export default function EligibilityForm({ className = '' }: { className?: string
 
     const body = new URLSearchParams({ fvv: '1', pageHistory: '0' });
     for (const [key, value] of answers) if (value) body.set(ENTRY[key] as string, value);
-    // Date of birth (Bronx route): the Google Form's Date question takes year, month and day separately.
-    const dob = inBronx ? dobString(values) : null;
+    // Date of birth: the Google Form's Date question takes year, month and day separately.
+    const dob = dobString(values);
     if (dob) {
       const [mm, dd, yyyy] = dob.split('/');
       body.set(`${ENTRY.dob}_year`, yyyy);
@@ -370,7 +382,7 @@ export default function EligibilityForm({ className = '' }: { className?: string
     // submission emails the care team. Add ?livesubmit=1 to send anyway (lib/siteEnv.ts).
     if (!formsSendForReal()) {
       console.info('[form] test site, not sent:', Object.fromEntries(body));
-      sendEvent('generate_lead', { form_name: 'nutrition_box_callback', page_language: lang });
+      sendEvent('generate_lead', lead);
       go(steps.length - 1);
       return;
     }
@@ -384,8 +396,8 @@ export default function EligibilityForm({ className = '' }: { className?: string
       const timeout = setTimeout(() => controller.abort(), 15000);
       await fetch(FORM_RESPONSE_URL as string, { method: 'POST', mode: 'no-cors', body, signal: controller.signal });
       clearTimeout(timeout);
-      // Nothing from the form itself goes to analytics or Meta: only that a request was sent.
-      sendEvent('generate_lead', { form_name: 'nutrition_box_callback', page_language: lang });
+      sendEvent('generate_lead', lead);
+      forgetAdSource();
       go(steps.length - 1);
     } catch {
       setError(t.failed(<PhoneLink />));

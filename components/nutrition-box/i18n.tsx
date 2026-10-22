@@ -55,6 +55,14 @@ export function LangProvider({ children }: { children: ReactNode }) {
     }
     const initial = isLang(fromUrl) ? fromUrl : isLang(saved) ? saved : (browserLang() ?? 'en');
     if (initial !== 'en') setLangState(initial);
+    // A link's language (an ad's ?lang=es) is kept for their next visit too.
+    if (isLang(fromUrl) && fromUrl !== saved) {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, fromUrl);
+      } catch {
+        // Not remembered.
+      }
+    }
   }, []);
 
   // Screen readers and browser translation read the page's language from <html lang>.
