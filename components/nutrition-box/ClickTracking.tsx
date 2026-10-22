@@ -18,7 +18,8 @@ import { sendEvent } from './analytics';
 //
 // What visitors type into the form is never sent, only which buttons they click.
 // EligibilityForm also sends generate_lead (form_name nutrition_box_callback,
-// page_language) when a form is submitted.
+// page_language, and source: the ad's ?src= variant, if they came from one) when a form
+// is submitted. Meta gets the same, as its Lead event.
 // On localhost the event is logged to the console instead of sent, so previews don't
 // add test clicks to the real data.
 
