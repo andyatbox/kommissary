@@ -133,6 +133,12 @@ redirect (added in `next.config.mjs` → `redirects()`):
 | /nyc-groceries, /jobs-fair | — | campaign pages: check for flyers/QR codes |
 | /box, /labs, /v2, /kommissary1.0, /src | — | old experiments: probably let go |
 
+**Done after launch (October 23, 2026):** /nyc-groceries/… → https://nyc-groceries.kommissary.com/… (the
+proposal to NYCEDC links there; that site is its own hPanel website now, never touch it from here),
+/labs/hungry-no-more → hungrynomore.co, /box, /labs, /src → home, the old form scripts (/handler.php,
+/contact/contact-us.php) → /contact. 1.0's `/images/` files are back in `public/images` (except drafts and
+the two large videos), because emails, signatures and listings may still load them from kommissary.com.
+
 ### Instagram reconnect address
 Meta app → Instagram settings → add `https://kommissary.com/api/instagram/callback` as a
 valid redirect URI, and set `INSTAGRAM_REDIRECT_URI` to it on the live app. (Only matters if
