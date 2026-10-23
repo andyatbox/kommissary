@@ -35,7 +35,19 @@ const nextConfig = {
       { source: '/services', destination: '/bespoke-meals', permanent: true },
       { source: '/jobs-fair', destination: '/careers', permanent: true },
       { source: '/spotlight', destination: '/social', permanent: true },
-      { source: '/nyc-groceries-site', destination: '/', permanent: true },
+      // The NYC Groceries proposal: its first address (kommissary.com/nyc-groceries/, linked from
+      // the proposal sent to NYCEDC) and the folder it was briefly served from both go to its
+      // own site, keeping the rest of the path (e.g. its PDF).
+      { source: '/nyc-groceries/:path*', destination: 'https://nyc-groceries.kommissary.com/:path*', permanent: true },
+      { source: '/nyc-groceries-site/:path*', destination: 'https://nyc-groceries.kommissary.com/:path*', permanent: true },
+      // 1.0's experiments and form scripts, to their nearest home (October 2026).
+      { source: '/labs/hungry-no-more/:path*', destination: 'https://hungrynomore.co', permanent: true },
+      { source: '/labs/:path*', destination: '/', permanent: true },
+      { source: '/box/:path*', destination: '/', permanent: true },
+      { source: '/src/:path*', destination: '/', permanent: true },
+      { source: '/handler.php', destination: '/contact', permanent: true },
+      { source: '/contact/contact-us.php', destination: '/contact', permanent: true },
+      { source: '/our-impact/x-horiz-our-impact.html', destination: '/our-impact', permanent: true },
       { source: '/v2', destination: '/', permanent: true },
       { source: '/kommissary1.0', destination: '/', permanent: true },
       { source: '/home.html', destination: '/', permanent: true },
