@@ -83,7 +83,9 @@ const ZONES: ZoneDef[] = [
       },
       // Behind the word and off to the right, turned toward the camera.
       {
-        url: '/models/free-food-truck.glb',
+        // New file name when the model changes: the server sends no cache headers, so
+        // browsers keep an old copy under the same name.
+        url: '/models/free-food-truck-v2.glb',
         anchor: 'progressive',
         offset: [5.6, 2, -4],
         target: 6.5,
