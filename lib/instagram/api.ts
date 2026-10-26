@@ -62,14 +62,39 @@ function toReel(m: RawMedia): Reel | null {
   };
 }
 
-/** Hashtags that mark a reel as part of an ad campaign (the Nutrition Box ads). The
- *  homepage phones skip these: the ads look out of place in the site's own showcase. */
-const AD_HASHTAGS = ['bronx', 'medicaid'];
-const AD_HASHTAG = new RegExp(`#(${AD_HASHTAGS.join('|')})(?![\\p{L}\\p{N}_])`, 'iu');
+/**
+ * Reels promoting the Bronx Medicaid grocery program (Nutrition Box): its ads and posts.
+ * The homepage phones skip these, since ads look out of place in the site's own showcase.
+ * Not every one is hashtagged, so the program's own wording counts too, in English and
+ * Spanish (matched without accents). Checked against @kommissary's 137 reels in October
+ * 2026: it caught the six program posts, and one older "Medicaid accepted" post, but
+ * nothing else; generic words like "qualify" were left out because they caught posts
+ * about food insecurity in general.
+ */
+const PROGRAM_WORDING = new RegExp(
+  [
+    '#(?:bronx|medicaid|freefood)(?![\\p{L}\\p{N}_])',
+    'medicaid',
+    'nutrition box',
+    'grocery box',
+    // "free food", "free groceries", but not inside a handle like @thefreefoodtrucknyc.
+    '(?<![\\p{L}\\p{N}_@])free (?:grocer\\w*|food)\\b',
+    'eligib\\w*',
+    'elegib\\w*',
+    'comida gratis',
+    'alimentos gratis',
+    'cajas? de (?:alimentos|comida)',
+    'regalando',
+    'kommissary\\.com/bronx',
+  ].join('|'),
+  'iu'
+);
 
-/** True for a reel tagged #bronx or #medicaid (any case; not #bronxeats and the like). */
-export function isAdReel(reel: Reel): boolean {
-  return AD_HASHTAG.test(reel.caption);
+const ACCENTS = new RegExp('\\p{M}', 'gu');
+
+/** True for a reel about the Bronx Medicaid grocery program (see PROGRAM_WORDING). */
+export function isProgramReel(reel: Reel): boolean {
+  return PROGRAM_WORDING.test(reel.caption.normalize('NFD').replace(ACCENTS, ''));
 }
 
 /**
