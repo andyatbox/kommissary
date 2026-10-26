@@ -166,8 +166,7 @@ const ZONES: ZoneDef[] = [
     id: 'provisions',
     triggers: ['provisions'],
     models: [
-      // To the right, behind the word: bananas, an apple and an orange. (The Our Story
-      // page still uses the older bananas-apple.glb.)
+      // To the right, behind the word: bananas, an apple and an orange.
       {
         url: '/models/fruits.glb',
         anchor: 'provisions',
