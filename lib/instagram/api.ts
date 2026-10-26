@@ -62,6 +62,16 @@ function toReel(m: RawMedia): Reel | null {
   };
 }
 
+/** Hashtags that mark a reel as part of an ad campaign (the Nutrition Box ads). The
+ *  homepage phones skip these: the ads look out of place in the site's own showcase. */
+const AD_HASHTAGS = ['bronx', 'medicaid'];
+const AD_HASHTAG = new RegExp(`#(${AD_HASHTAGS.join('|')})(?![\\p{L}\\p{N}_])`, 'iu');
+
+/** True for a reel tagged #bronx or #medicaid (any case; not #bronxeats and the like). */
+export function isAdReel(reel: Reel): boolean {
+  return AD_HASHTAG.test(reel.caption);
+}
+
 /**
  * The most recent reels, newest first. Returns an empty list on any failure — a missing
  * token or a bad response should leave a quiet gap in the page, never break the render.
