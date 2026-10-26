@@ -3,7 +3,7 @@ import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
 import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
 import { galleryImageFromSanity, type SanityGalleryImage } from '@/lib/galleryImage';
-import { getReels } from '@/lib/instagram/api';
+import { getReels, isAdReel } from '@/lib/instagram/api';
 import { PHONES } from '@/lib/phones';
 import { DEFAULT_CONTENT } from '@/lib/defaultContent';
 import type { HomeContent, TeamImages, TeamSlot } from '@/lib/store';
@@ -90,9 +90,10 @@ export default async function Page() {
 
   // One playable reel per phone model, newest first, so no two phones show the same
   // clip. Most reels expose no file at all (Instagram withholds it when the audio is
-  // licensed), so this looks past the ones it can't use.
+  // licensed), so this looks past the ones it can't use, and past ad-campaign reels
+  // (#bronx, #medicaid: see isAdReel).
   const phoneReels = (await getReels(24))
-    .filter((r) => r.canPlayInline)
+    .filter((r) => r.canPlayInline && !isAdReel(r))
     .slice(0, PHONES.length)
     .map((r) => ({ id: r.id, poster: r.poster, videoUrl: r.videoUrl }));
   try {
