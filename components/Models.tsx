@@ -166,13 +166,14 @@ const ZONES: ZoneDef[] = [
     id: 'provisions',
     triggers: ['provisions'],
     models: [
-      // To the right, behind the word.
+      // To the right, behind the word: bananas, an apple and an orange. (The Our Story
+      // page still uses the older bananas-apple.glb.)
       {
-        url: '/models/bananas-apple.glb',
+        url: '/models/fruits.glb',
         anchor: 'provisions',
         offset: [3, 1, -4],
         target: 5.7,
-        rotationY: M.degToRad(95),
+        rotationY: -0.3,
         hoverAmp: 0.38,
         hoverFreq: 1.1,
       },
