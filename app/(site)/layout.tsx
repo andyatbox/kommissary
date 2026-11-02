@@ -4,7 +4,7 @@ import { client } from '@/sanity/lib/client';
 import { buildNav, NAV_QUERY, type NavMenu, type NavPage } from '@/lib/nav';
 import Nav from '@/components/Nav';
 import SiteFooter from '@/components/SiteFooter';
-import SmoothWheel from '@/components/SmoothWheel';
+import ScrollProgress from '@/components/ScrollProgress';
 import KaiWidget from '@/components/kai/KaiWidget';
 import GradientBackground from '@/components/GradientBackground';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
@@ -90,8 +90,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Nav menus={nav} />
         {children}
         <SiteFooter />
-        {/* Our Story's scroll feel on the other scrolling pages (mouse and trackpad). */}
-        <SmoothWheel />
+        {/* The nav's scroll-progress rule on the other scrolling pages. */}
+        <ScrollProgress />
         {/* Ask Kai — floating chatbot, on every page. */}
         <KaiWidget />
         <GoogleAnalytics />

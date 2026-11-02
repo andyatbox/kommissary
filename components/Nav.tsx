@@ -114,7 +114,7 @@ export default function Nav({ menus }: { menus: NavMenu[] }) {
           Holds the certifications image (right edge matching the nav padding, so it sits
           under the Connect chevron). */}
       {/* Scroll progress: a rule along the very bottom of the screen, filled by
-          SmoothWheel / Our Story's SmoothScroll. (It used to run along the top bar,
+          ScrollProgress / Our Story's SmoothScroll. (It used to run along the top bar,
           through the logo.) The homepage has its own at the bottom (HomeProgress), where
           it becomes the sentence filling in, so it's omitted there. */}
       {pathname !== '/' && (

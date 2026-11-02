@@ -1,3 +1,22 @@
+/* Drawn a little larger than its box: with no doorframe (November 2026), the art fills
+   only the left three quarters of its 784x1080 frame. On phones it grows from the
+   doormat, up and right into the room the doorframe took. Side by side with the copy it's
+   boxed in by the headline above and the partner links below, so it grows only a little,
+   from its middle. */
+.stage {
+  position: absolute;
+  inset: 0;
+  transform: scale(1.15);
+  transform-origin: 45% 100%;
+}
+
+@media (orientation: landscape) {
+  .stage {
+    transform: scale(1.06);
+    transform-origin: 45% 55%;
+  }
+}
+
 .layer {
   position: absolute;
   inset: 0;

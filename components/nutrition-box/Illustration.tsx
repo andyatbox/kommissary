@@ -25,8 +25,8 @@ type Float = {
   rot: string;
 };
 
-// Listed top to bottom: layer 1 is in front, layer 7 (the doorway) is at the back and
-// doesn't move.
+// Listed top to bottom: layer 1 is in front, layer 7 (the woman on her doormat) is at the
+// back and doesn't move.
 const LAYERS: { src: StaticImageData; float?: Float }[] = [
   { src: layer1, float: { origin: ['25.9%', '26.8%'], duration: 3.1, delay: -0.4, amp: '0.9%', rot: '3deg' } },
   { src: layer2, float: { origin: ['45.2%', '23.9%'], duration: 3.7, delay: -1.9, amp: '0.8%', rot: '2.5deg' } },
@@ -46,30 +46,32 @@ export default function Illustration({ className = '' }: { className?: string })
   const alt = useCopy(ALT);
   return (
     <div className={`relative aspect-[784/1080] ${className}`}>
-      {LAYERS.map(({ src, float }, i) => (
-        <Image
-          key={i}
-          src={src}
-          alt={float ? '' : alt}
-          aria-hidden={float ? true : undefined}
-          priority
-          className={`${styles.layer} ${float ? styles.float : ''}`}
-          style={
-            {
-              zIndex: LAYERS.length - i,
-              ...(float && {
-                '--ox': float.origin[0],
-                '--oy': float.origin[1],
-                '--dur': `${float.duration}s`,
-                '--delay': `${float.delay}s`,
-                '--amp': float.amp,
-                '--rot': float.rot,
-              }),
-            } as CSSProperties
-          }
-          sizes="(min-width: 768px) 50vw, 60vw"
-        />
-      ))}
+      <div className={styles.stage}>
+        {LAYERS.map(({ src, float }, i) => (
+          <Image
+            key={i}
+            src={src}
+            alt={float ? '' : alt}
+            aria-hidden={float ? true : undefined}
+            priority
+            className={`${styles.layer} ${float ? styles.float : ''}`}
+            style={
+              {
+                zIndex: LAYERS.length - i,
+                ...(float && {
+                  '--ox': float.origin[0],
+                  '--oy': float.origin[1],
+                  '--dur': `${float.duration}s`,
+                  '--delay': `${float.delay}s`,
+                  '--amp': float.amp,
+                  '--rot': float.rot,
+                }),
+              } as CSSProperties
+            }
+            sizes="(min-width: 768px) 50vw, 60vw"
+          />
+        ))}
+      </div>
     </div>
   );
 }
