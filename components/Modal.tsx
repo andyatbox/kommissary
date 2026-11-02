@@ -16,7 +16,7 @@ type OverlayContent = {
 const ptComponents: PortableTextComponents = {
   block: {
     normal: ({ children }) => (
-      <p className="mt-5 text-base leading-relaxed text-[#ff6666] first:mt-0 sm:text-lg">
+      <p className="mt-5 text-xl leading-relaxed text-[#ff6666] first:mt-0 sm:text-2xl">
         {children}
       </p>
     ),
@@ -24,12 +24,12 @@ const ptComponents: PortableTextComponents = {
   // Tailwind's preflight removes list markers/indent, so restore them + the red color.
   list: {
     bullet: ({ children }) => (
-      <ul className="mt-5 list-disc space-y-2 pl-6 text-left text-base leading-relaxed text-[#ff6666] marker:text-[#ff6666] first:mt-0 sm:text-lg">
+      <ul className="mt-5 list-disc space-y-2 pl-6 text-left text-xl leading-relaxed text-[#ff6666] marker:text-[#ff6666] first:mt-0 sm:text-2xl">
         {children}
       </ul>
     ),
     number: ({ children }) => (
-      <ol className="mt-5 list-decimal space-y-2 pl-6 text-left text-base leading-relaxed text-[#ff6666] marker:text-[#ff6666] first:mt-0 sm:text-lg">
+      <ol className="mt-5 list-decimal space-y-2 pl-6 text-left text-xl leading-relaxed text-[#ff6666] marker:text-[#ff6666] first:mt-0 sm:text-2xl">
         {children}
       </ol>
     ),
@@ -131,7 +131,7 @@ export default function Modal() {
       </button>
 
       <div className="flex min-h-full items-center justify-center p-8 sm:p-12">
-        <div className="max-w-2xl text-center">
+        <div className="max-w-3xl text-center">
           {title && (
             <h2 className="font-spirit text-3xl font-medium text-white sm:text-4xl">{title}</h2>
           )}
